@@ -1,0 +1,22 @@
+<!--
+  ~ Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
+  ~ This file is part of Sync-in | The open source file sync and share solution
+  ~ See the LICENSE file for licensing details
+  -->
+@if (transfer) {
+  <div class="d-flex align-items-center truncate fs-xxs ms-auto me-auto">
+    <span class="d-flex align-items-center me-1">
+      <fa-icon [icon]="transfer.sideIcon" class="{{transfer.ok ? transfer.sideIconClass : 'circle-error-icon'}} me-1"></fa-icon>
+      <fa-icon [icon]="transfer.actionIcon" [class.text-danger]="!transfer.ok" class="circle-gray-icon" size="sm"></fa-icon>
+    </span>
+    <span class="truncate">{{ transfer.name }}</span>
+  </div>
+  @if (transferProgress) {
+    <div class="d-flex bottomBar-syncProgress">
+      <progressbar [value]="transferProgress.percent" [max]="100" [animate]="true">
+        <div class="progress-text">{{ transferProgress.currentSize }}&nbsp;•&nbsp;{{ transferProgress.totalSize }}</div>
+      </progressbar>
+    </div>
+  }
+}
+

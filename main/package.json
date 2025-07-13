@@ -1,0 +1,20 @@
+{
+  "name": "@sync-in-desktop/main",
+  "description": "Desktop Application Main",
+  "license": "AGPL-3.0-or-later",
+  "author": {
+    "name": "Johan Legrand",
+    "email": "johan.legrand@sync-in.com"
+  },
+  "private": true,
+  "dependencies": {
+    "mime-types": "^3.0.1"
+  },
+  "devDependencies": {
+    "@electron/notarize": "^3.0.1",
+    "@types/mime-types": "^2.1.4",
+    "electron": "^36.1.0",
+    "electron-builder": "^26.0.12",
+    "electron-updater": "^6.3.9"
+  }
+}

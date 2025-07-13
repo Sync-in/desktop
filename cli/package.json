@@ -1,0 +1,16 @@
+{
+  "name": "@sync-in-desktop/cli",
+  "description": "Command Line",
+  "license": "AGPL-3.0-or-later",
+  "private": true,
+  "author": {
+    "name": "Johan Legrand",
+    "email": "johan.legrand@sync-in.com"
+  },
+  "dependencies": {
+    "yargs": "^17.6.2"
+  },
+  "devDependencies": {
+    "@types/yargs": "^17.0.19"
+  }
+}

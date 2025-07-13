@@ -1,0 +1,112 @@
+/*!
+ * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
+ * This file is part of Sync-in | The open source file sync and share solution
+ * See the LICENSE file for licensing details
+ */
+
+.bottomBar {
+  -webkit-user-select: none;
+  -webkit-app-region: drag;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+
+  .bottomBar-syncs {
+    display: flex;
+
+  }
+
+  .bottomBar-content {
+    display: flex;
+    padding-left: 0;
+
+    .bottomBar-syncs {
+      @extend .truncate;
+      display: flex;
+      align-items: center;
+      height: $bottom-bar-height - 1px;
+      flex-wrap: nowrap;
+      font-size: $font-size-xs;
+      width: 100%;
+      padding: 0 0 0 10px;
+
+      .bottomBar-syncProgress {
+        position: relative;
+        min-width: 125px;
+        height: 100%;
+        border-width: 0 0 0 .5px;
+        border-style: solid;
+
+        .progress {
+          background-color: transparent;
+          border-radius: 0;
+          height: 100%;
+        }
+
+        .progress-text {
+          display: flex;
+          justify-content: center;
+          position: absolute;
+          width: 100%;
+          font-size: $font-size-xxxs;
+        }
+      }
+    }
+
+    .bottomBar-downloads {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      height: $bottom-bar-height - 1px;
+
+      .btn-group {
+        height: 100%;
+
+        .dropdown-menu {
+          // dropup fix
+          transform: translateY(-100%) !important;
+
+          .dropdown-item {
+            width: 350px
+          }
+        }
+
+        .progress {
+          position: absolute;
+          background-color: transparent;
+          border-radius: 0;
+          height: $bottom-bar-height - 1px;
+        }
+      }
+
+      > div > button {
+        cursor: default !important;
+        box-shadow: none !important;
+        -webkit-app-region: no-drag;
+        border-width: 0 .5px;
+        border-style: solid;
+        padding: 0.65rem 0.5rem;
+        border-radius: 0;
+        font-size: 0.8rem;
+        min-width: 50px;
+        max-width: 300px;
+        overflow: hidden;
+      }
+
+      li {
+        min-width: 200px;
+        max-width: 400px;
+
+        a {
+          height: $bottom-bar-height;
+        }
+
+        button {
+          padding: .2rem;
+          border: none;
+        }
+      }
+    }
+  }
+}

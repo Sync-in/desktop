@@ -1,0 +1,118 @@
+/*!
+ * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
+ * This file is part of Sync-in | The open source file sync and share solution
+ * See the LICENSE file for licensing details
+ */
+
+@mixin app-theme($bg-color, $border-color, $font-color, $dropdown-bg-color, $dropdown-item-color) {
+  .topBar {
+    background-color: $bg-color;
+
+    .topBar-container {
+      border-bottom: .5px solid $border-color;
+    }
+
+    .topBar-content {
+
+      > div > button {
+        color: $font-color;
+        border-color: $border-color;
+
+        &:hover, &:active, &:focus {
+          background: rgba(0, 0, 0, .2);
+        }
+
+      }
+
+    }
+
+    .topBar-buttons {
+      color: rgba(61, 60, 64, 0.7);
+
+      > .button {
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        &:active {
+          background: rgba(255, 255, 255, 0.2);
+        }
+
+      }
+
+      > .close-button:hover {
+        background: #E81123 !important;
+      }
+
+      > .close-button:active {
+        background: #f1707a !important;
+      }
+
+
+    }
+  }
+
+  .bottomBar {
+    background-color: $bg-color;
+
+    .bottomBar-content {
+      border-top: .5px solid $border-color;
+
+      .bottomBar-syncs {
+        color: white;
+
+        .bottomBar-syncProgress {
+          background-color: $border-color;
+          border-color: $border-color;
+
+          .progress {
+            .progress-bar {
+              background-color: darken($orange, 3%);
+            }
+          }
+        }
+      }
+
+      .bottomBar-downloads {
+        .btn-group {
+          .progress {
+            .progress-bar {
+              background-color: #034d78;
+            }
+          }
+        }
+
+        > div > button {
+          color: $font-color;
+          border-color: $border-color;
+
+          &:hover, &:active, &:focus {
+            background: rgba(0, 0, 0, .2);
+          }
+        }
+      }
+    }
+  }
+
+  .dropdown-menu {
+    background-color: $dropdown-bg-color;
+
+    .dropdown-divider {
+      border-color: lighten($dropdown-bg-color, 5%);
+    }
+
+    .dropdown-item {
+      color: $dropdown-item-color;
+
+      &:hover, &:active, &:focus {
+        color: white;
+        background-color: darken($dropdown-bg-color, 8%);
+      }
+    }
+  }
+
+  .modal {
+    background: rgba(0, 0, 0, .3);
+  }
+}

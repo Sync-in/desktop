@@ -1,0 +1,111 @@
+/*!
+ * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
+ * This file is part of Sync-in | The open source file sync and share solution
+ * See the LICENSE file for licensing details
+ */
+body {
+  -webkit-font-smoothing: antialiased;
+  margin: 0;
+  background-color: transparent;
+  height: 100%;
+
+  .app-main {
+    &.theme-dark {
+      @include app-theme($dark-theme-bg-color, $dark-theme-border-color, $dark-theme-font-color, $dark-theme-dropdown-bg-color,
+              $dark-theme-dropdown-item-color);
+    }
+
+    &.theme-light {
+      @include app-theme($light-theme-bg-color, $light-theme-border-color, $light-theme-font-color, $light-theme-dropdown-bg-color,
+              $light-theme-dropdown-item-color);
+    }
+  }
+}
+
+.truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-dark {
+  background-color: $dark-theme-bg-color;
+}
+
+
+.no-text-select {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.bg-maroon {
+  background-color: $maroon;
+}
+
+.bg-purple {
+  background-color: $purple;
+}
+
+.fs-lg {
+  font-size: $font-size-lg;
+}
+
+.fs-xs {
+  font-size: $font-size-xs;
+}
+
+.fs-xxs {
+  font-size: $font-size-xxs;
+}
+
+.fs-xxxs {
+  font-size: $font-size-xxxs;
+}
+
+.fs-xxxxs {
+  font-size: $font-size-xxxxs;
+}
+
+.fs-md {
+  font-size: $font-size-md;
+}
+
+.text-gray {
+  color: $gray;
+}
+
+.circle-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 23px;
+  min-height: 23px;
+  font-size: $font-size-md;
+  border-radius: 50%;
+}
+
+.circle-primary-icon {
+  @extend .circle-icon;
+  background: linear-gradient(#0086d7, #00456f);
+  color: whitesmoke;
+}
+
+.circle-purple-icon {
+  @extend .circle-icon;
+  background: linear-gradient(#965ab4, #5a3778);
+  color: whitesmoke;
+}
+
+.circle-gray-icon {
+  @extend .circle-icon;
+  background-color: darken($gray-light, 5%);
+  color: black;
+}
+
+
+.circle-error-icon {
+  @extend .circle-icon;
+  background: linear-gradient(#e63228, #c80f0a);
+  color: whitesmoke;
+}

@@ -1,0 +1,28 @@
+/*!
+ * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
+ * This file is part of Sync-in | The open source file sync and share solution
+ * See the LICENSE file for licensing details
+ */
+
+.dropdown-menu {
+  min-width: 0 !important;
+  font-size: 0.8rem;
+  background-clip: border-box;
+  padding: 0;
+  overflow: hidden;
+
+  .dropdown-divider {
+    margin: 0;
+    border-top-width: .5px;
+  }
+
+  .dropdown-item {
+    padding: 0.5rem;
+    cursor: pointer;
+    min-width: 200px;
+
+    .menu-item {
+      cursor: pointer;
+    }
+  }
+}

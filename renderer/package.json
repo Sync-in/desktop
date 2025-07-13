@@ -1,0 +1,51 @@
+{
+  "name": "@sync-in-desktop/renderer",
+  "description": "Desktop Application Renderer",
+  "license": "AGPL-3.0-or-later",
+  "private": true,
+  "author": {
+    "name": "Johan Legrand",
+    "email": "johan.legrand@sync-in.com"
+  },
+  "homepage": "https://sync-in.com",
+  "scripts": {
+    "ng": "ng",
+    "angular:prod": "ng build renderer",
+    "angular:dev": "ng build renderer --configuration development",
+    "angular:update": "ng update @angular/cli @angular/core --allow-dirty --force",
+    "lint": "ng lint",
+    "lint:fix": "ng lint --fix"
+  },
+  "dependencies": {
+    "@angular/animations": "^19.2.0",
+    "@angular/common": "^19.2.0",
+    "@angular/compiler": "^19.2.0",
+    "@angular/core": "^19.2.0",
+    "@angular/forms": "^19.2.0",
+    "@angular/platform-browser": "^19.2.0",
+    "@angular/platform-browser-dynamic": "^19.2.0",
+    "@fortawesome/angular-fontawesome": "^1.0.0",
+    "@fortawesome/fontawesome-svg-core": "^6.7.2",
+    "@fortawesome/free-regular-svg-icons": "^6.7.2",
+    "@fortawesome/free-solid-svg-icons": "^6.7.2",
+    "angular-l10n": "^17.0.0",
+    "dayjs": "^1.11.13",
+    "ngx-bootstrap": "^19.0.2",
+    "rxjs": "^7.8.2",
+    "tslib": "^2.8.1",
+    "zone.js": "^0.15.0"
+  },
+  "devDependencies": {
+    "@angular/build": "^19.2.1",
+    "@angular/cli": "^19.2.1",
+    "@angular/compiler-cli": "^19.2.1",
+    "@eslint/js": "^9.18.0",
+    "angular-eslint": "^19.2.0",
+    "bootstrap": "^5.3.5",
+    "eslint": "^9.21.0",
+    "eslint-config-prettier": "^10.1.1",
+    "eslint-plugin-prettier": "^5.2.3",
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.26.0"
+  }
+}

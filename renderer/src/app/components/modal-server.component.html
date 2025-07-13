@@ -1,0 +1,111 @@
+<!--
+  ~ Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
+  ~ This file is part of Sync-in | The open source file sync and share solution
+  ~ See the LICENSE file for licensing details
+  -->
+<div class="modal-header align-items-center">
+  <h4 class="modal-title pull-left">
+    <fa-icon [icon]="titleIcon"></fa-icon>
+    <fa-icon [icon]="icons.faServer"></fa-icon>
+    <span class="ms-1">{{ this.loginForm.value.name || this.config?.server?.name }}</span>
+  </h4>
+  @if (activeServer.id) {
+    <button type="button" class="btn-close close pull-right" aria-label="Close" (click)="closeModal()">
+      <span aria-hidden="true" class="visually-hidden">&times;</span>
+    </button>
+  }
+</div>
+<div class="modal-body" (keyup.enter)="onSubmit()">
+  <div>
+    <p class="mb-2">
+      @if (hasError) {
+        <span class="text-danger" l10nTranslate>{{ textError }}</span>
+      } @else {
+        <span class="text-dark">
+          @if (submitted) {
+            <span>
+              <span class="me-1" l10nTranslate>Please wait</span>
+              <fa-icon [icon]="icons.faSyncAlt" animation="spin"></fa-icon>
+          </span>
+          } @else {
+            <span class="me-1" l10nTranslate>{{ titleText }}</span>
+          }
+        </span>
+      }
+    </p>
+  </div>
+  @if (isRemoveModal) {
+    <div class="mb-1" [innerHTML]="'Remove_Server_Warning' | translate:locale.language:{server: this.loginForm.value.name}"></div>
+  } @else {
+    <form [formGroup]="loginForm">
+      <div class="input-group mb-3">
+        <div class="input-group-text">
+        <span>
+          <fa-icon [icon]="icons.faServer"></fa-icon>
+        </span>
+        </div>
+        <input [placeholder]="'Server display name'|translate:locale.language"
+               formControlName="name"
+               class="form-control"
+               aria-label="server"
+               type="text"
+               appAutofocus />
+      </div>
+      <div>
+        <div class="input-group mb-3">
+          <div class="input-group-text">
+              <span>
+                <fa-icon [icon]="icons.faGlobe"></fa-icon>
+              </span>
+          </div>
+          <input formControlName="url"
+                 class="form-control"
+                 placeholder="https://my.sync-in.com"
+                 aria-label="server"
+                 type="text" />
+        </div>
+        @if (isAddModal || this.isAuthenticationModal) {
+          <div class="input-group mb-3">
+            <div class="input-group-text">
+              <span>
+                <fa-icon [icon]="icons.faUserAlt"></fa-icon>
+              </span>
+            </div>
+            <input [placeholder]="'Login or Email'|translate:locale.language"
+                   appAutofocus
+                   [autoFocus]="this.isAuthenticationModal"
+                   [autoSelect]="this.isAuthenticationModal"
+                   formControlName="login"
+                   class="form-control"
+                   aria-label="login"
+                   type="text" />
+          </div>
+          <div class="input-group mb-3">
+            <div class="input-group-text">
+              <span>
+                <fa-icon [icon]="icons.faLock"></fa-icon>
+              </span>
+            </div>
+            <input [placeholder]="'Password'|translate:locale.language"
+                   formControlName="password"
+                   class="form-control"
+                   aria-label="password"
+                   type="password" />
+          </div>
+        }
+      </div>
+    </form>
+  }
+</div>
+<div class="modal-footer">
+  @if (activeServer.id) {
+    <button type="button" class="btn btn-sm btn-secondary" (click)="closeModal()" l10nTranslate>Cancel</button>
+  }
+  <button (click)="onSubmit()"
+          [disabled]="submitted || loginForm.invalid"
+          class="btn btn-sm {{isRemoveModal ? 'btn-danger' : 'btn-primary'}}"
+          type="submit"
+          role="button">
+    <span l10nTranslate>Confirm</span>
+  </button>
+</div>

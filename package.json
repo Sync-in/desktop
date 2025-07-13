@@ -1,0 +1,138 @@
+{
+  "name": "sync-in-desktop",
+  "productName": "Sync-in",
+  "description": "Sync-in Desktop Application",
+  "version": "1.2.7",
+  "license": "AGPL-3.0-or-later",
+  "main": "dist/main/main.js",
+  "author": {
+    "name": "Johan Legrand",
+    "email": "johan.legrand@sync-in.com"
+  },
+  "homepage": "https://sync-in.com",
+  "workspaces": [
+    "core",
+    "main",
+    "cli",
+    "renderer"
+  ],
+  "scripts": {
+    "electron:make": "electron-builder --dir -m",
+    "electron:dist": "electron-builder -m -l -w",
+    "app": "electron . --trace-warnings",
+    "app:dist": "rm -Rf ./releases; npm run angular:prod && npm run webpack:all:prod && npm run electron:dist && node build/manifest.mjs",
+    "webpack:all:prod": "webpack --config-node-env production --config webpack.config.mjs --progress",
+    "webpack:all:dev": "webpack --config-node-env development --config webpack.config.mjs --progress --watch",
+    "webpack:cli:dev": "webpack --config-node-env development --config webpack.config.mjs --config-name cli --progress --watch",
+    "webpack:app:dev": "webpack --config-node-env development --config webpack.config.mjs --config-name app --progress --watch",
+    "angular:prod": "npm -w renderer run angular:prod",
+    "angular:dev": "npm -w renderer run angular:dev",
+    "angular:update": "npx -w renderer ng update @angular/cli @angular/core --allow-dirty --force",
+    "lint": "eslint \"{main,core}/**/*.ts\" && npm -w renderer run lint",
+    "lint:fix": "eslint \"{main,core}/**/*.ts\" --fix && npm -w renderer run lint --fix",
+    "reset": "rm -Rf ./node_modules ./renderer/.angular; npm cache clean --force",
+    "docker:build": "docker build -t desktop-releases:local .",
+    "docker:buildx": "docker buildx build --platform linux/arm64,linux/amd64 --tag syncin/desktop-releases:latest --tag syncin/desktop-releases:${npm_package_version} . --push"
+  },
+  "private": true,
+  "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "@swc/cli": "^0.7.7",
+    "@types/node": "^22.14.0",
+    "copy-webpack-plugin": "^13.0.0",
+    "eslint": "^9.21.0",
+    "eslint-config-prettier": "^10.1.1",
+    "eslint-plugin-prettier": "^5.2.3",
+    "eslint-webpack-plugin": "^5.0.0",
+    "fork-ts-checker-webpack-plugin": "9.0.2",
+    "globals": "^16.0.0",
+    "swc-loader": "^0.2.6",
+    "terser-webpack-plugin": "^5.3.14",
+    "tslib": "^2.8.1",
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.26.0",
+    "webpack": "^5.98.0",
+    "webpack-cli": "^6.0.1",
+    "webpack-shebang-plugin": "^1.1.8"
+  },
+  "build": {
+    "asar": true,
+    "appId": "Sync-in",
+    "copyright": "Copyright © 2012-2025 Johan Legrand <johan.legrand@sync-in.com>",
+    "directories": {
+      "buildResources": "main/assets/app",
+      "output": "releases/sync-in-desktop/${os}"
+    },
+    "artifactName": "${productName}-Desktop-${version}-${arch}.${ext}",
+    "mac": {
+      "notarize": true,
+      "target": [
+        {
+          "target": "default",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "category": "public.app-category.utilities",
+      "darkModeSupport": false,
+      "electronLanguages": [
+        "fr",
+        "en"
+      ],
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "main/assets/app/icon.png",
+      "legalTrademarks": "Sync-in"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "category": "Office",
+      "icon": "main/assets/app/icon.icns"
+    },
+    "files": [
+      "i18n/*.json",
+      "dist/**"
+    ],
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://updates.sync-in.org/${name}/${os}"
+      }
+    ],
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "buildUniversalInstaller": false,
+      "allowToChangeInstallationDirectory": false,
+      "runAfterFinish": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "include": "build/installer.nsh",
+      "license": "build/license.html",
+      "artifactName": "${productName}-Desktop-${version}-${arch}.${ext}"
+    }
+  }
+}

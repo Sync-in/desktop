@@ -1,0 +1,112 @@
+<!--
+  ~ Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
+  ~ This file is part of Sync-in | The open source file sync and share solution
+  ~ See the LICENSE file for licensing details
+  -->
+
+<div class="topBar">
+  <div class="topBar-container" [class.macOS]="appService.isMacOS && !appService.isFullScreen()">
+    <div class="topBar-content">
+      <div class="btn-group" dropdown (isOpenChange)="onDropDownState($event)">
+        <!-- App Menu (only for linux & windows -->
+        @if (!appService.isMacOS) {
+          <button (click)="onAppMenu()"
+                  (mouseenter)="onDropDownState(true)"
+                  (mouseleave)="onDropDownState(false)"
+                  class="btn app-btn"
+                  type="button">
+            <fa-icon [icon]="icons.faEllipsisVertical"></fa-icon>
+          </button>
+        }
+        <!-- Dropdown menu-->
+        <button id="button-basic" dropdownToggle type="button" class="btn" aria-controls="dropdown-basic">
+          <div class="d-flex align-items-center no-text-select">
+            <fa-icon [icon]="icons.faServer" class="me-1"></fa-icon>
+            @if (activeServer.id === 0) {
+              <div class="me-1 text-truncate" l10nTranslate>{{ activeServer.name }}</div>
+            } @else {
+              <div class="me-1 text-truncate">{{ activeServer.name }}</div>
+            }
+            <fa-icon [icon]="icons.faChevronDown" class="ms-auto"></fa-icon>
+          </div>
+        </button>
+        <ul id="dropdown-basic" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-basic">
+          @for (server of servers; track server.id) {
+            <li role="menuitem" (mouseenter)="enterMenuItem(server.id)" (mouseleave)="leaveMenuItem()" (click)="onActiveServer($event, server.id)">
+              <a class="d-flex align-items-center dropdown-item no-text-select">
+                <fa-icon [icon]="activeServer.id === server.id ? icons.fasCircle : icons.farCircle" class="{{server.available ? 'text-primary' : 'text-danger'}}"></fa-icon>
+                <span class="text-truncate ms-1 me-auto">{{ server.name }}</span>
+                <div class="ms-auto">
+                  @if (hoverIndex === server.id) {
+                    <div>
+                      <button (click)="onReload($event, server)" type="button" class="btn btn-sm btn-outline-secondary ms-4 me-1">
+                        <fa-icon [icon]="icons.faArrowRotateRight"></fa-icon>
+                      </button>
+                      <button (click)="openEditServerModal($event, server)" type="button" class="btn btn-sm btn-outline-secondary me-1">
+                        <fa-icon [icon]="icons.faPencil"></fa-icon>
+                      </button>
+                      <button (click)="openRemoveServerModal($event, server)" type="button" class="btn btn-sm btn-outline-danger">
+                        <fa-icon [icon]="icons.faTrashAlt"></fa-icon>
+                      </button>
+                    </div>
+                  } @else {
+                    <div>
+                      <button class="btn btn-sm ms-4 me-1"><fa-icon></fa-icon></button>
+                      <button class="btn btn-sm me-1"><fa-icon></fa-icon></button>
+                      <button class="btn btn-sm"><fa-icon></fa-icon></button>
+                    </div>
+                  }
+                </div>
+              </a>
+            </li>
+          }
+          <li class="divider dropdown-divider"></li>
+          <li role="menuitem">
+            <a class="d-flex align-items-center dropdown-item" href="#" (click)="openAddServerModal($event)">
+              <fa-icon [icon]="icons.faPlus"></fa-icon>
+              <span class="ms-1" l10nTranslate>Connect to a server</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+      <!-- Tabs menu-->
+      <div class="btn-group">
+        @for (server of serversAppsCounter; track server.id) {
+          <button type="button"
+                  class="btn border-start-0"
+                  (click)="onActiveServer(null, server.id)">
+            <div class="d-flex align-items-center no-text-select">
+              <fa-icon [icon]="icons.faRss" class="text-primary"></fa-icon>
+              <div class="text-truncate ms-1 me-2">{{ server.name }}</div>
+              @if (server.applications.syncs) {
+                <div>
+                  <fa-icon [icon]="icons.faArrowsRotate" animation="spin"></fa-icon>
+                  <span class="translate-middle badge rounded-pill bg-purple fs-xxxxs ms-1">{{ server.applications.syncs }}</span>
+                </div>
+              }
+              @if (server.applications.notifications) {
+                <div>
+                  <fa-icon [icon]="icons.faBell"></fa-icon>
+                  <span class="translate-middle badge rounded-pill bg-warning fs-xxxxs ms-1">{{ server.applications.notifications }}</span>
+                </div>
+              }
+              @if (server.applications.tasks) {
+                <div>
+                  <fa-icon [icon]="icons.faFlag"></fa-icon>
+                  <span class="translate-middle badge rounded-pill bg-maroon fs-xxxxs ms-1">{{ server.applications.tasks }}</span>
+                </div>
+              }
+            </div>
+          </button>
+        }
+        @if (updateDownloaded) {
+          <button (click)="onUpdate()" class="btn border-start-0" type="button">
+            <fa-icon [icon]="icons.faTriangleExclamation" class="text-warning"></fa-icon>
+            <span class="ms-1">{{ updateDownloaded }}</span>
+          </button>
+        }
+      </div>
+    </div>
+    <app-top-bar-buttons></app-top-bar-buttons>
+  </div>
+</div>

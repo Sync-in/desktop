@@ -1,0 +1,122 @@
+/*!
+ * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
+ * This file is part of Sync-in | The open source file sync and share solution
+ * See the LICENSE file for licensing details
+ */
+// Bootstrap overrides
+// Colors
+$white: #ffffff;
+$gray-dark: #384042;
+$gray: #9faecb;
+$gray-mid: #b9c5da;
+$gray-light: #d4dbe8;
+$gray-lighter: #e1e6ef;
+$gray-lightest: #eef1f6;
+$light-blue: #2e92ce;
+$lighter-blue: #94c7e8;
+$red: #dc3545;
+$green: #06854b;
+$dark-green: #008000;
+$light-green: #37cb46;
+$aqua: #0dcaf0;
+$blue: #0576b9;
+$dark-mid-blue: #337abd;
+$dark-blue: #195d9e;
+$navy: #0b2640;
+$cyan: #17a2b8;
+$teal: #39CCCC;
+$dark-teal: #527a7a;
+$olive: #3D9970;
+$lime: #01FF70;
+$orange: #ff7700;
+$yellow: #ffc107;
+$fuchsia: #F012BE;
+$purple: #9b59b6;
+$maroon: #b33c00;
+$black: #111;
+
+$primary: #1c68b0;
+$success: $green;
+$secondary: #c3cee0;
+$secondary-light: #dde3ee;
+$info: $aqua;
+$warning: $orange;
+$danger: $red;
+$mark-bg: $light-green;
+$muted: #777;
+// Options
+// Font, line-height, and color for body text, headings, and more.
+$font-size-base: 0.9rem; // Assumes the browser default, typically `16px`
+$font-size-lg: 1rem;
+$font-size-md: .90rem;
+$font-size-sm: .80rem;
+$font-size-xs: .75rem;
+$font-size-xxs: .70rem;
+$font-size-xxxs: .60rem;
+$font-size-xxxxs: .55rem;
+
+//--------------------------------------------------------
+//Body background (Affects main content background only)
+$body-bg: transparent;
+$body-color: #333;
+$custom-color: #212529;
+$custom-light-color: #384047;
+$custom-dark-color: #28353b;
+$list-group-color: $custom-color;
+$placeholder-color: #8c8c8c;
+// Themed colors
+$dark-theme-bg-color: #222d32;
+$dark-theme-font-color: $gray-light;
+$dark-theme-border-color: #304047;
+$dark-theme-dropdown-bg-color: $dark-theme-border-color;
+$dark-theme-dropdown-item-color: lighten($dark-theme-bg-color, 60%);
+
+$light-theme-bg-color: $navy;
+$light-theme-font-color: $gray-lightest;
+$light-theme-border-color: lighten($light-theme-bg-color, 10%);
+$light-theme-dropdown-bg-color: lighten($light-theme-bg-color, 10%);
+$light-theme-dropdown-item-color: $gray-light;
+
+
+// Font, line-height, and color for body text, headings, and more.
+$font-size-base: 0.9rem; // Assumes the browser default, typically `16px`
+$font-size-xl: 1.1rem;
+$font-size-lg: 1rem;
+$font-size-md: .90rem;
+$font-size-sm: .80rem;
+$font-size-xs: .75rem;
+$font-size-xxs: .70rem;
+$font-size-xxxs: .65rem;
+$font-size-xxxxs: .60rem;
+// Quickly modify global styling by enabling or disabling optional features.
+$enable-transitions: true;
+$enable-rounded: true;
+$enable-grid-classes: true;
+$enable-shadows: true;
+$enable-sidebar-nav-rounded: false;
+$border-color: $gray-lighter;
+$hr-color: $secondary;
+$btn-font-size: $font-size-xs !default;
+$btn-font-size-sm: $font-size-xs;
+$btn-close-width: .75em !default;
+$btn-close-padding-x: .5em !default;
+$btn-box-shadow: false;
+// Dropdowns
+$btn-active-box-shadow: none;
+// Modals
+$modal-inner-padding: .4rem;
+$modal-header-padding-x: .8rem;
+$modal-header-padding-y: .5rem;
+$modal-backdrop-opacity: 0.5;
+$modal-content-bg: lighten($gray-lighter, 1%);
+// Inputs
+$input-bg: $white;
+$input-color: $custom-color;
+$input-font-size: $font-size-sm;
+$input-font-size-sm: $font-size-xs;
+$input-box-shadow: none !important;
+$input-focus-box-shadow: none !important;
+$input-disabled-color: $muted;
+// Custom
+$top-bar-height: 40px;
+$bottom-bar-height: $top-bar-height;

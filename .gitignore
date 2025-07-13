@@ -1,0 +1,15 @@
+node_modules
+dist
+releases
+.angular
+renderer/.angular
+tmp
+out-tsc
+bazel-out
+npm-debug.log
+
+# Others
+.idea
+*.DS_Store
+Thumbs.db
+electron-builder.env

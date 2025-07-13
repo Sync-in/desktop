@@ -1,0 +1,100 @@
+/*!
+ * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
+ * This file is part of Sync-in | The open source file sync and share solution
+ * See the LICENSE file for licensing details
+ */
+
+/*
+ * Component: modal
+ * ----------------
+ */
+.modal-lg {
+    max-width: 50% !important;
+}
+
+.modal-header {
+  @include border-top-radius(4px);
+  line-height: 1;
+}
+
+.modal-title {
+  @extend .truncate;
+  font-size: $font-size-sm;
+  line-height: 2;
+  i {
+    margin-right: 5px;
+  }
+}
+
+.modal-body {
+  font-size: $font-size-xs;
+  padding: 8px 12px;
+  background-color: $body-bg;
+}
+
+.modal-full {
+  max-width: 100%;
+  &.modal-dialog {
+    margin: 0;
+  }
+  .modal-content {
+    border: none;
+    .modal-header {
+      border: none;
+    }
+    .modal-body {
+      padding: 0;
+    }
+  }
+}
+
+//Modal variants
+.modal-primary {
+  .modal-header {
+    @extend .bg-primary;
+    color: white;
+  }
+  .modal-footer {
+    background-color: $gray-lightest;
+  }
+}
+
+.modal-warning {
+  .modal-header {
+    @extend .bg-warning;
+    color: white;
+  }
+  .modal-footer {
+    background-color: $gray-lightest;
+  }
+}
+
+.modal-info {
+  .modal-header {
+    @extend .bg-info;
+    color: white;
+  }
+  .modal-footer {
+    background-color: $gray-lightest;
+  }
+}
+
+.modal-success {
+  .modal-header {
+    @extend .bg-success;
+    color: white;
+  }
+  .modal-footer {
+    background-color: $gray-lightest;
+  }
+}
+
+.modal-danger {
+  .modal-header {
+    @extend .bg-danger;
+    color: white;
+  }
+  .modal-footer {
+    background-color: $gray-lightest;
+  }
+}

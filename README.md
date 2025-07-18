@@ -22,6 +22,11 @@ server management features.
 Available as a **desktop application** (Windows, macOS, Linux) and a **command line interface (CLI)**, Sync-in adapts to
 your workflow — whether on a personal workstation, a Linux server, or a headless environment...
 
+<picture>
+  <source srcset="https://raw.githubusercontent.com/Sync-in/assets/main/desktop-dark.png" media="(prefers-color-scheme: dark)" />
+  <img src="https://raw.githubusercontent.com/Sync-in/assets/main/desktop.png" alt="Sync-in" style="max-height: 500px"/>
+</picture>
+
 ---
 
 ## 🚀 Features

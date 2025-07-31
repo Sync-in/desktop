@@ -12,8 +12,6 @@ _Welcome to the official Sync-in desktop client repository!_
 - 🧪 [Try the demo](https://sync-in.com/docs/demo)
 
 <a href="#-license"><img src="https://img.shields.io/badge/Licence-AGPL%20v3.0-green.svg" alt="License"/></a>
-<a href="https://www.paypal.com/donate/?business=HU3F3CMDDH7YJ&no_recurring=0&item_name=I+rely+on+your+donations+to+grow+the+Sync-in+open+source+project.+Thank+you+for+your+support+%E2%80%94+it+truly+makes+a+difference%21&currency_code=EUR" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-blue.svg" alt="Paypal"/></a>
-<a href="https://liberapay.com/sync-in/donate" target="_blank"><img src="https://img.shields.io/badge/Donate-LiberaPay-yellow.svg" alt="LiberaPay"/></a>
 <a href="https://discord.gg/qhJyzwaymT" target="_blank"><img src="https://img.shields.io/badge/Discord-Online-brightgreen.svg" alt="Discord"/></a>
 
 The client for the **Sync-in** platform, bringing a complete local experience with advanced file sync and
@@ -31,7 +29,7 @@ your workflow — whether on a personal workstation, a Linux server, or a headle
 
 ## 🚀 Features
 
-### ✅ Desktop Application
+### 💻 Desktop Application
 
 - ⚙️ **Full feature parity with the web version**
 - 🌐 **Multi-server support**: connect and manage multiple Sync-in servers
@@ -47,7 +45,7 @@ your workflow — whether on a personal workstation, a Linux server, or a headle
 - 👀 **Transfer visualization**: view real-time transfer logs
 - 🤖 **Smart assistant**: step-by-step sync configuration wizard
 
-### 🖥️ Command Line Interface (CLI)
+### 📟 Command Line Interface (CLI)
 
 - Works on **any Linux server**
 - Sync files to/from any Sync-in server
@@ -60,7 +58,7 @@ your workflow — whether on a personal workstation, a Linux server, or a headle
 - 🌍 **Official website**: [https://sync-in.com](https://sync-in.com)
 - 📖 **Documentation**: [https://sync-in.com/docs](https://sync-in.com/docs)
 - 🗄️ **Server** - Full-stack server : [https://github.com/Sync-in/server](https://github.com/Sync-in/server)
-- 💻 **Desktop & CLI** - Cross-platform desktop app and command-line interface : [https://github.com/Sync-in/desktop](https://github.com/Sync-in/desktop)
+- 📟 **Desktop & CLI** - Cross-platform desktop app and command-line interface : [https://github.com/Sync-in/desktop](https://github.com/Sync-in/desktop)
 - 🐳 **Docker** - Docker images and deployment configuration : [https://github.com/Sync-in/docker](https://github.com/Sync-in/docker)
 
 ---
@@ -76,10 +74,7 @@ If you find it useful, you can:
 - 💬 Join the community on :
   - [Discord](https://discord.gg/qhJyzwaymT)
   - [Stack Overflow](https://stackoverflow.com/questions/tagged/sync-in)
-- 💖 Support the project via :
-  - [Paypal](https://www.paypal.com/donate/?business=HU3F3CMDDH7YJ&no_recurring=0&item_name=I+rely+on+your+donations+to+grow+the+Sync-in+open+source+project.+Thank+you+for+your+support+%E2%80%94+it+truly+makes+a+difference%21&currency_code=EUR)
-  - [Liberapay](https://liberapay.com/sync-in)
-  - [Patreon](https://www.patreon.com/sync_in)
+- 💖 [Support the project !](https://sync-in.com/support)
 
 ---
 

@@ -113,12 +113,12 @@ export function createTemplate() {
   const viewSubMenu = [
     {
       label: i18n.tr('Back'),
-      accelerator: 'CmdOrCtrl+[',
+      accelerator: 'CmdOrCtrl+Left',
       click: () => appEvents.emit(LOCAL_RENDERER.UI.NAV_BACK)
     },
     {
       label: i18n.tr('Forward'),
-      accelerator: 'CmdOrCtrl+]',
+      accelerator: 'CmdOrCtrl+Right',
       click: () => appEvents.emit(LOCAL_RENDERER.UI.NAV_FORWARD)
     },
     {

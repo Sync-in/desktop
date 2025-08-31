@@ -4,18 +4,17 @@
  * See the LICENSE file for licensing details
  */
 
-import { app, globalShortcut, Menu } from 'electron'
+import { app, Menu } from 'electron'
 import { i18n } from './components/translate'
 
 import { WindowManager } from './components/windows'
 import { TrayManager } from './components/tray'
 import { DownloadManager } from './components/downloads'
 import { NotifyManager } from './components/notifications'
-import { appEvents, EventsManager } from './components/events'
+import { EventsManager } from './components/events'
 import { UpdateManager } from './components/autoupdater'
 import { ENVIRONMENT, IS_PROD_ENV, IS_WINDOWS } from '../core/constants'
 import { createMenu } from './components/menus'
-import { LOCAL_RENDERER } from './constants/events'
 
 class MainManager {
   trayManager: TrayManager
@@ -61,8 +60,6 @@ class MainManager {
       this.windowManager.setAppIsQuitting(true)
     })
     this.windowManager.setAppIsQuitting(false)
-    globalShortcut.register('CmdOrCtrl+Left', () => appEvents.emit(LOCAL_RENDERER.UI.NAV_BACK))
-    globalShortcut.register('CmdOrCtrl+Right', () => appEvents.emit(LOCAL_RENDERER.UI.NAV_FORWARD))
   }
 }
 

@@ -16,13 +16,19 @@
       padding-left: 80px;
     }
 
+    &:not(.macOS) {
+      .topBar-content .dropdown-menu {
+        inset: 100% auto auto 50px !important;
+      }
+    }
+
     .topBar-content {
       display: flex;
       margin-right: auto;
       align-items: center;
       justify-content: flex-start;
       flex-wrap: wrap;
-      height: $top-bar-height - 1px;
+      height: $top-bar-height;
 
       .btn-group {
         height: 100%;

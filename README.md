@@ -83,7 +83,7 @@ If you find it useful, you can:
 ## 🤝 Contributing
 Before submitting your pull request, please confirm the following:
 
-- ✅ I have read and followed the [contribution guide](readme/CONTRIBUTING.md).
+- ✅ I have read and followed the [contribution guide](CONTRIBUTING.md).
 - ✅ I am submitting this pull request in good faith and to help improve Sync-in.
 
 ---

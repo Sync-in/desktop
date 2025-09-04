@@ -13,6 +13,7 @@ import {
   IpcMainEvent,
   IpcMainInvokeEvent,
   Menu,
+  screen,
   session,
   shell,
   WebContentsView,
@@ -41,6 +42,106 @@ export class ViewsManager {
     this.initIPC()
     this.initWrapperView()
     this.initWebViews().catch((e: Error) => console.error(e))
+  }
+
+  resizeViews() {
+    const content = this.mainWindow.getContentBounds()
+    const display = screen.getDisplayMatching(this.mainWindow.getBounds())
+    const scale = display?.scaleFactor || 1
+    const width = Math.floor(content.width * scale) / scale
+    const height = Math.floor(content.height * scale) / scale
+    this.wrapperView.setBounds({ x: 0, y: 0, width, height })
+    const top = TAB_BAR_HEIGHT
+    const innerH = Math.max(0, height - WRAPPER_VIEW_OFFSET_HEIGHT)
+
+    for (const webView of Object.values(this.allViews)) {
+      webView.setBounds({ x: 0, y: top, width, height: innerH })
+    }
+  }
+
+  sendToWrapperRenderer(channel: string, ...args: any[]) {
+    this.wrapperView.webContents.send(channel, ...args)
+  }
+
+  sendToWebRenderer(id: number, channel: string, ...args: any[]) {
+    const webView = this.allViews[id]
+    if (webView) {
+      webView.webContents.send(channel, ...args)
+    } else {
+      console.error(`unable to find webView with id: ${id}`)
+    }
+  }
+
+  async createWebView(server: Server): Promise<AppWebContentsView> {
+    const webView = new WebContentsView(defaultViewProps) as AppWebContentsView
+    webView.webContents.serverName = server.name
+    webView.webContents.serverId = server.id
+    webView.webContents.on('will-navigate', (event: Event<WebContentsWillNavigateEventParams>) => {
+      if (!event.url.startsWith(server.url)) {
+        event.preventDefault()
+        shell.openExternal(event.url).then()
+      }
+    })
+    this.mainWindow.contentView.addChildView(webView)
+    this.addLoadURLListener(webView, server)
+    webView.webContents.loadURL(server.url, this.viewOptions)
+    return webView
+  }
+
+  checkView(server: Server, webView: AppWebContentsView, success = true) {
+    if (this.isBooting) {
+      server.available = success
+      this.countViewsOnBoot += 1
+      if (this.countViewsOnBoot === ServersManager.list.length) {
+        this.isBooting = false
+        this.enableView(server, webView, !success, true)
+        coreEvents.emit(CORE.SAVE_SETTINGS, true)
+      }
+    } else if (server.available !== success) {
+      server.available = success
+      this.enableView(server, webView, !success)
+      coreEvents.emit(CORE.SAVE_SETTINGS, true)
+    }
+  }
+
+  enableView(server: Server, webView: AppWebContentsView, toTopView = false, show = false) {
+    this.currentView = webView
+    this.currentServer = server
+    this.switchViewFocus(toTopView)
+    if (show) {
+      this.mainWindow.show()
+    }
+    this.resizeViews()
+    this.sendServersUpdate()
+  }
+
+  switchViewFocus(toTopView: boolean) {
+    if (toTopView) {
+      this.mainWindow.contentView.addChildView(this.wrapperView)
+      this.wrapperView.webContents.focus()
+    } else {
+      // avoid to lose focus on TopView if modal is open or the active server has no content
+      if (this.isModalOpen || !this.currentServer.available || this.currentServer.authTokenExpired) {
+        return
+      }
+      this.mainWindow.contentView.addChildView(this.currentView)
+      // this.mainWindow.setContentView(this.activeView)
+      this.currentView.webContents.focus()
+    }
+  }
+
+  reloadView(serverId?: number, clear = false) {
+    const targetView = serverId ? this.allViews[serverId] : this.currentView
+    if (clear) {
+      session.defaultSession.clearCache().then(() => targetView.webContents.reloadIgnoringCache())
+    } else {
+      targetView.webContents.reload()
+    }
+  }
+
+  sendServersUpdate() {
+    this.sendToWrapperRenderer(LOCAL_RENDERER.SERVER.LIST, ServersManager.list)
+    this.sendToWrapperRenderer(LOCAL_RENDERER.SERVER.SET_ACTIVE, this.currentServer)
   }
 
   private initIPC() {
@@ -124,48 +225,6 @@ export class ViewsManager {
     this.currentView.webContents.navigationHistory.goForward()
   }
 
-  resizeViews() {
-    const bounds = this.mainWindow.getBounds()
-    this.wrapperView.setBounds({
-      x: 0,
-      y: 0,
-      width: bounds.width,
-      height: bounds.height
-    })
-    for (const webView of Object.values(this.allViews)) {
-      webView.setBounds({ x: 0, y: TAB_BAR_HEIGHT, width: bounds.width, height: bounds.height - WRAPPER_VIEW_OFFSET_HEIGHT })
-    }
-  }
-
-  sendToWrapperRenderer(channel: string, ...args: any[]) {
-    this.wrapperView.webContents.send(channel, ...args)
-  }
-
-  sendToWebRenderer(id: number, channel: string, ...args: any[]) {
-    const webView = this.allViews[id]
-    if (webView) {
-      webView.webContents.send(channel, ...args)
-    } else {
-      console.error(`unable to find webView with id: ${id}`)
-    }
-  }
-
-  async createWebView(server: Server): Promise<AppWebContentsView> {
-    const webView = new WebContentsView(defaultViewProps) as AppWebContentsView
-    webView.webContents.serverName = server.name
-    webView.webContents.serverId = server.id
-    webView.webContents.on('will-navigate', (event: Event<WebContentsWillNavigateEventParams>) => {
-      if (!event.url.startsWith(server.url)) {
-        event.preventDefault()
-        shell.openExternal(event.url).then()
-      }
-    })
-    this.mainWindow.contentView.addChildView(webView)
-    this.addLoadURLListener(webView, server)
-    webView.webContents.loadURL(server.url, this.viewOptions)
-    return webView
-  }
-
   private addLoadURLListener(webView: AppWebContentsView, server: Server) {
     // catch HTTP error code (no error is thrown during loadURL
     if (!webView.webContents.listeners('did-navigate').length) {
@@ -183,61 +242,5 @@ export class ViewsManager {
         })
       }
     }
-  }
-
-  checkView(server: Server, webView: AppWebContentsView, success = true) {
-    if (this.isBooting) {
-      server.available = success
-      this.countViewsOnBoot += 1
-      if (this.countViewsOnBoot === ServersManager.list.length) {
-        this.isBooting = false
-        this.enableView(server, webView, !success, true)
-        coreEvents.emit(CORE.SAVE_SETTINGS, true)
-      }
-    } else if (server.available !== success) {
-      server.available = success
-      this.enableView(server, webView, !success)
-      coreEvents.emit(CORE.SAVE_SETTINGS, true)
-    }
-  }
-
-  enableView(server: Server, webView: AppWebContentsView, toTopView = false, show = false) {
-    this.currentView = webView
-    this.currentServer = server
-    this.switchViewFocus(toTopView)
-    if (show) {
-      this.mainWindow.show()
-    }
-    this.resizeViews()
-    this.sendServersUpdate()
-  }
-
-  switchViewFocus(toTopView: boolean) {
-    if (toTopView) {
-      this.mainWindow.contentView.addChildView(this.wrapperView)
-      this.wrapperView.webContents.focus()
-    } else {
-      // avoid to lose focus on TopView if modal is open or the active server has no content
-      if (this.isModalOpen || !this.currentServer.available || this.currentServer.authTokenExpired) {
-        return
-      }
-      this.mainWindow.contentView.addChildView(this.currentView)
-      // this.mainWindow.setContentView(this.activeView)
-      this.currentView.webContents.focus()
-    }
-  }
-
-  reloadView(serverId?: number, clear = false) {
-    const targetView = serverId ? this.allViews[serverId] : this.currentView
-    if (clear) {
-      session.defaultSession.clearCache().then(() => targetView.webContents.reloadIgnoringCache())
-    } else {
-      targetView.webContents.reload()
-    }
-  }
-
-  sendServersUpdate() {
-    this.sendToWrapperRenderer(LOCAL_RENDERER.SERVER.LIST, ServersManager.list)
-    this.sendToWrapperRenderer(LOCAL_RENDERER.SERVER.SET_ACTIVE, this.currentServer)
   }
 }

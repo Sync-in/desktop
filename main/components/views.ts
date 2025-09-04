@@ -74,6 +74,7 @@ export class ViewsManager {
 
   async createWebView(server: Server): Promise<AppWebContentsView> {
     const webView = new WebContentsView(defaultViewProps) as AppWebContentsView
+    webView.webContents.setZoomFactor(1)
     webView.webContents.serverName = server.name
     webView.webContents.serverId = server.id
     webView.webContents.on('will-navigate', (event: Event<WebContentsWillNavigateEventParams>) => {
@@ -168,6 +169,7 @@ export class ViewsManager {
       }
     })
     this.wrapperView = new WebContentsView(defaultViewProps)
+    this.wrapperView.webContents.setZoomFactor(1)
     this.mainWindow.contentView.addChildView(this.wrapperView)
     this.wrapperView.webContents.loadFile(RENDERER_FILE).then(() => this.resizeViews())
   }

@@ -47,6 +47,10 @@ export class EventsManager {
     this.initIPC()
   }
 
+  async checkNativeTheme() {
+    await this.switchTheme(nativeTheme.shouldUseDarkColors ? THEME.DARK : THEME.LIGHT)
+  }
+
   private initIPC() {
     powerMonitor.on('suspend', () => this.managePowerSuspension(true))
     powerMonitor.on('resume', () => this.managePowerSuspension(false))
@@ -94,6 +98,9 @@ export class EventsManager {
     ipcMain.handle(REMOTE_RENDERER.SYNC.TRANSFER_LOGS, async (ev: IpcMainInvokeEventServer, action: string, syncPathId: number, query: string) =>
       this.onSyncTransferLogs(ev, action, syncPathId, query)
     )
+    appEvents.on(LOCAL_RENDERER.WINDOW.ZOOM.IN, () => this.windowZoomIn())
+    appEvents.on(LOCAL_RENDERER.WINDOW.ZOOM.OUT, () => this.windowZoomOut())
+    appEvents.on(LOCAL_RENDERER.WINDOW.ZOOM.RESET, () => this.windowZoomReset())
     appEvents.on(LOCAL_RENDERER.UPDATE.DOWNLOADED, (msg: string) => this.viewsManager.sendToWrapperRenderer(LOCAL_RENDERER.UPDATE.DOWNLOADED, msg))
     appEvents.on(LOCAL_RENDERER.POWER.PREVENT_APP_SUSPENSION, (state: boolean) => this.manageAppPreventSuspension(state))
   }
@@ -114,10 +121,6 @@ export class EventsManager {
     for (const serverId of ServersManager.list.map((s: Server) => s.id)) {
       this.viewsManager.sendToWebRenderer(serverId, REMOTE_RENDERER.MISC.SWITCH_THEME, theme)
     }
-  }
-
-  async checkNativeTheme() {
-    await this.switchTheme(nativeTheme.shouldUseDarkColors ? THEME.DARK : THEME.LIGHT)
   }
 
   private serverAuthentication(ev: any): SyncClientAuth {
@@ -322,5 +325,22 @@ export class EventsManager {
       this.logger.info('power is on')
     }
     appEvents.emit(LOCAL_RENDERER.POWER.SUSPENSION_EVENT, state)
+  }
+
+  private windowZoomIn() {
+    if (!this.viewsManager.currentView) return
+    const zFactor = this.viewsManager.currentView.webContents.getZoomFactor()
+    this.viewsManager.currentView.webContents.setZoomFactor(zFactor + 0.1)
+  }
+
+  private windowZoomOut() {
+    if (!this.viewsManager.currentView) return
+    const zFactor = this.viewsManager.currentView.webContents.getZoomFactor()
+    this.viewsManager.currentView.webContents.setZoomFactor(zFactor - 0.1)
+  }
+
+  private windowZoomReset() {
+    if (!this.viewsManager.currentView) return
+    this.viewsManager.currentView.webContents.setZoomFactor(1)
   }
 }

@@ -24,7 +24,8 @@ export const LOCAL_RENDERER = {
     UNMAXIMIZE: 'window-unmaximize',
     IS_MAXIMIZED: 'window-is-maximized',
     IS_FULLSCREEN: 'window-is-fullscreen',
-    CLOSE: 'window-close'
+    CLOSE: 'window-close',
+    ZOOM: { IN: 'window-zoom-in', OUT: 'window-zoom-out', RESET: 'window-zoom-reset' }
   },
   UPDATE: {
     DOWNLOADED: 'update-available',

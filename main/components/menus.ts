@@ -140,28 +140,18 @@ export function createTemplate() {
     separatorItem,
     {
       label: i18n.tr('Actual Size'),
-      role: 'resetZoom',
-      accelerator: 'CmdOrCtrl+0'
+      accelerator: 'CmdOrCtrl+0',
+      click: () => appEvents.emit(LOCAL_RENDERER.WINDOW.ZOOM.RESET)
     },
     {
-      role: 'zoomIn',
       label: i18n.tr('Zoom In'),
-      accelerator: 'CmdOrCtrl+='
+      accelerator: 'CmdOrCtrl+=',
+      click: () => appEvents.emit(LOCAL_RENDERER.WINDOW.ZOOM.IN)
     },
     {
-      role: 'zoomIn',
-      visible: false,
-      accelerator: 'CmdOrCtrl+Shift+='
-    },
-    {
-      role: 'zoomOut',
       label: i18n.tr('Zoom Out'),
-      accelerator: 'CmdOrCtrl+-'
-    },
-    {
-      role: 'zoomOut',
-      visible: false,
-      accelerator: 'CmdOrCtrl+Shift+-'
+      accelerator: 'CmdOrCtrl+-',
+      click: () => appEvents.emit(LOCAL_RENDERER.WINDOW.ZOOM.OUT)
     },
     separatorItem,
     {

@@ -77,7 +77,7 @@ export class DownloadManager {
   private done(item: DownloadItem | any, _ev: Event, state: string) {
     item.state = item.isPaused() ? DOWNLOAD_STATE.PAUSED : state
     this.sendProgressItem(item)
-    if (item.state === DOWNLOAD_STATE.CANCELLED) {
+    if (item.state === DOWNLOAD_STATE.COMPLETED) {
       this.notifyManager.send(i18n.tr('Download complete'), item.name, () => this.openDownload(item.id))
     }
     this.throttledGlobalProgress(item)

@@ -21,8 +21,8 @@ export function createTemplate(settings: AppSettings) {
   let platformAppMenu = []
   if (IS_MACOS) {
     platformAppMenu.push({
-      label: `${i18n.tr('Support')} ${ENVIRONMENT.appID}`,
-      click: () => shell.openExternal(ENVIRONMENT.appSupportPage)
+      label: `${i18n.tr('Support')} ${ENVIRONMENT.appID} 💛`,
+      click: () => shell.openExternal(`${ENVIRONMENT.appHomePage}${i18n.language === 'fr' ? '/fr' : ''}/support/`)
     })
     platformAppMenu.push({
       label: i18n.tr('Check for Updates'),
@@ -86,8 +86,8 @@ export function createTemplate(settings: AppSettings) {
     platformAppMenu = platformAppMenu.concat([
       separatorItem,
       {
-        label: `${i18n.tr('Support')} ${ENVIRONMENT.appID}`,
-        click: () => shell.openExternal(ENVIRONMENT.appSupportPage)
+        label: `${i18n.tr('Support')} ${ENVIRONMENT.appID} 💛`,
+        click: () => shell.openExternal(`${ENVIRONMENT.appHomePage}${i18n.language === 'fr' ? '/fr' : ''}/support/`)
       },
       {
         label: i18n.tr('Check for Updates'),
@@ -252,12 +252,12 @@ export function createTemplate(settings: AppSettings) {
   const helpMenu = []
   helpMenu.push({
     label: i18n.tr('Official Website'),
-    click: () => shell.openExternal(ENVIRONMENT.appHomePage)
+    click: () => shell.openExternal(`${ENVIRONMENT.appHomePage}${i18n.language === 'fr' ? '/fr' : ''}`)
   })
 
   helpMenu.push({
     label: i18n.tr('Documentation'),
-    click: () => shell.openExternal(`${ENVIRONMENT.appHomePage}/docs/`)
+    click: () => shell.openExternal(`${ENVIRONMENT.appHomePage}${i18n.language === 'fr' ? '/fr' : ''}/docs/`)
   })
 
   helpMenu.push({

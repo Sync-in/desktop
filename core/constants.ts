@@ -13,8 +13,7 @@ export const ENVIRONMENT = {
   appName: process.versions.electron ? SYNC_CLIENT_TYPE.DESKTOP : SYNC_CLIENT_TYPE.CLI,
   appID: packageJson.productName || null,
   appHomePage: packageJson.homepage,
-  appReleasesPage: packageJson.releasespage,
-  appSupportPage: packageJson.supportpage
+  appReleasesPage: packageJson.releasespage
 }
 export const USER_AGENT = `${ENVIRONMENT.appName}/${ENVIRONMENT.appVersion}`
 export const IS_MACOS = process.platform === 'darwin'

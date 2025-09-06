@@ -9,7 +9,7 @@ _Welcome to the official Sync-in desktop client repository!_
 
 - 🌍 [Website](https://sync-in.com)
 - 📄 [Documentation](https://sync-in.com/docs)
-- 🧪 [Try the demo](https://sync-in.com/docs/demo)
+- 📥 [Download the desktop app](https://sync-in.com/downloads)
 
 <a href="#-license"><img src="https://img.shields.io/badge/Licence-AGPL%20v3.0-green.svg" alt="License"/></a>
 <a href="https://discord.gg/qhJyzwaymT" target="_blank"><img src="https://img.shields.io/badge/Discord-Online-brightgreen.svg" alt="Discord"/></a>
@@ -42,8 +42,10 @@ your workflow — whether on a personal workstation, a Linux server, or a headle
 - 📆 **Plannable syncs**: schedule automatic synchronizations
 - 🎯 **Custom filters**: exclude specific files/folders from sync
 - 🧪 **Sync simulation**: preview what will happen before syncing
+- 📥 **Integrated download manager** offers a unified experience.
 - 👀 **Transfer visualization**: view real-time transfer logs
 - 🤖 **Smart assistant**: step-by-step sync configuration wizard
+- 🔄 **Automatic updates**: the application keeps itself up to date in the background
 
 ### 📟 Command Line Interface (CLI)
 

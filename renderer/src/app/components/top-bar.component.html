@@ -15,45 +15,49 @@
                   (mouseleave)="onDropDownState(false)"
                   class="btn app-btn"
                   type="button">
-            <fa-icon [icon]="icons.faEllipsisVertical"></fa-icon>
+            <fa-icon [icon]="icons.faEllipsisVertical"/>
           </button>
         }
         <!-- Dropdown menu-->
         <button id="button-basic" dropdownToggle type="button" class="btn" aria-controls="dropdown-basic">
           <div class="d-flex align-items-center no-text-select">
-            <fa-icon [icon]="icons.faServer" class="me-1"></fa-icon>
+            <fa-icon [icon]="icons.faServer" class="me-1"/>
             @if (activeServer.id === 0) {
               <div class="me-1 text-truncate" l10nTranslate>{{ activeServer.name }}</div>
             } @else {
               <div class="me-1 text-truncate">{{ activeServer.name }}</div>
             }
-            <fa-icon [icon]="icons.faChevronDown" class="ms-auto"></fa-icon>
+            <fa-icon [icon]="icons.faChevronDown" class="ms-auto"/>
           </div>
         </button>
         <ul id="dropdown-basic" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-basic">
           @for (server of servers; track server.id) {
             <li role="menuitem" (mouseenter)="enterMenuItem(server.id)" (mouseleave)="leaveMenuItem()" (click)="onActiveServer($event, server.id)">
               <a class="d-flex align-items-center dropdown-item no-text-select">
-                <fa-icon [icon]="activeServer.id === server.id ? icons.fasCircle : icons.farCircle" class="{{server.available ? 'text-primary' : 'text-danger'}}"></fa-icon>
+                  @if (activeServer.id === server.id) {
+                      <fa-icon [icon]="icons.fasCircle" class="{{server.available ? 'text-primary' : 'text-danger'}}"/>
+                  } @else {
+                      <fa-icon [icon]="icons.farCircle" class="{{server.available ? 'text-primary' : 'text-danger'}}"/>
+                  }
                 <span class="text-truncate ms-1 me-auto">{{ server.name }}</span>
                 <div class="ms-auto">
                   @if (hoverIndex === server.id) {
                     <div>
                       <button (click)="onReload($event, server)" type="button" class="btn btn-sm btn-outline-secondary ms-4 me-1">
-                        <fa-icon [icon]="icons.faArrowRotateRight"></fa-icon>
+                        <fa-icon [icon]="icons.faArrowRotateRight"/>
                       </button>
                       <button (click)="openEditServerModal($event, server)" type="button" class="btn btn-sm btn-outline-secondary me-1">
-                        <fa-icon [icon]="icons.faPencil"></fa-icon>
+                        <fa-icon [icon]="icons.faPencil"/>
                       </button>
                       <button (click)="openRemoveServerModal($event, server)" type="button" class="btn btn-sm btn-outline-danger">
-                        <fa-icon [icon]="icons.faTrashAlt"></fa-icon>
+                        <fa-icon [icon]="icons.faTrashAlt"/>
                       </button>
                     </div>
                   } @else {
                     <div>
-                      <button class="btn btn-sm ms-4 me-1"><fa-icon></fa-icon></button>
-                      <button class="btn btn-sm me-1"><fa-icon></fa-icon></button>
-                      <button class="btn btn-sm"><fa-icon></fa-icon></button>
+                      <button class="btn btn-sm ms-4 me-1" style="width: 1.25em; visibility: hidden">&nbsp;</button>
+                      <button class="btn btn-sm me-1" style="width: 1.25em; visibility: hidden">&nbsp;</button>
+                      <button class="btn btn-sm" style="width: 1.25em; visibility: hidden">&nbsp;</button>
                     </div>
                   }
                 </div>
@@ -63,7 +67,7 @@
           <li class="divider dropdown-divider"></li>
           <li role="menuitem">
             <a class="d-flex align-items-center dropdown-item" href="#" (click)="openAddServerModal($event)">
-              <fa-icon [icon]="icons.faPlus"></fa-icon>
+              <fa-icon [icon]="icons.faPlus"/>
               <span class="ms-1" l10nTranslate>Connect to a server</span>
             </a>
           </li>
@@ -76,23 +80,23 @@
                   class="btn border-start-0"
                   (click)="onActiveServer(null, server.id)">
             <div class="d-flex align-items-center no-text-select">
-              <fa-icon [icon]="icons.faRss" class="text-primary"></fa-icon>
+              <fa-icon [icon]="icons.faRss" class="text-primary"/>
               <div class="text-truncate ms-1 me-2">{{ server.name }}</div>
               @if (server.applications.syncs) {
                 <div>
-                  <fa-icon [icon]="icons.faArrowsRotate" animation="spin"></fa-icon>
+                  <fa-icon [icon]="icons.faArrowsRotate" animation="spin"/>
                   <span class="translate-middle badge rounded-pill bg-purple fs-xxxxs ms-1">{{ server.applications.syncs }}</span>
                 </div>
               }
               @if (server.applications.notifications) {
                 <div>
-                  <fa-icon [icon]="icons.faBell"></fa-icon>
+                  <fa-icon [icon]="icons.faBell"/>
                   <span class="translate-middle badge rounded-pill bg-warning fs-xxxxs ms-1">{{ server.applications.notifications }}</span>
                 </div>
               }
               @if (server.applications.tasks) {
                 <div>
-                  <fa-icon [icon]="icons.faFlag"></fa-icon>
+                  <fa-icon [icon]="icons.faFlag"/>
                   <span class="translate-middle badge rounded-pill bg-maroon fs-xxxxs ms-1">{{ server.applications.tasks }}</span>
                 </div>
               }
@@ -101,7 +105,7 @@
         }
         @if (updateDownloaded) {
           <button (click)="onUpdate()" class="btn border-start-0" type="button">
-            <fa-icon [icon]="icons.faTriangleExclamation" class="text-warning"></fa-icon>
+            <fa-icon [icon]="icons.faTriangleExclamation" class="text-warning"/>
             <span class="ms-1">{{ updateDownloaded }}</span>
           </button>
         }

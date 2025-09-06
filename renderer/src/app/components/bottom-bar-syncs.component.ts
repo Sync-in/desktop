@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component } from '@angular/core'
+import { Component, inject } from '@angular/core'
 import { AppService } from '../app.service'
 import { ProgressbarComponent } from 'ngx-bootstrap/progressbar'
 import { faIcons } from '../common/icons'
@@ -42,8 +42,9 @@ const iconActions: Record<string, IconDefinition> = {
 export class BottomBarSyncsComponent {
   public transfer: { name: string; sideIcon: IconDefinition; sideIconClass: string; actionIcon: IconDefinition; ok: boolean } = null
   public transferProgress: { currentSize: string; totalSize: string; percent: number } = null
+  protected readonly appService = inject(AppService)
 
-  constructor(private appService: AppService) {
+  constructor() {
     this.appService.syncTransfer.subscribe((transfer: SyncTransfer) => this.setTransfer(transfer))
   }
 

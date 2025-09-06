@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, Inject, OnInit } from '@angular/core'
+import { Component, inject, OnInit } from '@angular/core'
 import { AppService } from './app.service'
 import { LOCAL_RENDERER } from '../../../main/constants/events'
 import { L10N_LOCALE, L10nLoader, L10nLocale, L10nTranslateDirective } from 'angular-l10n'
@@ -28,18 +28,17 @@ import { SERVER_ACTION } from '@sync-in-desktop/core/components/constants/server
   standalone: true
 })
 export class AppComponent implements OnInit {
-  protected icons = faIcons
   public activeServer = null
   public isRetrying = false
+  protected readonly appService = inject(AppService)
+  protected readonly faConfig = inject(FaConfig)
+  protected icons = faIcons
+  private locale = inject<L10nLocale>(L10N_LOCALE)
+  private l10nLoader = inject(L10nLoader)
+  private bsLocaleService = inject(BsLocaleService)
 
-  constructor(
-    @Inject(L10N_LOCALE) private locale: L10nLocale,
-    protected readonly faConfig: FaConfig,
-    private l10nLoader: L10nLoader,
-    private bsLocaleService: BsLocaleService,
-    protected readonly appService: AppService
-  ) {
-    faConfig.fixedWidth = true
+  constructor() {
+    this.faConfig.fixedWidth = true
     setTheme('bs5')
     defineLocale('fr', frLocale)
     defineLocale('en', enGbLocale)

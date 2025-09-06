@@ -3,12 +3,11 @@
  * This file is part of Sync-in | The open source file sync and share solution
  * See the LICENSE file for licensing details
  */
-import { Component, Inject, OnInit } from '@angular/core'
+import { Component, inject, OnInit } from '@angular/core'
 import { AppService } from '../app.service'
 import { ReactiveFormsModule, UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms'
 import { LOCAL_RENDERER } from '../../../../main/constants/events'
-import { L10N_LOCALE, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
-import { L10nLocale } from 'angular-l10n/lib/models/types'
+import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { AutofocusDirective } from '../common/directives/auto-focus.directive'
 import { FaIconComponent, IconDefinition } from '@fortawesome/angular-fontawesome'
 import { faIcons } from '../common/icons'
@@ -23,10 +22,6 @@ import { SERVER_ACTION } from '../../../../core/components/constants/server'
 })
 export class ModalServerComponent implements OnInit {
   public config: { type: SERVER_ACTION; server: SyncServer } = null
-  protected icons = faIcons
-  protected isAddModal = false
-  protected isRemoveModal = false
-  protected isAuthenticationModal = false
   public titleIcon: IconDefinition = null
   public titleText: string = null
   public activeServer: SyncServer = null
@@ -34,12 +29,15 @@ export class ModalServerComponent implements OnInit {
   public hasError = false
   public textError = ''
   public submitted = false
+  protected locale = inject<L10nLocale>(L10N_LOCALE)
+  protected icons = faIcons
+  protected isAddModal = false
+  protected isRemoveModal = false
+  protected isAuthenticationModal = false
+  private readonly appService = inject(AppService)
+  private readonly fb = inject(UntypedFormBuilder)
 
-  constructor(
-    @Inject(L10N_LOCALE) protected locale: L10nLocale,
-    private readonly appService: AppService,
-    private readonly fb: UntypedFormBuilder
-  ) {
+  constructor() {
     this.appService.activeServer.subscribe((server: SyncServer) => (this.activeServer = server))
   }
 

@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, ViewChild } from '@angular/core'
+import { Component, inject, ViewChild } from '@angular/core'
 import { AppService } from '../app.service'
 import { BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective } from 'ngx-bootstrap/dropdown'
 import { LOCAL_RENDERER } from '../../../../main/constants/events'
@@ -26,6 +26,7 @@ import { ModalServerComponent } from './modal-server.component'
 })
 export class TopBarComponent {
   @ViewChild(BsDropdownDirective, { static: true }) dropDownServer: BsDropdownDirective
+  protected readonly appService = inject(AppService)
   protected readonly icons = faIcons
   protected hoverIndex = null
   protected servers: SyncServer[] = []
@@ -34,7 +35,7 @@ export class TopBarComponent {
   protected activeServer = null
   protected updateDownloaded = null
 
-  constructor(protected readonly appService: AppService) {
+  constructor() {
     this.appService.allServers.subscribe((servers: SyncServer[]) => (this.servers = servers))
     this.appService.activeServer.subscribe((server: SyncServer) => this.setActiveServer(server))
     this.appService.serversAppsCounter.subscribe((servers: ServerAppCounter[]) => this.setServersAppsCounter(servers))

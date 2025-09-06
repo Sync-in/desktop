@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component } from '@angular/core'
+import { Component, inject } from '@angular/core'
 import { stopEventPropagation } from '../common/functions/utils'
 import { AppService } from '../app.service'
 import { LOCAL_RENDERER } from '../../../../main/constants/events'
@@ -23,14 +23,15 @@ import { DOWNLOAD_ACTION, DOWNLOAD_STATE } from '../../../../main/constants/down
   standalone: true
 })
 export class BottomBarDownloadsComponent {
+  protected readonly appService = inject(AppService)
   protected readonly DOWNLOAD_STATE = DOWNLOAD_STATE
   protected readonly icons = faIcons
   protected downloads: IDownload[] = []
   protected dropdownView: any = {}
-  private globalProgress: IDownload
   protected activeDownloads: IDownload[] = []
+  private globalProgress: IDownload
 
-  constructor(private readonly appService: AppService) {
+  constructor() {
     this.appService.ipcRenderer.invoke(LOCAL_RENDERER.DOWNLOAD.LIST).then((items: any[]) => this.setDownloads(items))
     this.appService.downloadGlobalProgress.subscribe((item: IDownload) => (this.globalProgress = item))
     this.appService.downloadProgress.subscribe((item: IDownload) => this.setDownloadProgress(item))

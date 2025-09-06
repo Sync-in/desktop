@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component } from '@angular/core'
+import { Component, inject } from '@angular/core'
 import { AppService } from '../app.service'
 import { LOCAL_RENDERER } from '../../../../main/constants/events'
 
@@ -26,7 +26,7 @@ import { LOCAL_RENDERER } from '../../../../main/constants/events'
   standalone: true
 })
 export class TopBarButtonsComponent {
-  constructor(protected readonly appService: AppService) {}
+  protected readonly appService = inject(AppService)
 
   onMinimize() {
     this.appService.ipcRenderer.send(LOCAL_RENDERER.WINDOW.MINIMIZE)

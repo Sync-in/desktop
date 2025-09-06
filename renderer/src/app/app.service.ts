@@ -3,7 +3,7 @@
  * This file is part of Sync-in | The open source file sync and share solution
  * See the LICENSE file for licensing details
  */
-import { Injectable, NgZone, signal, WritableSignal } from '@angular/core'
+import { inject, Injectable, NgZone, signal, WritableSignal } from '@angular/core'
 import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal'
 import { LOCAL_RENDERER, REMOTE_RENDERER } from '../../../main/constants/events'
 import { BehaviorSubject, fromEvent, map, mergeWith, Observable, Subject } from 'rxjs'
@@ -27,29 +27,14 @@ declare global {
 
 @Injectable({ providedIn: 'root' })
 export class AppService {
-  private modalRef: BsModalRef = null
-  private readonly modalConfig = { animated: true, keyboard: true, backdrop: true, ignoreBackdropClick: true }
-  private readonly modalClass = 'modal-lg modal-primary modal-dialog-centered'
   public ipcRenderer = window.ipcRenderer
   public isMacOS = window.process.platform === 'darwin'
-  // Observable Network
-  private _networkIsOnline = new BehaviorSubject<boolean>(navigator.onLine)
-  public networkIsOnline: Observable<boolean> = this._networkIsOnline
-    .asObservable()
-    .pipe(mergeWith(fromEvent(window, 'online').pipe(map(() => true)), fromEvent(window, 'offline').pipe(map(() => false))))
   // Observables Windows
   public themeMode: WritableSignal<THEME> = signal(getTheme())
   public isMaximized: WritableSignal<boolean> = signal(false)
   public isFullScreen: WritableSignal<boolean> = signal(false)
   // Observables Servers
   public allServers = new BehaviorSubject<SyncServer[]>([])
-  public activeServer = new BehaviorSubject<SyncServer>({
-    id: 0,
-    name: this.translation.translate('No server configured'),
-    url: null,
-    available: true,
-    authTokenExpired: false
-  })
   // Observables Downloads
   public downloadProgress = new BehaviorSubject<any>({})
   public downloadGlobalProgress = new BehaviorSubject<any>({})
@@ -59,13 +44,27 @@ export class AppService {
   public serversAppsCounter = new BehaviorSubject<any[]>([])
   // Observable AutoUpdate
   public updateDownloaded: Subject<string> = new Subject<string>()
+  private readonly ngZone = inject(NgZone)
+  private readonly translation = inject(L10nTranslationService)
+  public activeServer = new BehaviorSubject<SyncServer>({
+    id: 0,
+    name: this.translation.translate('No server configured'),
+    url: null,
+    available: true,
+    authTokenExpired: false
+  })
+  private readonly bsLocale = inject(BsLocaleService)
+  private readonly bsModal = inject(BsModalService)
+  private modalRef: BsModalRef = null
+  private readonly modalConfig = { animated: true, keyboard: true, backdrop: true, ignoreBackdropClick: true }
+  private readonly modalClass = 'modal-lg modal-primary modal-dialog-centered'
+  // Observable Network
+  private _networkIsOnline = new BehaviorSubject<boolean>(navigator.onLine)
+  public networkIsOnline: Observable<boolean> = this._networkIsOnline
+    .asObservable()
+    .pipe(mergeWith(fromEvent(window, 'online').pipe(map(() => true)), fromEvent(window, 'offline').pipe(map(() => false))))
 
-  constructor(
-    private readonly ngZone: NgZone,
-    private readonly translation: L10nTranslationService,
-    private readonly bsLocale: BsLocaleService,
-    private readonly bsModal: BsModalService
-  ) {
+  constructor() {
     this.setLanguage()
     this.networkIsOnline.subscribe((state: boolean) => this.ipcRenderer.send(REMOTE_RENDERER.MISC.NETWORK_IS_ONLINE, state))
     this.ipcRenderer.on(REMOTE_RENDERER.MISC.SWITCH_THEME, (_e: Event, theme: THEME) => this.themeMode.set(theme))

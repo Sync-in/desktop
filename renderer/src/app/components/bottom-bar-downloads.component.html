@@ -15,7 +15,7 @@
           <img class="align-self-center" height="30px" [src]="dropdownView?.icon" alt="" />
         } @else {
           <div class="mx-auto">
-            <fa-icon [icon]="icons.faDownload"></fa-icon>
+            <fa-icon [icon]="icons.faDownload"/>
             <span class="badge rounded-pill bg-info position-absolute" style="top: 3px; left: 25px">{{ dropdownView?.name }}</span>
           </div>
         }
@@ -55,26 +55,26 @@
               @switch (d.state) {
                 @case (DOWNLOAD_STATE.PROGRESSING) {
                   <button (click)="onPause($event, d.id)" type="button" class="btn btn-sm btn-outline-secondary me-1">
-                    <fa-icon [icon]="icons.faPause"></fa-icon>
+                    <fa-icon [icon]="icons.faPause"/>
                   </button>
                   <button (click)="onCancel($event, d.id)" type="button" class="btn btn-sm btn-outline-danger">
-                    <fa-icon [icon]="icons.faStop"></fa-icon>
+                    <fa-icon [icon]="icons.faStop"/>
                   </button>
                 }
                 @case (DOWNLOAD_STATE.COMPLETED) {
                   <button (click)="onOpen($event, d.id)" type="button" class="btn btn-sm btn-outline-secondary me-1">
-                    <fa-icon [icon]="icons.faFolderOpen"></fa-icon>
+                    <fa-icon [icon]="icons.faFolderOpen"/>
                   </button>
                 }
                 @case (DOWNLOAD_STATE.PAUSED) {
                   <button (click)="onResume($event, d.id)" type="button" class="btn btn-sm btn-outline-secondary">
-                    <fa-icon [icon]="icons.faPlay"></fa-icon>
+                    <fa-icon [icon]="icons.faPlay"/>
                   </button>
                 }
               }
               @if (d.state !== DOWNLOAD_STATE.PROGRESSING) {
                 <button (click)="onRemove($event, d.id)" type="button" class="btn btn-sm btn-outline-danger">
-                  <fa-icon [icon]="icons.faTrashAlt"></fa-icon>
+                  <fa-icon [icon]="icons.faTrashAlt"/>
                 </button>
               }
             </div>

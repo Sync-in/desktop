@@ -5,8 +5,8 @@
   -->
 <div class="modal-header align-items-center">
   <h4 class="modal-title pull-left">
-    <fa-icon [icon]="titleIcon"></fa-icon>
-    <fa-icon [icon]="icons.faServer"></fa-icon>
+    <fa-icon [icon]="titleIcon"/>
+    <fa-icon [icon]="icons.faServer"/>
     <span class="ms-1">{{ this.loginForm.value.name || this.config?.server?.name }}</span>
   </h4>
   @if (activeServer.id) {
@@ -25,7 +25,7 @@
           @if (submitted) {
             <span>
               <span class="me-1" l10nTranslate>Please wait</span>
-              <fa-icon [icon]="icons.faSyncAlt" animation="spin"></fa-icon>
+              <fa-icon [icon]="icons.faSyncAlt" animation="spin"/>
           </span>
           } @else {
             <span class="me-1" l10nTranslate>{{ titleText }}</span>
@@ -41,7 +41,7 @@
       <div class="input-group mb-3">
         <div class="input-group-text">
         <span>
-          <fa-icon [icon]="icons.faServer"></fa-icon>
+          <fa-icon [icon]="icons.faServer"/>
         </span>
         </div>
         <input [placeholder]="'Server display name'|translate:locale.language"
@@ -55,7 +55,7 @@
         <div class="input-group mb-3">
           <div class="input-group-text">
               <span>
-                <fa-icon [icon]="icons.faGlobe"></fa-icon>
+                <fa-icon [icon]="icons.faGlobe"/>
               </span>
           </div>
           <input formControlName="url"
@@ -68,7 +68,7 @@
           <div class="input-group mb-3">
             <div class="input-group-text">
               <span>
-                <fa-icon [icon]="icons.faUserAlt"></fa-icon>
+                <fa-icon [icon]="icons.faUserAlt"/>
               </span>
             </div>
             <input [placeholder]="'Login or Email'|translate:locale.language"
@@ -83,7 +83,7 @@
           <div class="input-group mb-3">
             <div class="input-group-text">
               <span>
-                <fa-icon [icon]="icons.faLock"></fa-icon>
+                <fa-icon [icon]="icons.faLock"/>
               </span>
             </div>
             <input [placeholder]="'Password'|translate:locale.language"

@@ -6,8 +6,8 @@
 @if (transfer) {
   <div class="d-flex align-items-center truncate fs-xxs ms-auto me-auto">
     <span class="d-flex align-items-center me-1">
-      <fa-icon [icon]="transfer.sideIcon" class="{{transfer.ok ? transfer.sideIconClass : 'circle-error-icon'}} me-1"></fa-icon>
-      <fa-icon [icon]="transfer.actionIcon" [class.text-danger]="!transfer.ok" class="circle-gray-icon" size="sm"></fa-icon>
+      <fa-icon [icon]="transfer.sideIcon" class="{{transfer.ok ? transfer.sideIconClass : 'circle-error-icon'}} me-1"/>
+      <fa-icon [icon]="transfer.actionIcon" [class.text-danger]="!transfer.ok" class="circle-gray-icon" size="sm"/>
     </span>
     <span class="truncate">{{ transfer.name }}</span>
   </div>

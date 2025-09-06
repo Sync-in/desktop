@@ -5,7 +5,7 @@
  */
 
 import { BrowserWindow, ipcMain } from 'electron'
-import { defaultWindowProps } from './constants'
+import { defaultWindowProps } from '../constants/windows'
 import { ViewsManager } from './views'
 import { LOCAL_RENDERER } from '../constants/events'
 import { appEvents } from './events'
@@ -16,11 +16,11 @@ export class WindowManager {
   mainWindow: BrowserWindow
   viewsManager: ViewsManager
 
-  constructor() {
+  constructor(startHidden = false) {
     this.mainWindow = new BrowserWindow(defaultWindowProps)
     this.mainWindow.setTitle(ENVIRONMENT.appID)
     this.mainWindow.setMenuBarVisibility(false)
-    this.viewsManager = new ViewsManager(this.mainWindow)
+    this.viewsManager = new ViewsManager(this.mainWindow, !startHidden)
     this.mainWindow.on('close', (e: Event) => this.close(e))
     this.mainWindow.on('maximize', () => this.viewsManager.sendToWrapperRenderer(LOCAL_RENDERER.WINDOW.IS_MAXIMIZED, true))
     this.mainWindow.on('unmaximize', () => this.viewsManager.sendToWrapperRenderer(LOCAL_RENDERER.WINDOW.IS_MAXIMIZED, false))

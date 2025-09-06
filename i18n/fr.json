@@ -2,7 +2,6 @@
   "en": "Anglais",
   "fr": "Français",
   "File": "Fichier",
-  "About": "À propos de",
   "Hide": "Masquer",
   "Hide Others": "Masquer les autres",
   "Show All": "Afficher tout",
@@ -30,7 +29,7 @@
   "Bring All to Front": "Tout mettre en avant",
   "Help": "Aide",
   "Learn More...": "En savoir plus...",
-  "Show logs": "Afficher les logs",
+  "Show logs": "Afficher les journaux",
   "Version": "Version",
   "Sync": "Synchroniser",
   "Open": "Ouvrir",
@@ -73,5 +72,11 @@
   "will be automatically installed on application exit": "sera installée à la fermeture de l'application",
   "Check for Updates": "Vérifier les mises à jour",
   "Back": "Retour",
-  "Forward": "Avancer"
+  "Forward": "Avancer",
+  "Launch at startup": "Lancer au démarrage",
+  "Start Hidden": "Cacher au démarrage",
+  "Official Website": "Site officiel",
+  "Version history": "Historique des versions",
+  "Documentation": "Documentation",
+  "Support": "Soutenir"
 }

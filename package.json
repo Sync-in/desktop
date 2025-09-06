@@ -10,6 +10,52 @@
     "email": "johan.legrand@sync-in.com"
   },
   "homepage": "https://sync-in.com",
+  "releasespage": "https://github.com/Sync-in/desktop/releases",
+  "supportpage": "https://sync-in.com/support",
+  "funding": [
+    {
+      "type": "github",
+      "url": "https://github.com/sponsors/sync-in"
+    },
+    {
+      "type": "patreon",
+      "url": "https://patreon.com/sync_in"
+    },
+    {
+      "type": "liberapay",
+      "url": "https://liberapay.com/sync-in"
+    },
+    {
+      "type": "project",
+      "url": "https://sync-in.com/support"
+    }
+  ],
+  "keywords": [
+    "sync-in",
+    "self-hosted",
+    "open-source",
+    "data-sovereignty",
+    "cloud-storage",
+    "privacy-first",
+    "file-server",
+    "file-manager",
+    "file-storage",
+    "file-sharing",
+    "file-sync",
+    "synchronization",
+    "sync",
+    "webdav",
+    "collaboration",
+    "onlyoffice",
+    "full-text-search",
+    "access-control",
+    "spaces",
+    "secure-links",
+    "document-management",
+    "nextcloud-alternative",
+    "owncloud-alternative",
+    "dropbox-alternative"
+  ],
   "workspaces": [
     "core",
     "main",

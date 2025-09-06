@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { defaultViewProps, RENDERER_FILE, TAB_BAR_HEIGHT, WRAPPER_VIEW_OFFSET_HEIGHT } from './constants'
+import { defaultViewProps, RENDERER_FILE, TAB_BAR_HEIGHT, WRAPPER_VIEW_OFFSET_HEIGHT } from '../constants/windows'
 import {
   BrowserWindow,
   dialog,
@@ -33,11 +33,13 @@ export class ViewsManager {
   currentServer: Server = new Server({ name: 'No server configured', url: null, available: true })
   viewOptions: { extraHeaders: 'pragma: no-cache\n' }
   allViews: Record<string | number, AppWebContentsView> = {}
+  showAtStartup = false
   isModalOpen = false
   isBooting = true
   countViewsOnBoot = 0
 
-  constructor(mainWindow: BrowserWindow) {
+  constructor(mainWindow: BrowserWindow, showAtStartup: boolean) {
+    this.showAtStartup = showAtStartup
     this.mainWindow = mainWindow
     this.initIPC()
     this.initWrapperView()
@@ -94,7 +96,7 @@ export class ViewsManager {
       this.countViewsOnBoot += 1
       if (this.countViewsOnBoot === ServersManager.list.length) {
         this.isBooting = false
-        this.enableView(server, webView, !success, true)
+        this.enableView(server, webView, !success, this.showAtStartup)
         coreEvents.emit(CORE.SAVE_SETTINGS, true)
       }
     } else if (server.available !== success) {
@@ -109,6 +111,7 @@ export class ViewsManager {
     this.currentServer = server
     this.switchViewFocus(toTopView)
     if (show) {
+      // first show called when the app starts
       this.mainWindow.show()
     }
     this.resizeViews()

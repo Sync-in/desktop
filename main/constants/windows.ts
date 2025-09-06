@@ -6,7 +6,7 @@
 
 import path from 'node:path'
 import { BrowserWindowConstructorOptions, nativeTheme, WebContentsViewConstructorOptions } from 'electron'
-import { THEME } from '../constants/themes'
+import { THEME } from './themes'
 
 // Renderer constants
 const DEFAULT_WINDOW_WIDTH = 1128

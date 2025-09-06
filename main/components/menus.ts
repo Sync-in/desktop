@@ -6,11 +6,12 @@
 
 import { ENVIRONMENT, IS_MACOS, IS_WINDOWS, MAIN_LOGS_FILE } from '../../core/constants'
 import { i18n } from './translate'
-import { Menu, MenuItem, MenuItemConstructorOptions, shell } from 'electron'
+import { app, Menu, MenuItem, MenuItemConstructorOptions, shell } from 'electron'
 import { LOCAL_RENDERER } from '../constants/events'
 import { appEvents } from './events'
+import { AppSettings } from './settings'
 
-export function createTemplate() {
+export function createTemplate(settings: AppSettings) {
   const separatorItem: MenuItemConstructorOptions = {
     type: 'separator'
   }
@@ -20,8 +21,8 @@ export function createTemplate() {
   let platformAppMenu = []
   if (IS_MACOS) {
     platformAppMenu.push({
-      label: `${i18n.tr('About')} ${ENVIRONMENT.appID}`,
-      role: 'about'
+      label: `${i18n.tr('Support')} ${ENVIRONMENT.appID}`,
+      click: () => shell.openExternal(ENVIRONMENT.appSupportPage)
     })
     platformAppMenu.push({
       label: i18n.tr('Check for Updates'),
@@ -33,6 +34,31 @@ export function createTemplate() {
   platformAppMenu.push({
     label: i18n.tr('Connect to a server'),
     click: () => appEvents.emit(LOCAL_RENDERER.UI.MODAL_TOGGLE)
+  })
+
+  platformAppMenu.push({
+    label: 'Options',
+    submenu: [
+      {
+        label: i18n.tr('Launch at startup'),
+        type: 'checkbox',
+        checked: settings.configuration.launchAtStartup,
+        click: () => {
+          settings.configuration.launchAtStartup = !settings.configuration.launchAtStartup
+          settings.writeSettings()
+          app.setLoginItemSettings({ openAtLogin: settings.configuration.launchAtStartup })
+        }
+      },
+      {
+        label: i18n.tr('Start Hidden'),
+        type: 'checkbox',
+        checked: settings.configuration.startHidden,
+        click: () => {
+          settings.configuration.startHidden = !settings.configuration.startHidden
+          settings.writeSettings()
+        }
+      }
+    ]
   })
 
   if (IS_MACOS) {
@@ -58,6 +84,15 @@ export function createTemplate() {
     ])
   } else {
     platformAppMenu = platformAppMenu.concat([
+      separatorItem,
+      {
+        label: `${i18n.tr('Support')} ${ENVIRONMENT.appID}`,
+        click: () => shell.openExternal(ENVIRONMENT.appSupportPage)
+      },
+      {
+        label: i18n.tr('Check for Updates'),
+        click: () => appEvents.emit(LOCAL_RENDERER.UPDATE.CHECK)
+      },
       separatorItem,
       {
         role: 'quit',
@@ -215,32 +250,38 @@ export function createTemplate() {
   }
   template.push(windowMenu)
   const helpMenu = []
-  if (!IS_MACOS) {
-    helpMenu.push({
-      label: i18n.tr('Check for Updates'),
-      click: () => appEvents.emit(LOCAL_RENDERER.UPDATE.CHECK)
-    })
-  }
   helpMenu.push({
-    label: i18n.tr('Learn More...'),
+    label: i18n.tr('Official Website'),
     click: () => shell.openExternal(ENVIRONMENT.appHomePage)
   })
+
+  helpMenu.push({
+    label: i18n.tr('Documentation'),
+    click: () => shell.openExternal(`${ENVIRONMENT.appHomePage}/docs/`)
+  })
+
+  helpMenu.push({
+    label: i18n.tr('Version history'),
+    click: () => shell.openExternal(ENVIRONMENT.appReleasesPage)
+  })
+
+  helpMenu.push({
+    label: `${i18n.tr('Version')} ${ENVIRONMENT.appVersion}`,
+    role: 'about'
+  })
+
+  helpMenu.push(separatorItem)
 
   helpMenu.push({
     id: 'Show logs',
     label: i18n.tr('Show logs'),
     click: () => shell.showItemInFolder(MAIN_LOGS_FILE)
   })
-  helpMenu.push(separatorItem)
-
-  helpMenu.push({
-    label: `${i18n.tr('Version')} ${ENVIRONMENT.appVersion}`
-  })
 
   template.push({ id: 'help', label: i18n.tr('Help'), submenu: helpMenu })
   return template
 }
 
-export function createMenu() {
-  return Menu.buildFromTemplate(createTemplate() as (MenuItemConstructorOptions | MenuItem)[])
+export function createMenu(settings: AppSettings) {
+  return Menu.buildFromTemplate(createTemplate(settings) as (MenuItemConstructorOptions | MenuItem)[])
 }

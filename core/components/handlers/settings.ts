@@ -6,7 +6,7 @@
 
 import fs from 'node:fs'
 import { getLogger } from './loggers'
-import { isPathExists } from '../utils/functions'
+import { isPathExists, loadJsonFile, writeToFileSync } from '../utils/functions'
 import { Server } from '../models/server'
 import { CONF_PATH, SERVERS_SETTINGS, SNAPSHOTS_PATH, SYNC_LOGS_PATH } from '../../constants'
 import { CORE, coreEvents } from './events'
@@ -14,47 +14,12 @@ import { CORE, coreEvents } from './events'
 const logger = getLogger('Settings')
 
 class SettingsManager {
-  // configurations
   public servers: Server[] = []
 
   constructor() {
     SettingsManager.checkDirectories()
     this.loadSettings()
     this.listeners()
-  }
-
-  private listeners() {
-    coreEvents.on(CORE.SAVE_SETTINGS, (reloadConf?: boolean, exit?: boolean) => this.writeServersSettings(reloadConf, exit))
-  }
-
-  writeServersSettings(reloadConf = false, exit = false) {
-    SettingsManager.writeToFile(
-      SERVERS_SETTINGS,
-      this.servers.map((s: Server) => s.export()),
-      4
-    )
-    logger.debug(`${SERVERS_SETTINGS} saved (reload: ${reloadConf}, exited: ${exit})`)
-  }
-
-  private loadSettings() {
-    this.servers = SettingsManager.loadFromFile(SERVERS_SETTINGS, []).map((data: any) => new Server(data))
-  }
-
-  private static writeToFile(filePath: string, settings: any, indent = null) {
-    try {
-      fs.writeFileSync(filePath, JSON.stringify(settings, null, indent))
-    } catch (e) {
-      logger.error(e)
-      throw e
-    }
-  }
-
-  private static loadFromFile(filePath: string, defaultValue: any = {}): any[] {
-    if (fs.existsSync(filePath)) {
-      return JSON.parse(fs.readFileSync(filePath, 'utf8'))
-    } else {
-      return defaultValue
-    }
   }
 
   private static checkDirectories() {
@@ -65,6 +30,27 @@ class SettingsManager {
         logger.debug(`${path} created`)
       })
     }
+  }
+
+  writeServersSettings(reloadConf = false, exit = false) {
+    try {
+      writeToFileSync(
+        SERVERS_SETTINGS,
+        this.servers.map((s: Server) => s.export())
+      )
+      logger.debug(`${SERVERS_SETTINGS} saved (reload: ${reloadConf}, exited: ${exit})`)
+    } catch (e) {
+      logger.error(e)
+      throw e
+    }
+  }
+
+  private listeners() {
+    coreEvents.on(CORE.SAVE_SETTINGS, (reloadConf?: boolean, exit?: boolean) => this.writeServersSettings(reloadConf, exit))
+  }
+
+  private loadSettings() {
+    this.servers = loadJsonFile(SERVERS_SETTINGS, []).map((data: Partial<Server>) => new Server(data))
   }
 }
 

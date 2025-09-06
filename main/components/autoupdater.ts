@@ -69,7 +69,6 @@ export class UpdateManager {
   }
 
   private downloadProgress(infos: any) {
-    console.log(infos)
     appEvents.emit(REMOTE_RENDERER.SYNC.TRANSFER, {
       ok: true,
       side: SIDE.LOCAL,

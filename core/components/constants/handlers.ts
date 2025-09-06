@@ -19,7 +19,7 @@ export const SYMBOLS = IS_WINDOWS
   ? { [SIDE.LOCAL]: '↓', [SIDE.REMOTE]: '↑', [SIDE.BOTH]: '↓↑' }
   : { [SIDE.LOCAL]: '⬇', [SIDE.REMOTE]: '⬆', [SIDE.BOTH]: '⬇⬆' }
 
-// data index of the values array of a file
+// data index of the value array of a file
 export enum F_STAT {
   IS_DIR = 0,
   SIZE = 1,

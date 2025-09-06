@@ -2,7 +2,6 @@
   "en": "English",
   "fr": "French",
   "File": "File",
-  "About": "About",
   "Hide": "Hide",
   "Hide Others": "Hide Others",
   "Show All": "Show All",
@@ -70,5 +69,11 @@
   "will be automatically installed on application exit": "will be automatically installed on application exit",
   "Check for Updates": "Check for Updates",
   "Back": "Back",
-  "Forward": "Forward"
+  "Forward": "Forward",
+  "Launch at startup": "Launch at startup",
+  "Start Hidden": "Start Hidden",
+  "Official Website": "Official Website",
+  "Version history": "Version history",
+  "Documentation": "Documentation",
+  "Support": "Support"
 }

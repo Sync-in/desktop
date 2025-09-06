@@ -7,7 +7,7 @@
 import os from 'node:os'
 import path from 'node:path'
 import fs from 'node:fs/promises'
-import { createReadStream, createWriteStream } from 'node:fs'
+import { createReadStream, createWriteStream, writeFileSync, readFileSync, existsSync } from 'node:fs'
 import { ENVIRONMENT, HAS_TTY, IS_WINDOWS } from '../../constants'
 import { DEFAULT_HIGH_WATER_MARK, INCOMPLETE_PREFIX, SYNC_CHECKSUM_ALG } from '../constants/handlers'
 import { TransferProgress } from '../handlers/transfers'
@@ -244,4 +244,16 @@ export async function limitConcurrency<T, R>(items: T[], fn: (item: T) => Promis
     }
   }
   return Promise.all(results)
+}
+
+export function writeToFileSync(filePath: string, settings: any, indent = 4) {
+  writeFileSync(filePath, JSON.stringify(settings, null, indent))
+}
+
+export function loadJsonFile<T>(filePath: string, defaultValue: T): T {
+  if (existsSync(filePath)) {
+    return JSON.parse(readFileSync(filePath, 'utf8'))
+  } else {
+    return defaultValue
+  }
 }

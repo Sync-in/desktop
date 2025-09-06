@@ -6,7 +6,6 @@
 
 import { app, Menu } from 'electron'
 import { i18n } from './components/translate'
-
 import { WindowManager } from './components/windows'
 import { TrayManager } from './components/tray'
 import { DownloadManager } from './components/downloads'
@@ -15,8 +14,10 @@ import { EventsManager } from './components/events'
 import { UpdateManager } from './components/autoupdater'
 import { ENVIRONMENT, IS_PROD_ENV, IS_WINDOWS } from '../core/constants'
 import { createMenu } from './components/menus'
+import { AppSettings } from './components/settings'
 
 class MainManager {
+  appSettings: AppSettings
   trayManager: TrayManager
   windowManager: WindowManager
   downloadManager: DownloadManager
@@ -30,24 +31,23 @@ class MainManager {
     // app.commandLine.appendSwitch('enable-logging')
     app.commandLine.appendSwitch('ignore-certificate-errors')
     app.whenReady().then(() => this.appIsReady())
+    this.appSettings = new AppSettings()
   }
 
   appIsReady() {
     if (!app.requestSingleInstanceLock()) {
-      console.log('App already started')
+      console.log('Sync-in App is already started')
       app.quit()
       return
     }
     if (IS_WINDOWS) {
       app.setAppUserModelId(ENVIRONMENT.appID)
     }
-    if (IS_PROD_ENV && !app.getLoginItemSettings().openAtLogin) {
-      app.setLoginItemSettings({ openAtLogin: true })
-    }
+    this.checkStartUp()
     i18n.updateLanguage(app.getLocale())
-    Menu.setApplicationMenu(createMenu())
+    Menu.setApplicationMenu(createMenu(this.appSettings))
     this.trayManager = new TrayManager()
-    this.windowManager = new WindowManager()
+    this.windowManager = new WindowManager(this.appSettings.configuration.startHidden)
     this.eventsManager = new EventsManager(this.windowManager.viewsManager)
     this.notifyManager = new NotifyManager(this.windowManager.viewsManager)
     this.downloadManager = new DownloadManager(this.windowManager, this.notifyManager)
@@ -60,6 +60,17 @@ class MainManager {
       this.windowManager.setAppIsQuitting(true)
     })
     this.windowManager.setAppIsQuitting(false)
+  }
+
+  private checkStartUp() {
+    if (!IS_PROD_ENV) return
+    const loginItem = app.getLoginItemSettings()
+    if (this.appSettings.configuration.launchAtStartup !== loginItem.openAtLogin) {
+      app.setLoginItemSettings({ openAtLogin: this.appSettings.configuration.launchAtStartup })
+    }
+    if (app.commandLine.hasSwitch('hidden') || process.env.SYNC_IN_HIDDEN === '1') {
+      this.appSettings.configuration.startHidden = true
+    }
   }
 }
 

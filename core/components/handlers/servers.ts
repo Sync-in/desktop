@@ -86,7 +86,7 @@ export class ServersManager {
             return [false, 'Server not reachable']
         }
       }
-      return [false, await RequestsManager.handleHttpError(e)]
+      return [false, await RequestsManager.handleHttpError(e, true)]
     }
   }
 

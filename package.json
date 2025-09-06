@@ -2,7 +2,7 @@
   "name": "sync-in-desktop",
   "productName": "Sync-in",
   "description": "Sync-in Desktop Application",
-  "version": "1.2.9",
+  "version": "1.3.0",
   "license": "AGPL-3.0-or-later",
   "main": "dist/main/main.js",
   "author": {
@@ -75,7 +75,9 @@
     "angular:update": "npx -w renderer ng update @angular/cli @angular/core --allow-dirty --force",
     "lint": "eslint \"{main,core}/**/*.ts\" && npm -w renderer run lint",
     "lint:fix": "eslint \"{main,core}/**/*.ts\" --fix && npm -w renderer run lint --fix",
-    "reset": "rm -Rf ./node_modules ./renderer/.angular; npm cache clean --force",
+    "reset": "rm -Rf ./node_modules ./.angular ./renderer/node_modules ./renderer/.angular; npm cache clean --force",
+    "bump:version": "commit-and-tag-version",
+    "bump:version:dry": "commit-and-tag-version --dry-run",
     "docker:build": "docker build -t desktop-releases:local .",
     "docker:buildx": "docker buildx build --platform linux/arm64,linux/amd64 --tag syncin/desktop-releases:latest --tag syncin/desktop-releases:${npm_package_version} . --push"
   },
@@ -100,6 +102,12 @@
     "webpack": "^5.98.0",
     "webpack-cli": "^6.0.1",
     "webpack-shebang-plugin": "^1.1.8"
+  },
+  "commit-and-tag-version": {
+    "header": "",
+    "skip": {
+      "commit": true
+    }
   },
   "build": {
     "asar": true,

@@ -30,7 +30,7 @@ const serverADD: CommandModule = {
       type: 'string'
     },
     url: {
-      alias: 'web',
+      alias: 'w',
       describe: 'Server URL',
       demandOption: true,
       type: 'string'
@@ -46,6 +46,12 @@ const serverADD: CommandModule = {
       describe: 'User password',
       demandOption: true,
       type: 'string'
+    },
+    code: {
+      alias: 'c',
+      describe: 'Two-Fa Authentication Code',
+      demandOption: false,
+      type: 'string'
     }
   },
   handler: async (argv: any) => {
@@ -53,12 +59,12 @@ const serverADD: CommandModule = {
     console.log('Adding the server')
     const manager = new ServersManager(server, false)
     await manager.checkUpdatedProperties(server)
-    const [ok, msg] = await manager.add(argv.login, argv.password)
+    const [ok, msg] = await manager.add(argv.login, argv.password, argv.code)
     if (ok) {
       console.log('Server authentication & registration OK')
       console.log(server.toString())
     } else {
-      console.error(msg)
+      console.error(`The server was not registered: ${msg}`)
     }
   }
 }
@@ -70,7 +76,8 @@ const serverAUTH: CommandModule = {
     server: {
       alias: 's',
       describe: 'Given id or name to identify the server',
-      demandOption: true
+      demandOption: true,
+      type: 'string'
     },
     login: {
       alias: 'u',
@@ -83,6 +90,12 @@ const serverAUTH: CommandModule = {
       describe: 'User password',
       demandOption: true,
       type: 'string'
+    },
+    code: {
+      alias: 'c',
+      describe: 'Two-Fa Authentication Code',
+      demandOption: false,
+      type: 'string'
     }
   },
   handler: async (argv: any) => {
@@ -90,11 +103,11 @@ const serverAUTH: CommandModule = {
     console.log(server.toString())
     const manager = new ServersManager(server, false)
     try {
-      await manager.register(argv.login, argv.password)
+      await manager.register(argv.login, argv.password, argv.code)
       ServersManager.saveSettings()
       console.log('The token has been updated')
     } catch (e) {
-      console.log(`The token has not been updated : ${e}`)
+      console.log(`The token has not been updated: ${e}`)
     }
   }
 }

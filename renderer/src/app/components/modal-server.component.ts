@@ -67,7 +67,8 @@ export class ModalServerComponent implements OnInit {
         name: this.fb.control(this.isAddModal ? '' : this.config.server.name, [Validators.required]),
         url: this.fb.control(this.isAddModal ? '' : this.config.server.url, [Validators.required]),
         login: this.fb.control('', [Validators.required]),
-        password: this.fb.control('', [Validators.required])
+        password: this.fb.control('', [Validators.required]),
+        code: this.fb.control('')
       })
     } else {
       // remove / edit / auth modal
@@ -77,7 +78,8 @@ export class ModalServerComponent implements OnInit {
         ...(this.isAuthenticationModal
           ? {
               login: this.fb.control('', [Validators.required]),
-              password: this.fb.control('', [Validators.required])
+              password: this.fb.control('', [Validators.required]),
+              code: this.fb.control('')
             }
           : {})
       })
@@ -105,7 +107,7 @@ export class ModalServerComponent implements OnInit {
           url: this.serverURL(),
           available: this.config.server ? this.config.server.available : false
         },
-        { login: this.loginForm.value.login, password: this.loginForm.value.password }
+        { login: this.loginForm.value.login, password: this.loginForm.value.password, code: this.loginForm.value.code }
       )
       .then((info: { ok: boolean; msg?: string }) => this.onServerCheck(info))
   }

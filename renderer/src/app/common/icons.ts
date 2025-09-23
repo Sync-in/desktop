@@ -23,6 +23,7 @@ import {
   faPencil,
   faPlay,
   faPlus,
+  faQrcode,
   faRss,
   faServer,
   faStop,
@@ -66,5 +67,6 @@ export const faIcons = {
   faGlobe,
   faUserAlt,
   faLock,
-  faKey
+  faKey,
+  faQrcode
 }

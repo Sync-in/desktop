@@ -91,6 +91,16 @@
                    class="form-control"
                    aria-label="password"
                    type="password" />
+              <span class="input-group-text">
+                <fa-icon [icon]="icons.faQrcode"></fa-icon>
+              </span>
+              <input [placeholder]="'Authentication code (if required)' | translate:locale.language"
+                     type="text"
+                     class="form-control"
+                     formControlName="code"
+                     inputmode="numeric"
+                     autocomplete="one-time-code"
+                     [maxlength]=6 />
           </div>
         }
       </div>

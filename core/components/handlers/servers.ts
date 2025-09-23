@@ -13,7 +13,6 @@ import { API } from '../constants/requests'
 import { SYNC_SERVER } from '../constants/auth'
 
 export class ServersManager {
-  // constants
   server: Server
   req: RequestsManager
 
@@ -54,6 +53,10 @@ export class ServersManager {
     return { ok: true }
   }
 
+  static saveSettings() {
+    settingsManager.writeServersSettings()
+  }
+
   async checkUpdatedProperties(server?: Server) {
     if (!server) {
       server = this.server
@@ -78,7 +81,9 @@ export class ServersManager {
       }
       return [false, 'Server not found']
     } catch (e) {
-      if (e.response) {
+      if (e.code === 'EPROTO') {
+        return [false, 'Check server protocol (http/https)']
+      } else if (e.response) {
         switch (e.response.status) {
           case 404:
             return [false, 'Server not found']
@@ -90,7 +95,7 @@ export class ServersManager {
     }
   }
 
-  async add(login: string, password: string): Promise<[boolean, string]> {
+  async add(login: string, password: string, code?: string): Promise<[boolean, string]> {
     try {
       const [ok, msg] = await this.check()
       if (!ok) {
@@ -111,7 +116,7 @@ export class ServersManager {
     }
     this.server.id = lastID + 1
     try {
-      await this.register(login, password)
+      await this.register(login, password, code)
     } catch (e) {
       return [false, e]
     }
@@ -120,19 +125,25 @@ export class ServersManager {
     return [true, null]
   }
 
-  async register(login: string, password: string): Promise<void> {
+  async register(login: string, password: string, code?: string): Promise<void> {
     if (!this.server.authID) {
       this.server.authID = genUUID()
     }
     let r: AxiosResponse
     try {
-      r = await this.req.http.post<{ clientToken: string }>(API.REGISTER, { login, password, clientId: this.server.authID, info: genClientInfos() })
+      r = await this.req.http.post<{ clientToken: string }>(API.REGISTER, {
+        login,
+        password,
+        code,
+        clientId: this.server.authID,
+        info: genClientInfos()
+      })
     } catch (e) {
       switch (e.response?.status) {
         case 401:
-          throw 'Wrong login or password'
+          throw e.response.data?.message || 'Wrong login or password'
         case 403:
-          throw 'Account suspended or not authorized'
+          throw e.response.data?.message || 'Account suspended or not authorized'
         default:
           throw await RequestsManager.handleHttpError(e, true)
       }
@@ -143,9 +154,5 @@ export class ServersManager {
     } else {
       throw 'Client token is missing'
     }
-  }
-
-  static saveSettings() {
-    settingsManager.writeServersSettings()
   }
 }

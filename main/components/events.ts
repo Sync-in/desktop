@@ -171,7 +171,7 @@ export class EventsManager {
   private async serverOnAction(
     action: SERVER_ACTION,
     server: Server,
-    auth: { login: string; password: string }
+    auth: { login: string; password: string; code?: string }
   ): Promise<{
     ok: boolean
     msg?: string
@@ -181,7 +181,7 @@ export class EventsManager {
         server = new Server(server)
         try {
           const manager = new ServersManager(server, false)
-          const [ok, msg] = await manager.add(auth.login, auth.password)
+          const [ok, msg] = await manager.add(auth.login, auth.password, auth.code)
           if (!ok) {
             return { ok: false, msg: msg }
           }
@@ -207,7 +207,7 @@ export class EventsManager {
       case SERVER_ACTION.AUTHENTICATE:
         try {
           const manager = new ServersManager(ServersManager.find(server.id), false)
-          await manager.register(auth.login, auth.password)
+          await manager.register(auth.login, auth.password, auth.code)
           this.viewsManager.sendServersUpdate()
           coreEvents.emit(CORE.SAVE_SETTINGS, true)
           this.viewsManager.reloadView(server.id)

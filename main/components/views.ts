@@ -154,7 +154,8 @@ export class ViewsManager {
       REMOTE_RENDERER.MISC.DIALOG_OPEN,
       async (_ev: IpcMainInvokeEvent, properties) => await dialog.showOpenDialog(this.mainWindow, properties)
     )
-    ipcMain.on(REMOTE_RENDERER.MISC.FILE_OPEN, async (_ev: IpcMainEvent, path) => shell.showItemInFolder(path))
+    ipcMain.on(REMOTE_RENDERER.MISC.FILE_OPEN, async (_ev: IpcMainEvent, fullPath: string) => shell.showItemInFolder(fullPath))
+    ipcMain.on(REMOTE_RENDERER.MISC.URL_OPEN, async (_ev: IpcMainEvent, url: string) => shell.openExternal(url))
     ipcMain.on(LOCAL_RENDERER.UI.APP_MENU_OPEN, () => this.openAppMenu())
     appEvents.on(LOCAL_RENDERER.SERVER.RELOAD, (clear: boolean) => this.reloadView(null, clear))
     appEvents.on(LOCAL_RENDERER.UI.MODAL_TOGGLE, () => this.openModalToggle())
@@ -189,7 +190,7 @@ export class ViewsManager {
     } else {
       // hook to avoid errors with ipc renderer events
       this.currentView = this.wrapperView
-      // start wizard to log-in
+      // start wizard to log in
       this.mainWindow.once('ready-to-show', () => this.sendToWrapperRenderer(LOCAL_RENDERER.UI.MODAL_TOGGLE))
       this.mainWindow.show()
       this.resizeViews()

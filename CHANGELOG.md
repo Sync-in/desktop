@@ -1,4 +1,12 @@
 
+## [1.4.0](https://git.sync-in.org/sync-in/desktop/compare/v1.3.0...v1.4.0) (2025-09-26)
+
+
+### Features
+
+* **auth:** add support for MFA authentication ([544ec08](https://git.sync-in.org/sync-in/desktop/commit/544ec08fc77a4577f81f9a49d2beed853d034a09))
+* **main:** open external URLs in the user's browser instead of inside the app ([f3dda3d](https://git.sync-in.org/sync-in/desktop/commit/f3dda3db5e32fcd198208a12aa4454577b0e55ea))
+
 ## [1.3.0](https://git.sync-in.org/sync-in/desktop/compare/v1.2.9...v1.3.0) (2025-09-06)
 
 

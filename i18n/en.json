@@ -1,6 +1,4 @@
 {
-  "en": "English",
-  "fr": "French",
   "File": "File",
   "Hide": "Hide",
   "Hide Others": "Hide Others",
@@ -28,7 +26,6 @@
   "Close Window": "Close Window",
   "Bring All to Front": "Bring All to Front",
   "Help": "Help",
-  "Learn More...": "Learn More...",
   "Show logs": "Show logs",
   "Version": "Version",
   "Sync": "Sync",
@@ -58,7 +55,6 @@
   "Unable to connect to this server !": "Unable to connect to this server !",
   "Trying to connect to the server...": "Trying to connect to the server...",
   "Download complete": "Download complete",
-  "wrote": "wrote",
   "element synchronized": "element synchronized",
   "elements synchronized": "elements synchronized",
   "Do update": "Mettre à jour",

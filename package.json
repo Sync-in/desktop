@@ -132,8 +132,14 @@
       "category": "public.app-category.utilities",
       "darkModeSupport": false,
       "electronLanguages": [
+        "en",
         "fr",
-        "en"
+        "de",
+        "es",
+        "pt",
+        "it",
+        "zh-CN",
+        "hi"
       ],
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist",

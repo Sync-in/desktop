@@ -21,14 +21,6 @@ class i18nManager {
     this.load()
   }
 
-  private load() {
-    if (fs.existsSync(path.join(this.i18nPath, `${this.language}.json`))) {
-      this.dictionary = JSON.parse(fs.readFileSync(path.join(this.i18nPath, `${this.language}.json`), 'utf8'))
-    } else {
-      this.dictionary = JSON.parse(fs.readFileSync(path.join(this.i18nPath, 'en.json'), 'utf8'))
-    }
-  }
-
   tr(phrase: string) {
     const translation = this.dictionary[phrase]
     return translation === undefined ? phrase : translation
@@ -39,6 +31,14 @@ class i18nManager {
     if (this.language !== lang) {
       this.language = lang
       this.load()
+    }
+  }
+
+  private load() {
+    if (fs.existsSync(path.join(this.i18nPath, `${this.language}.json`))) {
+      this.dictionary = JSON.parse(fs.readFileSync(path.join(this.i18nPath, `${this.language}.json`), 'utf8'))
+    } else {
+      this.dictionary = JSON.parse(fs.readFileSync(path.join(this.i18nPath, 'en.json'), 'utf8'))
     }
   }
 }

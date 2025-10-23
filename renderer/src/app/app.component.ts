@@ -11,7 +11,7 @@ import { L10N_LOCALE, L10nLoader, L10nLocale, L10nTranslateDirective } from 'ang
 import { BsLocaleService } from 'ngx-bootstrap/datepicker'
 import { FaConfig, FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { setTheme } from 'ngx-bootstrap/utils'
-import { defineLocale, deLocale, esLocale, hiLocale, itLocale, ptBrLocale, zhCnLocale } from 'ngx-bootstrap/chronos'
+import { defineLocale, deLocale, esLocale, hiLocale, itLocale, ptBrLocale, ruLocale, zhCnLocale } from 'ngx-bootstrap/chronos'
 import { enGbLocale, frLocale } from 'ngx-bootstrap/locale'
 import { dJs } from './common/functions/time'
 import { TopBarComponent } from './components/top-bar.component'
@@ -48,6 +48,7 @@ export class AppComponent implements OnInit {
     defineLocale('it', itLocale)
     defineLocale('zh', zhCnLocale)
     defineLocale('hi', hiLocale)
+    defineLocale('ru', ruLocale)
     this.l10nLoader.init().then(() => {
       dJs.locale(this.locale.language)
       this.bsLocaleService.use(this.locale.language)

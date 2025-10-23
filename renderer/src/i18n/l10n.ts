@@ -12,6 +12,7 @@ import 'dayjs/locale/pt.js'
 import 'dayjs/locale/it.js'
 import 'dayjs/locale/zh.js'
 import 'dayjs/locale/hi.js'
+import 'dayjs/locale/ru.js'
 import enLocale from '../../../i18n/en.json'
 import frLocale from '../../../i18n/fr.json'
 import deLocale from '../../../i18n/de.json'
@@ -19,20 +20,9 @@ import itLocale from '../../../i18n/it.json'
 import ptLocale from '../../../i18n/pt.json'
 import zhLocale from '../../../i18n/zh.json'
 import hiLocale from '../../../i18n/hi.json'
+import ruLocale from '../../../i18n/ru.json'
 
-export const i18nAsset: any = { en: enLocale, fr: frLocale, de: deLocale, it: itLocale, pt: ptLocale, zh: zhLocale, hi: hiLocale }
-
-export const i18nLanguageText = {
-  auto: 'Auto',
-  en: 'English',
-  fr: 'Français',
-  de: 'Deutsch',
-  es: 'Español',
-  pt: 'Português',
-  it: 'Italiano',
-  zh: '中文 (简体)',
-  hi: 'हिन्दी'
-}
+export const i18nAsset: any = { en: enLocale, fr: frLocale, de: deLocale, it: itLocale, pt: ptLocale, zh: zhLocale, hi: hiLocale, ru: ruLocale }
 
 export const l10nConfig: L10nConfig = {
   format: 'language',
@@ -49,7 +39,8 @@ export const l10nConfig: L10nConfig = {
     { locale: { language: 'it' }, dir: 'ltr' },
     { locale: { language: 'pt' }, dir: 'ltr' },
     { locale: { language: 'hi' }, dir: 'ltr' },
-    { locale: { language: 'zh' }, dir: 'ltr' }
+    { locale: { language: 'zh' }, dir: 'ltr' },
+    { locale: { language: 'ru' }, dir: 'ltr' }
   ]
 }
 

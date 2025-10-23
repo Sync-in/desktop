@@ -139,7 +139,8 @@
         "pt",
         "it",
         "zh-CN",
-        "hi"
+        "hi",
+        "ru"
       ],
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist",

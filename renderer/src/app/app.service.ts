@@ -7,10 +7,9 @@ import { inject, Injectable, NgZone, signal, WritableSignal } from '@angular/cor
 import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal'
 import { LOCAL_RENDERER, REMOTE_RENDERER } from '../../../main/constants/events'
 import { BehaviorSubject, fromEvent, map, mergeWith, Observable, Subject } from 'rxjs'
-import { getBrowserLanguage, L10nTranslationService } from 'angular-l10n'
+import { L10nTranslationService } from 'angular-l10n'
 import { BsLocaleService } from 'ngx-bootstrap/datepicker'
 import { getTheme } from './common/functions/utils'
-import { dJs } from './common/functions/time'
 import type { ElectronIpcRenderer } from './common/interfaces/electron'
 import type { SyncServer } from '../../../core/components/interfaces/server.interface'
 import { IDownload } from '../../../main/interfaces/download.interface'
@@ -18,6 +17,11 @@ import type { SyncTransfer } from '@sync-in-desktop/core/components/interfaces/s
 import { THEME } from '../../../main/constants/themes'
 import { ModalServerComponent } from './components/modal-server.component'
 import { SERVER_ACTION } from '@sync-in-desktop/core/components/constants/server'
+import { setTheme } from 'ngx-bootstrap/utils'
+import { FaConfig } from '@fortawesome/angular-fontawesome'
+import { loadDayjsLocale } from '../i18n/lib/dayjs.i18n'
+import { loadBootstrapLocale } from '../i18n/lib/bs.i18n'
+import { LANG_DEFAULT, normalizeLanguage } from '../../../i18n'
 
 declare global {
   interface Window {
@@ -55,6 +59,7 @@ export class AppService {
   })
   private readonly bsLocale = inject(BsLocaleService)
   private readonly bsModal = inject(BsModalService)
+  private readonly faConfig = inject(FaConfig)
   private modalRef: BsModalRef = null
   private readonly modalConfig = { animated: true, keyboard: true, backdrop: true, ignoreBackdropClick: true }
   private readonly modalClass = 'modal-lg modal-primary modal-dialog-centered'
@@ -65,6 +70,8 @@ export class AppService {
     .pipe(mergeWith(fromEvent(window, 'online').pipe(map(() => true)), fromEvent(window, 'offline').pipe(map(() => false))))
 
   constructor() {
+    setTheme('bs5')
+    this.faConfig.fixedWidth = true
     this.setLanguage()
     this.networkIsOnline.subscribe((state: boolean) => this.ipcRenderer.send(REMOTE_RENDERER.MISC.NETWORK_IS_ONLINE, state))
     this.ipcRenderer.on(REMOTE_RENDERER.MISC.SWITCH_THEME, (_e: Event, theme: THEME) => this.themeMode.set(theme))
@@ -82,13 +89,11 @@ export class AppService {
   }
 
   setLanguage(language?: string) {
-    if (!language) {
-      language = getBrowserLanguage('language') || ''
-      language = language.split('-')[0]
-    }
+    language = normalizeLanguage(language) || LANG_DEFAULT
     if (language && language !== this.translation.getLocale().language) {
       this.translation.setLocale({ language }).then(() => {
-        dJs.locale(language)
+        loadDayjsLocale(language).catch(console.error)
+        loadBootstrapLocale(language)
         this.bsLocale.use(language)
       })
     }

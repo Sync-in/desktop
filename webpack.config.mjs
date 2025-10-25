@@ -32,7 +32,7 @@ export default [
       rules: [
         {
           test: /\.ts$/,
-          include: [path.resolve(__dirname, 'main'), path.resolve(__dirname, 'core')],
+          include: [path.resolve(__dirname, 'main'), path.resolve(__dirname, 'core'), path.resolve(__dirname, 'i18n')],
           exclude: /node_modules/,
           use: {
             loader: 'swc-loader',

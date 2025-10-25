@@ -6,18 +6,14 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
+import { i18nLocaleSupported, LANG_DEFAULT, normalizeLanguage } from '../../i18n'
 
 class i18nManager {
-  i18nPath: string
-  locale: string
-  language: string
-  dictionary: any
+  i18nPath = path.join(__dirname, 'i18n')
+  language: i18nLocaleSupported = LANG_DEFAULT
+  dictionary: any = {}
 
-  constructor(language: string, locale: string) {
-    this.i18nPath = path.join(__dirname, 'i18n')
-    this.locale = locale
-    this.language = language ? language : this.locale
-    this.dictionary = {}
+  constructor() {
     this.load()
   }
 
@@ -27,20 +23,17 @@ class i18nManager {
   }
 
   updateLanguage(language: string) {
-    const lang = language ? language : this.locale
-    if (this.language !== lang) {
-      this.language = lang
+    language = normalizeLanguage(language) || LANG_DEFAULT
+    if (this.language !== language) {
+      this.language = language as i18nLocaleSupported
       this.load()
     }
   }
 
   private load() {
-    if (fs.existsSync(path.join(this.i18nPath, `${this.language}.json`))) {
-      this.dictionary = JSON.parse(fs.readFileSync(path.join(this.i18nPath, `${this.language}.json`), 'utf8'))
-    } else {
-      this.dictionary = JSON.parse(fs.readFileSync(path.join(this.i18nPath, 'en.json'), 'utf8'))
-    }
+    const lang = fs.existsSync(path.join(this.i18nPath, `${this.language}.json`)) ? `${this.language}.json` : `${LANG_DEFAULT}.json`
+    this.dictionary = JSON.parse(fs.readFileSync(path.join(this.i18nPath, lang), 'utf8'))
   }
 }
 
-export const i18n: i18nManager = new i18nManager(null, 'en')
+export const i18n: i18nManager = new i18nManager()

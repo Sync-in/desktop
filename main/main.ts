@@ -29,7 +29,7 @@ class MainManager {
     // app.disableHardwareAcceleration()
     // app.commandLine.appendSwitch('log-file', MAIN_LOGS_FILE)
     // app.commandLine.appendSwitch('enable-logging')
-    // app.commandLine.appendSwitch('lang', 'de')
+    // app.commandLine.appendSwitch('lang', 'pt-BR')
     app.commandLine.appendSwitch('ignore-certificate-errors')
     app.whenReady().then(() => this.appIsReady())
     this.appSettings = new AppSettings()

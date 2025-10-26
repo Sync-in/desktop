@@ -19,9 +19,6 @@ import { ModalServerComponent } from './components/modal-server.component'
 import { SERVER_ACTION } from '@sync-in-desktop/core/components/constants/server'
 import { setTheme } from 'ngx-bootstrap/utils'
 import { FaConfig } from '@fortawesome/angular-fontawesome'
-import { loadDayjsLocale } from '../i18n/lib/dayjs.i18n'
-import { loadBootstrapLocale } from '../i18n/lib/bs.i18n'
-import { LANG_DEFAULT, normalizeLanguage } from '../../../i18n'
 
 declare global {
   interface Window {
@@ -72,7 +69,6 @@ export class AppService {
   constructor() {
     setTheme('bs5')
     this.faConfig.fixedWidth = true
-    this.setLanguage()
     this.networkIsOnline.subscribe((state: boolean) => this.ipcRenderer.send(REMOTE_RENDERER.MISC.NETWORK_IS_ONLINE, state))
     this.ipcRenderer.on(REMOTE_RENDERER.MISC.SWITCH_THEME, (_e: Event, theme: THEME) => this.themeMode.set(theme))
     this.ipcRenderer.on(LOCAL_RENDERER.SERVER.LIST, (_e: Event, servers: SyncServer[]) => this.ngZone.run(() => this.allServers.next(servers)))
@@ -86,17 +82,6 @@ export class AppService {
     this.ipcRenderer.on(LOCAL_RENDERER.UPDATE.DOWNLOADED, (_e: Event, msg: string) => this.ngZone.run(() => this.updateDownloaded.next(msg)))
     this.ipcRenderer.on(LOCAL_RENDERER.UI.MODAL_TOGGLE, () => this.ngZone.run(() => this.openDialog()))
     this.bsModal.onHide.subscribe(() => this.onHide())
-  }
-
-  setLanguage(language?: string) {
-    language = normalizeLanguage(language) || LANG_DEFAULT
-    if (language && language !== this.translation.getLocale().language) {
-      this.translation.setLocale({ language }).then(() => {
-        loadDayjsLocale(language).catch(console.error)
-        loadBootstrapLocale(language)
-        this.bsLocale.use(language)
-      })
-    }
   }
 
   openDialog(dialog?: any, componentStates: any = {}) {

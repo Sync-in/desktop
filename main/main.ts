@@ -29,7 +29,7 @@ class MainManager {
     // app.disableHardwareAcceleration()
     // app.commandLine.appendSwitch('log-file', MAIN_LOGS_FILE)
     // app.commandLine.appendSwitch('enable-logging')
-    // app.commandLine.appendSwitch('lang', 'pt-BR')
+    // app.commandLine.appendSwitch('lang', 'zh-CN')
     app.commandLine.appendSwitch('ignore-certificate-errors')
     app.whenReady().then(() => this.appIsReady())
     this.appSettings = new AppSettings()
@@ -45,6 +45,7 @@ class MainManager {
       app.setAppUserModelId(ENVIRONMENT.appID)
     }
     this.checkStartUp()
+    // `app.getLocale()` returns English by default if the language is not listed in `electronLanguages` in the main package.json
     i18n.updateLanguage(app.getLocale())
     Menu.setApplicationMenu(createMenu(this.appSettings))
     this.trayManager = new TrayManager()

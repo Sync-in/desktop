@@ -8,12 +8,11 @@ export type i18nLocaleSupported = 'de' | 'en' | 'es' | 'fr' | 'hi' | 'it' | 'ja'
 export const LANG_SUPPORTED = new Set<i18nLocaleSupported>(['de', 'en', 'es', 'fr', 'hi', 'it', 'ja', 'ko', 'pl', 'pt', 'pt-BR', 'ru', 'tr', 'zh'])
 export const LANG_DEFAULT: i18nLocaleSupported = 'en'
 
-export function normalizeLanguage(lang: string): i18nLocaleSupported | null {
-  const s = (lang || '').trim()
-  if (!s) return null
-  if (LANG_SUPPORTED.has(s as i18nLocaleSupported)) {
-    return s as i18nLocaleSupported
+export function normalizeLanguage(language: string): i18nLocaleSupported | null {
+  if (!language) return null
+  if (LANG_SUPPORTED.has(language as i18nLocaleSupported)) {
+    return language as i18nLocaleSupported
   }
-  const base = s.split('-')[0].toLowerCase()
-  return LANG_SUPPORTED.has(base as i18nLocaleSupported) ? (base as i18nLocaleSupported) : null
+  const code = language.split('-')[0]
+  return LANG_SUPPORTED.has(code as i18nLocaleSupported) ? (code as i18nLocaleSupported) : null
 }

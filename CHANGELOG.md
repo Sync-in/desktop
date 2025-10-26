@@ -1,4 +1,19 @@
 
+## [1.5.0](https://git.sync-in.org/sync-in/desktop/compare/v1.4.0...v1.5.0) (2025-10-26)
+
+### Highlights
+
+* 🌍 **14 languages supported** — added 12 new ones: 🇩🇪 🇪🇸 🇵🇹 🇧🇷 🇮🇹 🇨🇳 🇮🇳 🇹🇷 🇯🇵 🇰🇷 🇵🇱 🇷🇺
+
+### Features
+
+* **i18n:** add Japanese, Brazilian Portuguese, Polish, Korean, and Turkish translations ([443b898](https://git.sync-in.org/sync-in/desktop/commit/443b898515bd8d255fd7edc0379c8f7155242ffb))
+* **i18n:** add Russian translations ([82b941d](https://git.sync-in.org/sync-in/desktop/commit/82b941d4ba0bfff5c7fabdee4575d7d627f5a250))
+* **i18n:** add support for multiple languages and optimize unused translation keys detection ([85e527c](https://git.sync-in.org/sync-in/desktop/commit/85e527cdf2371d90a88527676981130ecbe72a73))
+* **i18n:** enhance i18n setup with dynamic translation loading and locale resolution ([a07d8c6](https://git.sync-in.org/sync-in/desktop/commit/a07d8c6c68c74c5adfbd7dd2fda9b1321563f032))
+* **i18n:** modularize localization setup and extend language support ([8d5eac6](https://git.sync-in.org/sync-in/desktop/commit/8d5eac64f8c30c56e83490e3eb64d53829b84e56))
+* **i18n:** refactor i18n manager and add language normalization logic ([04fb872](https://git.sync-in.org/sync-in/desktop/commit/04fb872037da70a0a9eeafc71d0a0fcf6b24ae84))
+
 ## [1.4.0](https://git.sync-in.org/sync-in/desktop/compare/v1.3.0...v1.4.0) (2025-09-26)
 
 

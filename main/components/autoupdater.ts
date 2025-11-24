@@ -11,7 +11,7 @@ import { Logger } from 'winston'
 import { getLogger } from '../../core/components/handlers/loggers'
 import { F_ACTION, SIDE } from '../../core/components/constants/handlers'
 import { i18n } from './translate'
-import { ENVIRONMENT } from '../../core/constants'
+import { ENVIRONMENT, USER_AGENT } from '../../core/constants'
 import { toHumanSize } from '../../core/components/utils/functions'
 import { ServersManager } from '@sync-in-desktop/core/components/handlers/servers'
 import { RequestsManager } from '@sync-in-desktop/core/components/handlers/requests'
@@ -24,9 +24,10 @@ export class UpdateManager {
   private customFeedUrlWasChecked = false
   private networkIsOnline = true
   private logger: Logger = getLogger('UpdateManager')
-  private checkInterval = 3600 * 4 * 1000 // 4 hours
+  private checkInterval = 3600 * 8 * 1000 // 8 hours
 
   constructor() {
+    autoUpdater.requestHeaders = { 'User-Agent': USER_AGENT }
     autoUpdater.autoRunAppAfterInstall = true
     autoUpdater.autoInstallOnAppQuit = true
     if (autoUpdater.isUpdaterActive()) {

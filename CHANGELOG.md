@@ -1,4 +1,12 @@
 
+## [1.5.1](https://git.sync-in.org/sync-in/desktop/compare/v1.5.0...v1.5.1) (2025-11-25)
+
+
+* **assets:** update app and tray icons, favicon, and related assets ([b302757](https://git.sync-in.org/sync-in/desktop/commit/b3027574c5aba3ee93819a6f84214331f80ef09e))
+* **deps:** update dependencies in package-lock.json ([ed28649](https://git.sync-in.org/sync-in/desktop/commit/ed286497eadfde4df978c7a5287d893d789e93d8))
+* **manifest:** add server release manifest generation ([1128087](https://git.sync-in.org/sync-in/desktop/commit/112808723d7afda9068f21348a2990b0c4d853f4))
+* **updater:** extend user-agent header support and adjust update check interval to 8 hours ([a173c77](https://git.sync-in.org/sync-in/desktop/commit/a173c77bfd0e4f6718cc39585797197bb3283e9d))
+
 ## [1.5.0](https://git.sync-in.org/sync-in/desktop/compare/v1.4.0...v1.5.0) (2025-10-26)
 
 ### Highlights

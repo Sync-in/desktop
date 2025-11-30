@@ -75,8 +75,10 @@
   "Forward": "Vorwärts",
   "Launch at startup": "Beim Systemstart starten",
   "Start Hidden": "Beim Start ausblenden",
-  "Official Website": "Offizielle Website",
-  "Version history": "Versionsverlauf",
+  "Version History": "Versionsverlauf",
   "Documentation": "Dokumentation",
-  "Support": "Unterstützen"
+  "Support": "Unterstützen",
+  "Hide Dock Icon": "Dock-Symbol ausblenden",
+  "Preferences": "Einstellungen",
+  "About": "Über"
 }

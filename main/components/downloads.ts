@@ -84,11 +84,11 @@ export class DownloadManager {
   }
 
   private sendProgressItem(item: DownloadItem, withIcon = false) {
-    this.windowManager.sendtoWrapperRenderer(LOCAL_RENDERER.DOWNLOAD.PROGRESS, this.exportItem(item, withIcon))
+    this.windowManager.sendToWrapperRenderer(LOCAL_RENDERER.DOWNLOAD.PROGRESS, this.exportItem(item, withIcon))
   }
 
   private sendGlobalProgress(item: IDownload) {
-    this.windowManager.sendtoWrapperRenderer(LOCAL_RENDERER.DOWNLOAD.GLOBAL_PROGRESS, item)
+    this.windowManager.sendToWrapperRenderer(LOCAL_RENDERER.DOWNLOAD.GLOBAL_PROGRESS, item)
   }
 
   private sendAllItems(): IDownload[] {

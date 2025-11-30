@@ -75,8 +75,10 @@
   "Forward": "Dalej",
   "Launch at startup": "Uruchamiaj przy starcie",
   "Start Hidden": "Uruchamiaj w ukryciu",
-  "Official Website": "Oficjalna strona",
-  "Version history": "Historia wersji",
+  "Version History": "Historia wersji",
   "Documentation": "Dokumentacja",
-  "Support": "Wsparcie"
+  "Support": "Wsparcie",
+  "Hide Dock Icon": "Ukryj ikonę Docka",
+  "Preferences": "Preferencje",
+  "About": "O programie"
 }

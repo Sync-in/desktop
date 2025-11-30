@@ -75,8 +75,10 @@
   "Forward": "आगे",
   "Launch at startup": "स्टार्टअप पर लॉन्च करें",
   "Start Hidden": "प्रारंभ पर छिपाएँ",
-  "Official Website": "आधिकारिक वेबसाइट",
-  "Version history": "संस्करण इतिहास",
+  "Version History": "संस्करण इतिहास",
   "Documentation": "प्रलेखन",
-  "Support": "समर्थन"
+  "Support": "समर्थन",
+  "Hide Dock Icon": "डॉक आइकन छिपाएँ",
+  "Preferences": "प्राथमिकताएँ",
+  "About": "के बारे में"
 }

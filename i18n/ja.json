@@ -75,8 +75,10 @@
   "Forward": "進む",
   "Launch at startup": "起動時に起動",
   "Start Hidden": "非表示で起動",
-  "Official Website": "公式サイト",
-  "Version history": "バージョン履歴",
+  "Version History": "バージョン履歴",
   "Documentation": "ドキュメント",
-  "Support": "サポート"
+  "Support": "サポート",
+  "Hide Dock Icon": "Dockアイコンを隠す",
+  "Preferences": "環境設定",
+  "About": "このアプリについて"
 }

@@ -4,30 +4,20 @@
  * See the LICENSE file for licensing details
  */
 
-import { ENVIRONMENT, IS_MACOS, IS_WINDOWS, MAIN_LOGS_FILE } from '../../core/constants'
+import { ENVIRONMENT, IS_MACOS, IS_WINDOWS } from '../../core/constants'
 import { i18n } from './translate'
-import { app, Menu, MenuItem, MenuItemConstructorOptions, shell } from 'electron'
+import { Menu, MenuItem, MenuItemConstructorOptions } from 'electron'
 import { LOCAL_RENDERER } from '../constants/events'
 import { appEvents } from './events'
-import { AppSettings } from './settings'
+import { checkUpdateMenu, helpMenu, preferencesMenu, separatorItem, supportMenu } from '../constants/menus'
 
-export function createTemplate(settings: AppSettings) {
-  const separatorItem: MenuItemConstructorOptions = {
-    type: 'separator'
-  }
-
+export function createTemplate() {
   const template = []
-
   let platformAppMenu = []
+
   if (IS_MACOS) {
-    platformAppMenu.push({
-      label: `${i18n.tr('Support')} ${ENVIRONMENT.appID} 💛`,
-      click: () => shell.openExternal(`${ENVIRONMENT.appHomePage}${i18n.language === 'fr' ? '/fr' : ''}/support/`)
-    })
-    platformAppMenu.push({
-      label: i18n.tr('Check for Updates'),
-      click: () => appEvents.emit(LOCAL_RENDERER.UPDATE.CHECK)
-    })
+    platformAppMenu.push(supportMenu())
+    platformAppMenu.push(checkUpdateMenu())
     platformAppMenu.push(separatorItem)
   }
 
@@ -36,30 +26,7 @@ export function createTemplate(settings: AppSettings) {
     click: () => appEvents.emit(LOCAL_RENDERER.UI.MODAL_TOGGLE)
   })
 
-  platformAppMenu.push({
-    label: 'Options',
-    submenu: [
-      {
-        label: i18n.tr('Launch at startup'),
-        type: 'checkbox',
-        checked: settings.configuration.launchAtStartup,
-        click: () => {
-          settings.configuration.launchAtStartup = !settings.configuration.launchAtStartup
-          settings.writeSettings()
-          app.setLoginItemSettings({ openAtLogin: settings.configuration.launchAtStartup })
-        }
-      },
-      {
-        label: i18n.tr('Start Hidden'),
-        type: 'checkbox',
-        checked: settings.configuration.startHidden,
-        click: () => {
-          settings.configuration.startHidden = !settings.configuration.startHidden
-          settings.writeSettings()
-        }
-      }
-    ]
-  })
+  platformAppMenu.push({ label: 'Preferences', submenu: preferencesMenu() })
 
   if (IS_MACOS) {
     platformAppMenu = platformAppMenu.concat([
@@ -85,14 +52,8 @@ export function createTemplate(settings: AppSettings) {
   } else {
     platformAppMenu = platformAppMenu.concat([
       separatorItem,
-      {
-        label: `${i18n.tr('Support')} ${ENVIRONMENT.appID} 💛`,
-        click: () => shell.openExternal(`${ENVIRONMENT.appHomePage}${i18n.language === 'fr' ? '/fr' : ''}/support/`)
-      },
-      {
-        label: i18n.tr('Check for Updates'),
-        click: () => appEvents.emit(LOCAL_RENDERER.UPDATE.CHECK)
-      },
+      supportMenu(),
+      checkUpdateMenu(),
       separatorItem,
       {
         role: 'quit',
@@ -249,39 +210,10 @@ export function createTemplate(settings: AppSettings) {
     ]
   }
   template.push(windowMenu)
-  const helpMenu = []
-  helpMenu.push({
-    label: i18n.tr('Official Website'),
-    click: () => shell.openExternal(`${ENVIRONMENT.appHomePage}${i18n.language === 'fr' ? '/fr' : ''}`)
-  })
-
-  helpMenu.push({
-    label: i18n.tr('Documentation'),
-    click: () => shell.openExternal(`${ENVIRONMENT.appHomePage}${i18n.language === 'fr' ? '/fr' : ''}/docs/`)
-  })
-
-  helpMenu.push({
-    label: i18n.tr('Version history'),
-    click: () => shell.openExternal(ENVIRONMENT.appReleasesPage)
-  })
-
-  helpMenu.push({
-    label: `${i18n.tr('Version')} ${ENVIRONMENT.appVersion}`,
-    role: 'about'
-  })
-
-  helpMenu.push(separatorItem)
-
-  helpMenu.push({
-    id: 'Show logs',
-    label: i18n.tr('Show logs'),
-    click: () => shell.showItemInFolder(MAIN_LOGS_FILE)
-  })
-
-  template.push({ id: 'help', label: i18n.tr('Help'), submenu: helpMenu })
+  template.push({ ...helpMenu(), id: 'help' })
   return template
 }
 
-export function createMenu(settings: AppSettings) {
-  return Menu.buildFromTemplate(createTemplate(settings) as (MenuItemConstructorOptions | MenuItem)[])
+export function createMenu() {
+  return Menu.buildFromTemplate(createTemplate() as (MenuItemConstructorOptions | MenuItem)[])
 }

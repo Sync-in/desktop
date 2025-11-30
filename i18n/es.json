@@ -75,8 +75,10 @@
   "Forward": "Adelante",
   "Launch at startup": "Iniciar al inicio",
   "Start Hidden": "Iniciar oculto",
-  "Official Website": "Sitio web oficial",
-  "Version history": "Historial de versiones",
+  "Version History": "Historial de versiones",
   "Documentation": "Documentación",
-  "Support": "Soporte"
+  "Support": "Soporte",
+  "Hide Dock Icon": "Ocultar el icono del Dock",
+  "Preferences": "Preferencias",
+  "About": "Acerca de"
 }

@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { ipcMain, nativeTheme, powerMonitor, powerSaveBlocker, shell } from 'electron'
+import { app, ipcMain, nativeTheme, powerMonitor, powerSaveBlocker, shell } from 'electron'
 import { LOCAL_RENDERER, REMOTE_RENDERER } from '../constants/events'
 import { ServersManager } from '../../core/components/handlers/servers'
 import { ViewsManager } from './views'
@@ -27,6 +27,8 @@ import { THEME } from '../constants/themes'
 import { SERVER_ACTION, SERVER_SCHEDULER_STATE } from '../../core/components/constants/server'
 import { PATH_ACTION } from '../constants/paths'
 import { SyncStatus } from '@sync-in-desktop/core/components/interfaces/sync-status.interface'
+import { appSettings } from './settings'
+import { IS_MACOS } from '@sync-in-desktop/core/constants'
 
 export const appEvents: any = new EventEmitter()
 // hook to delete to trash bin during sync
@@ -103,6 +105,9 @@ export class EventsManager {
     appEvents.on(LOCAL_RENDERER.WINDOW.ZOOM.RESET, () => this.windowZoomReset())
     appEvents.on(LOCAL_RENDERER.UPDATE.DOWNLOADED, (msg: string) => this.viewsManager.sendToWrapperRenderer(LOCAL_RENDERER.UPDATE.DOWNLOADED, msg))
     appEvents.on(LOCAL_RENDERER.POWER.PREVENT_APP_SUSPENSION, (state: boolean) => this.manageAppPreventSuspension(state))
+    appEvents.on(LOCAL_RENDERER.SETTINGS.HIDE_DOCK_ICON, () => this.hideDockIcon())
+    appEvents.on(LOCAL_RENDERER.SETTINGS.LAUNCH_AT_STARTUP, () => this.launchAtStartup())
+    appEvents.on(LOCAL_RENDERER.SETTINGS.START_HIDDEN, () => this.startHidden())
   }
 
   private async networkIsOnline(state: boolean) {
@@ -342,5 +347,27 @@ export class EventsManager {
   private windowZoomReset() {
     if (!this.viewsManager.currentView) return
     this.viewsManager.currentView.webContents.setZoomFactor(1)
+  }
+
+  private hideDockIcon() {
+    if (!IS_MACOS) return
+    appSettings.configuration.hideDockIcon = !appSettings.configuration.hideDockIcon
+    appSettings.writeSettings()
+    if (appSettings.configuration.hideDockIcon) {
+      app.dock.hide()
+    } else {
+      app.dock.show().catch(console.error)
+    }
+  }
+
+  private launchAtStartup() {
+    appSettings.configuration.launchAtStartup = !appSettings.configuration.launchAtStartup
+    appSettings.writeSettings()
+    app.setLoginItemSettings({ openAtLogin: appSettings.configuration.launchAtStartup })
+  }
+
+  private startHidden() {
+    appSettings.configuration.startHidden = !appSettings.configuration.startHidden
+    appSettings.writeSettings()
   }
 }

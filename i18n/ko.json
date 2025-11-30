@@ -75,8 +75,10 @@
   "Forward": "앞으로",
   "Launch at startup": "시작 시 실행",
   "Start Hidden": "숨김으로 시작",
-  "Official Website": "공식 웹사이트",
-  "Version history": "버전 기록",
+  "Version History": "버전 기록",
   "Documentation": "문서",
-  "Support": "지원"
+  "Support": "지원",
+  "Hide Dock Icon": "Dock 아이콘 숨기기",
+  "Preferences": "환경설정",
+  "About": "정보"
 }

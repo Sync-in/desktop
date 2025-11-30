@@ -17,6 +17,11 @@ export const LOCAL_RENDERER = {
     NAV_BACK: 'nav-back',
     NAV_FORWARD: 'nav-forward'
   },
+  SETTINGS: {
+    LAUNCH_AT_STARTUP: 'launch-at-startup',
+    START_HIDDEN: 'start-hidden',
+    HIDE_DOCK_ICON: 'hide-dock-icon'
+  },
   WINDOW: {
     SHOW: 'window-show',
     MAXIMIZE: 'window-maximize',

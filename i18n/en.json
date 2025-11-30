@@ -68,8 +68,10 @@
   "Forward": "Forward",
   "Launch at startup": "Launch at startup",
   "Start Hidden": "Start Hidden",
-  "Official Website": "Official Website",
-  "Version history": "Version history",
+  "Version History": "Version History",
   "Documentation": "Documentation",
-  "Support": "Support"
+  "Support": "Support",
+  "Hide Dock Icon": "Hide Dock Icon",
+  "Preferences": "Preferences",
+  "About": "About"
 }

@@ -75,8 +75,10 @@
   "Forward": "İleri",
   "Launch at startup": "Başlangıçta çalıştır",
   "Start Hidden": "Gizli başlat",
-  "Official Website": "Resmi web sitesi",
-  "Version history": "Sürüm geçmişi",
+  "Version History": "Sürüm geçmişi",
   "Documentation": "Belgeler",
-  "Support": "Destek"
+  "Support": "Destek",
+  "Hide Dock Icon": "Dock simgesini gizle",
+  "Preferences": "Tercihler",
+  "About": "Hakkında"
 }

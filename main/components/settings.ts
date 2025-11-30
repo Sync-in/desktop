@@ -8,8 +8,8 @@ import { loadJsonFile, writeToFileSync } from '@sync-in-desktop/core/components/
 import { APP_CONF_FILE } from '../constants/settings'
 import { AppConfiguration } from '../interfaces/settings.interface'
 
-export class AppSettings {
-  public configuration: AppConfiguration = { launchAtStartup: true, startHidden: false }
+class AppSettings {
+  public configuration: AppConfiguration = { launchAtStartup: true, startHidden: false, hideDockIcon: false }
 
   constructor() {
     this.loadSettings()
@@ -18,7 +18,6 @@ export class AppSettings {
   writeSettings() {
     try {
       writeToFileSync(APP_CONF_FILE, this.configuration)
-      console.debug(`${APP_CONF_FILE} written`)
     } catch (e) {
       console.error(`${APP_CONF_FILE} not written: ${e}`)
     }
@@ -28,3 +27,5 @@ export class AppSettings {
     this.configuration = loadJsonFile(APP_CONF_FILE, this.configuration)
   }
 }
+
+export const appSettings = new AppSettings()

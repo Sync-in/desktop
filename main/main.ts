@@ -12,12 +12,11 @@ import { DownloadManager } from './components/downloads'
 import { NotifyManager } from './components/notifications'
 import { EventsManager } from './components/events'
 import { UpdateManager } from './components/autoupdater'
-import { ENVIRONMENT, IS_PROD_ENV, IS_WINDOWS } from '../core/constants'
+import { ENVIRONMENT, IS_MACOS, IS_PROD_ENV, IS_WINDOWS } from '../core/constants'
 import { createMenu } from './components/menus'
-import { AppSettings } from './components/settings'
+import { appSettings } from './components/settings'
 
 class MainManager {
-  appSettings: AppSettings
   trayManager: TrayManager
   windowManager: WindowManager
   downloadManager: DownloadManager
@@ -32,7 +31,6 @@ class MainManager {
     // app.commandLine.appendSwitch('lang', 'zh-CN')
     app.commandLine.appendSwitch('ignore-certificate-errors')
     app.whenReady().then(() => this.appIsReady())
-    this.appSettings = new AppSettings()
   }
 
   appIsReady() {
@@ -47,9 +45,9 @@ class MainManager {
     this.checkStartUp()
     // `app.getLocale()` returns English by default if the language is not listed in `electronLanguages` in the main package.json
     i18n.updateLanguage(app.getLocale())
-    Menu.setApplicationMenu(createMenu(this.appSettings))
+    Menu.setApplicationMenu(createMenu())
     this.trayManager = new TrayManager()
-    this.windowManager = new WindowManager(this.appSettings.configuration.startHidden)
+    this.windowManager = new WindowManager()
     this.eventsManager = new EventsManager(this.windowManager.viewsManager)
     this.notifyManager = new NotifyManager(this.windowManager.viewsManager)
     this.downloadManager = new DownloadManager(this.windowManager, this.notifyManager)
@@ -65,13 +63,16 @@ class MainManager {
   }
 
   private checkStartUp() {
+    if (IS_MACOS && appSettings.configuration.hideDockIcon) {
+      app.dock.hide()
+    }
     if (!IS_PROD_ENV) return
     const loginItem = app.getLoginItemSettings()
-    if (this.appSettings.configuration.launchAtStartup !== loginItem.openAtLogin) {
-      app.setLoginItemSettings({ openAtLogin: this.appSettings.configuration.launchAtStartup })
+    if (appSettings.configuration.launchAtStartup !== loginItem.openAtLogin) {
+      app.setLoginItemSettings({ openAtLogin: appSettings.configuration.launchAtStartup })
     }
     if (app.commandLine.hasSwitch('hidden') || process.env.SYNC_IN_HIDDEN === '1') {
-      this.appSettings.configuration.startHidden = true
+      appSettings.configuration.startHidden = true
     }
   }
 }

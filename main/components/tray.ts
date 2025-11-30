@@ -13,6 +13,7 @@ import { appEvents } from './events'
 import { ENVIRONMENT, IS_MACOS, IS_WINDOWS } from '../../core/constants'
 import { ServersManager } from '../../core/components/handlers/servers'
 import { SyncStatus } from '@sync-in-desktop/core/components/interfaces/sync-status.interface'
+import { helpMenu, preferencesMenu, separatorItem, supportMenu } from '../constants/menus'
 
 const enabledTrayIcon = nativeImage.createFromPath(path.join(__dirname, './assets/tray/enabled.png')).resize({ width: 22 })
 const disabledTrayIcon = nativeImage.createFromPath(path.join(__dirname, './assets/tray/disabled.png')).resize({ width: 22 })
@@ -58,31 +59,35 @@ export class TrayManager {
     }
   }
 
-  private buildMenu(): any[] {
-    const mainMenu = [
+  private buildMenu(): Electron.MenuItemConstructorOptions[] {
+    const mainMenu: Electron.MenuItemConstructorOptions[] = [
       {
         label: `${i18n.tr('Open')} ${ENVIRONMENT.appID}`,
         type: 'normal',
         click: () => appEvents.emit(LOCAL_RENDERER.WINDOW.SHOW)
       },
       {
-        type: 'separator'
+        label: i18n.tr('Preferences'),
+        submenu: preferencesMenu()
       },
+      separatorItem,
+      ...this.buildInfoMenu(),
       {
-        label: i18n.tr('Quit'),
+        label: `${i18n.tr('Quit')} ${ENVIRONMENT.appID}`,
         type: 'normal',
         role: 'quit'
       }
     ]
-    const serversMenu = this.buildServersMenu()
+    const serversMenu: Electron.MenuItemConstructorOptions[] = this.buildServersMenu()
     if (serversMenu.length) {
-      mainMenu.splice(1, 0, ...serversMenu)
+      mainMenu.splice(2, 0, ...serversMenu)
     }
     return mainMenu
   }
 
-  private buildServersMenu(): any {
+  private buildServersMenu(): Electron.MenuItemConstructorOptions[] {
     const serversMenu = []
+    serversMenu.push()
     for (const server of ServersManager.list) {
       const serverMenu = {
         label: server.name,
@@ -90,8 +95,8 @@ export class TrayManager {
         submenu: [
           {
             label: `${i18n.tr('Open')}`,
-            srvid: server.id,
-            click: (e) => this.activeServerView(e)
+            srvId: server.id,
+            click: (ev: any) => this.activeServerView(ev)
           }
         ]
       }
@@ -103,22 +108,22 @@ export class TrayManager {
             {
               label: i18n.tr('All'),
               enabled: server.available,
-              spid: null,
-              srvid: server.id,
-              click: (e) => this.startSync(e)
+              spId: null,
+              srvId: server.id,
+              click: (ev: any) => this.startSync(ev)
             }
           ]
         }
         if (server.syncPaths.length > 1) {
-          syncMenu.submenu.push({ type: 'separator' })
+          syncMenu.submenu.push(separatorItem)
         }
-        for (const syncpath of server.syncPaths) {
+        for (const syncPath of server.syncPaths) {
           syncMenu.submenu.push({
-            label: syncpath.name,
-            enabled: server.available && syncpath.enabled,
-            spid: [syncpath.id],
-            srvid: server.id,
-            click: (e) => this.startSync(e)
+            label: syncPath.name,
+            enabled: server.available && syncPath.enabled,
+            spId: [syncPath.id],
+            srvId: server.id,
+            click: (ev: any) => this.startSync(ev)
           })
         }
         serverMenu.submenu.push(syncMenu)
@@ -126,17 +131,22 @@ export class TrayManager {
       serversMenu.push(serverMenu)
     }
     if (serversMenu.length) {
-      serversMenu.unshift({ type: 'separator' })
+      serversMenu.unshift(separatorItem)
     }
+    serversMenu.push(separatorItem)
     return serversMenu
   }
 
-  private startSync(e: any) {
-    coreEvents.emit(CORE.SYNC_START, { server: e.srvid, paths: e.spid }, false, true)
+  private buildInfoMenu(): Partial<Electron.MenuItemConstructorOptions>[] {
+    return [helpMenu('About', true), supportMenu(false)]
   }
 
-  private activeServerView(e: any) {
-    appEvents.emit(LOCAL_RENDERER.SERVER.SET_ACTIVE, e.srvid)
+  private startSync(ev: { srvId: number; spId: number }) {
+    coreEvents.emit(CORE.SYNC_START, { server: ev.srvId, paths: ev.spId }, false, true)
+  }
+
+  private activeServerView(ev: { srvId: number }) {
+    appEvents.emit(LOCAL_RENDERER.SERVER.SET_ACTIVE, ev.srvId)
   }
 
   private setSyncState(state: boolean) {

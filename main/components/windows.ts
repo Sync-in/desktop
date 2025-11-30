@@ -10,17 +10,18 @@ import { ViewsManager } from './views'
 import { LOCAL_RENDERER } from '../constants/events'
 import { appEvents } from './events'
 import { ENVIRONMENT, IS_MACOS } from '../../core/constants'
+import { appSettings } from './settings'
 
 export class WindowManager {
   appIsQuitting = false
   mainWindow: BrowserWindow
   viewsManager: ViewsManager
 
-  constructor(startHidden = false) {
+  constructor() {
     this.mainWindow = new BrowserWindow(defaultWindowProps)
     this.mainWindow.setTitle(ENVIRONMENT.appID)
     this.mainWindow.setMenuBarVisibility(false)
-    this.viewsManager = new ViewsManager(this.mainWindow, !startHidden)
+    this.viewsManager = new ViewsManager(this.mainWindow, !appSettings.configuration.startHidden)
     this.mainWindow.on('close', (e: Event) => this.close(e))
     this.mainWindow.on('maximize', () => this.viewsManager.sendToWrapperRenderer(LOCAL_RENDERER.WINDOW.IS_MAXIMIZED, true))
     this.mainWindow.on('unmaximize', () => this.viewsManager.sendToWrapperRenderer(LOCAL_RENDERER.WINDOW.IS_MAXIMIZED, false))
@@ -39,7 +40,7 @@ export class WindowManager {
     ipcMain.on(LOCAL_RENDERER.WINDOW.UNMAXIMIZE, () => this.unmaximize())
   }
 
-  sendtoWrapperRenderer(channel: string, ...args: any[]) {
+  sendToWrapperRenderer(channel: string, ...args: any[]) {
     this.viewsManager.sendToWrapperRenderer(channel, ...args)
   }
 

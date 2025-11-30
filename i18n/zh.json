@@ -75,8 +75,10 @@
   "Forward": "前进",
   "Launch at startup": "启动时运行",
   "Start Hidden": "启动时隐藏",
-  "Official Website": "官方网站",
-  "Version history": "版本历史",
+  "Version History": "版本历史",
   "Documentation": "文档",
-  "Support": "支持"
+  "Support": "支持",
+  "Hide Dock Icon": "隐藏程序坞图标",
+  "Preferences": "偏好设置",
+  "About": "关于"
 }

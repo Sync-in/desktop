@@ -75,8 +75,10 @@
   "Forward": "Вперёд",
   "Launch at startup": "Запускать при старте системы",
   "Start Hidden": "Запускать скрытым",
-  "Official Website": "Официальный сайт",
-  "Version history": "История версий",
+  "Version History": "История версий",
   "Documentation": "Документация",
-  "Support": "Поддержать"
+  "Support": "Поддержать",
+  "Hide Dock Icon": "Скрыть значок в Dock",
+  "Preferences": "Настройки",
+  "About": "О программе"
 }

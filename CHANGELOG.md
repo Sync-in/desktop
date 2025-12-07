@@ -1,4 +1,11 @@
 
+## [1.6.0](https://git.sync-in.org/sync-in/desktop/compare/v1.5.1...v1.6.0) (2025-12-07)
+
+
+### Features
+
+* **settings:** add "Hide Dock Icon" option on macOS and improve tray accessibility ([59261c5](https://git.sync-in.org/sync-in/desktop/commit/59261c5e17ae4af1c258789eb82f7f65ece99178))
+
 ## [1.5.1](https://git.sync-in.org/sync-in/desktop/compare/v1.5.0...v1.5.1) (2025-11-25)
 
 

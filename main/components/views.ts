@@ -43,7 +43,7 @@ export class ViewsManager {
     this.mainWindow = mainWindow
     this.initIPC()
     this.initWrapperView()
-    this.initWebViews().catch((e: Error) => console.error(e))
+    this.initWebViews().catch(console.error)
   }
 
   resizeViews() {
@@ -81,12 +81,15 @@ export class ViewsManager {
     webView.webContents.on('will-navigate', (event: Event<WebContentsWillNavigateEventParams>) => {
       if (!event.url.startsWith(server.url)) {
         event.preventDefault()
-        shell.openExternal(event.url).then()
+        shell.openExternal(event.url).catch(console.error)
       }
     })
     this.mainWindow.contentView.addChildView(webView)
     this.addLoadURLListener(webView, server)
-    webView.webContents.loadURL(server.url, this.viewOptions).then(() => webView.webContents.setZoomFactor(1))
+    webView.webContents
+      .loadURL(server.url, this.viewOptions)
+      .then(() => webView.webContents.setZoomFactor(1))
+      .catch(console.error)
     return webView
   }
 
@@ -180,12 +183,14 @@ export class ViewsManager {
     })
   }
 
-  private async initWebViews() {
+  private async initWebViews(): Promise<void> {
     if (ServersManager.list.length) {
       for (const server of ServersManager.list) {
-        this.createWebView(server).then((view: AppWebContentsView) => {
-          this.allViews[server.id] = view
-        })
+        this.createWebView(server)
+          .then((view: AppWebContentsView) => {
+            this.allViews[server.id] = view
+          })
+          .catch(console.error)
       }
     } else {
       // hook to avoid errors with ipc renderer events

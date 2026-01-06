@@ -13,7 +13,7 @@
   "devDependencies": {
     "@electron/notarize": "^3.0.1",
     "@types/mime-types": "^3.0.1",
-    "electron": "^38.0.0",
+    "electron": "^39.0.0",
     "electron-builder": "^26.0.12",
     "electron-updater": "^6.3.9"
   }

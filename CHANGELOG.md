@@ -1,4 +1,11 @@
 
+## [1.6.1](https://git.sync-in.org/sync-in/desktop/compare/v1.6.0...v1.6.1) (2026-01-07)
+
+
+### Bug Fixes
+
+* **main:** streamline error handling with `console.error` in webView methods ([6d6951c](https://git.sync-in.org/sync-in/desktop/commit/6d6951cac97ba8214f36765e6efa899d55b05b30))
+
 ## [1.6.0](https://git.sync-in.org/sync-in/desktop/compare/v1.5.1...v1.6.0) (2025-12-07)
 
 

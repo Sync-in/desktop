@@ -2,7 +2,7 @@
   "name": "sync-in-desktop",
   "productName": "Sync-in",
   "description": "Sync-in Desktop Application",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "license": "AGPL-3.0-or-later",
   "main": "dist/main/main.js",
   "author": {

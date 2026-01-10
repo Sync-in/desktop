@@ -1,19 +1,19 @@
 
-## [1.6.1](https://git.sync-in.org/sync-in/desktop/compare/v1.6.0...v1.6.1) (2026-01-07)
+## [1.6.1](https://github.com/Sync-in/desktop/compare/v1.6.0...v1.6.1) (2026-01-07)
 
 
 ### Bug Fixes
 
-* **main:** streamline error handling with `console.error` in webView methods ([6d6951c](https://git.sync-in.org/sync-in/desktop/commit/6d6951cac97ba8214f36765e6efa899d55b05b30))
+* **main:** streamline error handling with `console.error` in webView methods ([6d6951c](https://github.com/Sync-in/desktop/commit/6d6951cac97ba8214f36765e6efa899d55b05b30))
 
-## [1.6.0](https://git.sync-in.org/sync-in/desktop/compare/v1.5.1...v1.6.0) (2025-12-07)
+## [1.6.0](https://github.com/Sync-in/desktop/compare/v1.5.1...v1.6.0) (2025-12-07)
 
 
 ### Features
 
 * **settings:** add "Hide Dock Icon" option on macOS and improve tray accessibility ([59261c5](https://github.com/Sync-in/desktop/commit/59261c5e17ae4af1c258789eb82f7f65ece99178))
 
-## [1.5.1](https://git.sync-in.org/sync-in/desktop/compare/v1.5.0...v1.5.1) (2025-11-25)
+## [1.5.1](https://github.com/Sync-in/desktop/compare/v1.5.0...v1.5.1) (2025-11-25)
 
 
 * **assets:** update app and tray icons, favicon, and related assets ([b302757](https://github.com/Sync-in/desktop/commit/b3027574c5aba3ee93819a6f84214331f80ef09e))
@@ -21,7 +21,7 @@
 * **manifest:** add server release manifest generation ([1128087](https://github.com/Sync-in/desktop/commit/112808723d7afda9068f21348a2990b0c4d853f4))
 * **updater:** extend user-agent header support and adjust update check interval to 8 hours ([a173c77](https://github.com/Sync-in/desktop/commit/a173c77bfd0e4f6718cc39585797197bb3283e9d))
 
-## [1.5.0](https://git.sync-in.org/sync-in/desktop/compare/v1.4.0...v1.5.0) (2025-10-26)
+## [1.5.0](https://github.com/Sync-in/desktop/compare/v1.4.0...v1.5.0) (2025-10-26)
 
 ### Highlights
 
@@ -36,7 +36,7 @@
 * **i18n:** modularize localization setup and extend language support ([8d5eac6](https://github.com/Sync-in/desktop/commit/8d5eac64f8c30c56e83490e3eb64d53829b84e56))
 * **i18n:** refactor i18n manager and add language normalization logic ([04fb872](https://github.com/Sync-in/desktop/commit/04fb872037da70a0a9eeafc71d0a0fcf6b24ae84))
 
-## [1.4.0](https://git.sync-in.org/sync-in/desktop/compare/v1.3.0...v1.4.0) (2025-09-26)
+## [1.4.0](https://github.com/Sync-in/desktop/compare/v1.3.0...v1.4.0) (2025-09-26)
 
 
 ### Features
@@ -44,7 +44,7 @@
 * **auth:** add support for MFA authentication ([544ec08](https://github.com/Sync-in/desktop/commit/544ec08fc77a4577f81f9a49d2beed853d034a09))
 * **main:** open external URLs in the user's browser instead of inside the app ([f3dda3d](https://github.com/Sync-in/desktop/commit/f3dda3db5e32fcd198208a12aa4454577b0e55ea))
 
-## [1.3.0](https://git.sync-in.org/sync-in/desktop/compare/v1.2.9...v1.3.0) (2025-09-06)
+## [1.3.0](https://github.com/Sync-in/desktop/compare/v1.2.9...v1.3.0) (2025-09-06)
 
 
 ### Features

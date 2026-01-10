@@ -10,6 +10,10 @@
     "email": "johan.legrand@sync-in.com"
   },
   "homepage": "https://sync-in.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sync-in/desktop.git"
+  },
   "releasespage": "https://github.com/Sync-in/desktop/releases",
   "funding": [
     {

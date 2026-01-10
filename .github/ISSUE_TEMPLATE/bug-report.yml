@@ -1,0 +1,30 @@
+name: 🐞 Bug Report
+description: Report a bug in Sync-in Desktop
+labels: ['bug', 'triage']
+
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      placeholder: What’s broken?
+    validations:
+      required: true
+
+  - type: textarea
+    id: system
+    attributes:
+      label: System information
+      description: Sync-in Desktop version / OS
+      placeholder: |
+        Sync-in Desktop version:
+        OS:
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Paste relevant logs if available
+      render: shell

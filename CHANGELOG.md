@@ -1,4 +1,16 @@
 
+## [1.6.2](https://github.com/Sync-in/desktop/compare/v1.6.1...v1.6.2) (2026-01-19)
+
+
+### Bug Fixes
+
+* **core** enforce valid repository subdirectories and path normalization ([f6f17df](https://github.com/Sync-in/desktop/commit/f6f17df504188c5d207bf48f7b5d3713f81c6799))
+
+### Chore
+
+* **deps**: upgrade Electron to v40 and Node.js to v24 ([e7a21b5](https://github.com/Sync-in/desktop/commit/e7a21b5f92d8e89f4b9d58a311f761fef2820c69))
+* **main:menu**: reordering menus ([0f622ee](https://github.com/Sync-in/desktop/commit/0f622eeb102c6e74abba15701715706ab58cdc33))
+
 ## [1.6.1](https://github.com/Sync-in/desktop/compare/v1.6.0...v1.6.1) (2026-01-07)
 
 

@@ -17,6 +17,7 @@ import { API } from '../constants/requests'
 import { SyncPathSettings } from '../interfaces/sync-path-settings.interface'
 import { AxiosResponse } from 'axios'
 import { DIFF_MODE, SYNC_MODE } from '../constants/diff'
+import { SYNC_PATH_REPOSITORY } from '../constants/paths'
 
 const logger = getLogger('Paths')
 
@@ -179,10 +180,37 @@ export class PathsManager {
     if (IS_WINDOWS) {
       syncPath.localPath = syncPath.localPath.replace(regexSlash, '\\')
     }
-    if (syncPath.remotePath[0] === '/') {
-      syncPath.remotePath = syncPath.remotePath.substring(1)
+    // Remove trailing slashes from localPath (Windows or POSIX)
+    syncPath.localPath = syncPath.localPath.replace(/[\\/]+$/, '')
+
+    // Normalize remotePath by stripping leading and trailing '/' (Linux / POSIX path)
+    syncPath.remotePath = syncPath.remotePath.replace(/^\/+|\/+$/g, '')
+
+    const remoteParts = syncPath.remotePath.split('/')
+    const repository = remoteParts[0] as SYNC_PATH_REPOSITORY
+
+    // Check if the repository is known
+    if (!Object.values(SYNC_PATH_REPOSITORY).includes(repository)) {
+      throw `Unknown remote path repository type: ${repository}`
     }
+
+    // Enforce subdirectory rules
+    switch (repository) {
+      case SYNC_PATH_REPOSITORY.PERSONAL:
+      case SYNC_PATH_REPOSITORY.SHARES:
+        if (remoteParts.length < 2) {
+          throw 'Syncing the root of personal files or shares is not supported. Please select a subdirectory.'
+        }
+        break
+      case SYNC_PATH_REPOSITORY.SPACES:
+        if (remoteParts.length < 3) {
+          throw 'Syncing the root of a space is not supported. Please select a subdirectory.'
+        }
+        break
+    }
+
     this.isAlreadyExists(syncPath.localPath, syncPath.remotePath)
+
     if (await isPathExistsBool(syncPath.localPath)) {
       if ((await fs.stat(syncPath.localPath)).isFile()) {
         throw 'Local path must be a directory'

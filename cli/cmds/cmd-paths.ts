@@ -8,6 +8,7 @@ import { Argv, CommandModule } from 'yargs'
 import { ServersManager } from '../../core/components/handlers/servers'
 import { PathsManager } from '../../core/components/handlers/paths'
 import { CONFLICT_MODE, DIFF_MODE, SYNC_MODE } from '../../core/components/constants/diff'
+import { SYNC_PATH_REPOSITORY } from '@sync-in-desktop/core/components/constants/paths'
 
 const pathLS: CommandModule = {
   command: 'list',
@@ -43,7 +44,7 @@ const pathADD: CommandModule = {
     },
     remotePath: {
       alias: 'r',
-      describe: 'Path to a folder or a file on your server, path must start with "spaces" | "personal" | "shares" to identify the location',
+      describe: `Path to a folder or a file on your server, path must start with "${SYNC_PATH_REPOSITORY.PERSONAL}" | "${SYNC_PATH_REPOSITORY.SPACES}" | "${SYNC_PATH_REPOSITORY.SHARES}" to identify the location`,
       type: 'string',
       demandOption: true
     },

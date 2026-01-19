@@ -13,7 +13,7 @@ import { appEvents } from './events'
 import { ENVIRONMENT, IS_MACOS, IS_WINDOWS } from '../../core/constants'
 import { ServersManager } from '../../core/components/handlers/servers'
 import { SyncStatus } from '@sync-in-desktop/core/components/interfaces/sync-status.interface'
-import { helpMenu, preferencesMenu, separatorItem, supportMenu } from '../constants/menus'
+import { helpMenu, preferencesMenu, separatorItem } from '../constants/menus'
 
 const enabledTrayIcon = nativeImage.createFromPath(path.join(__dirname, './assets/tray/enabled.png')).resize({ width: 22 })
 const disabledTrayIcon = nativeImage.createFromPath(path.join(__dirname, './assets/tray/disabled.png')).resize({ width: 22 })
@@ -138,7 +138,7 @@ export class TrayManager {
   }
 
   private buildInfoMenu(): Partial<Electron.MenuItemConstructorOptions>[] {
-    return [helpMenu('About', true), supportMenu(false)]
+    return [helpMenu('About', true)]
   }
 
   private startSync(ev: { srvId: number; spId: number }) {

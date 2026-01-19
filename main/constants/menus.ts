@@ -52,6 +52,7 @@ export const preferencesMenu: () => MenuItemConstructorOptions[] = () => [
 export const helpMenu: (name?: string, withCheckUpdate?: boolean) => MenuItemConstructorOptions = (name = 'Help', withCheckUpdate = false) => ({
   label: i18n.tr(name),
   submenu: [
+    supportMenu(),
     {
       label: i18n.tr('Documentation'),
       click: () => shell.openExternal(`${ENVIRONMENT.appHomePage}${i18n.language === 'fr' ? '/fr' : ''}/docs/`)

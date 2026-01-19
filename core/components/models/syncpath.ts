@@ -10,7 +10,7 @@ import path from 'node:path'
 import { SNAPSHOTS_PATH, SYNC_LOGS_PATH } from '../../constants'
 import fs from 'node:fs/promises'
 import { SyncPathSettings } from '../interfaces/sync-path-settings.interface'
-import { SYNC_PATH_PERMISSION } from '../constants/permissions'
+import { SYNC_PATH_PERMISSION } from '../constants/paths'
 import type { SyncTransfer } from '../interfaces/sync-transfer.interface'
 import { CONFLICT_MODE, DIFF_MODE, SYNC_MODE } from '../constants/diff'
 

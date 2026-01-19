@@ -142,7 +142,7 @@ export class RunManager {
 
   private getPaths(server: Server, filterPaths?: (number | string)[]): SyncPath[] {
     if (filterPaths) {
-      const syncPaths: SyncPath[] = filterPaths.map((sp) => findByNameOrID(sp, server.syncPaths))
+      const syncPaths: SyncPath[] = filterPaths.map((sp) => findByNameOrID(sp, server.syncPaths)).filter(Boolean)
       if (syncPaths.length) {
         return syncPaths.filter((sp) => sp.enabled)
       } else {

@@ -5,11 +5,13 @@
 </picture>
 </a>
 
-_Welcome to the official Sync-in desktop client repository!_
+_Welcome to the Sync-in desktop client repository!_
 
 - 🌍 [Website](https://sync-in.com)
 - 📄 [Documentation](https://sync-in.com/docs)
 - 📥 [Download the desktop app](https://sync-in.com/downloads)
+- 🗄️ [GitHub Server Repository](https://github.com/Sync-in/server)
+- 💻 [GitHub Desktop & CLI Repository](https://github.com/Sync-in/desktop)
 
 <a href="#-license"><img src="https://img.shields.io/badge/Licence-AGPL%20v3.0-green.svg" alt="License"/></a>
 <a href="https://discord.gg/qhJyzwaymT" target="_blank"><img src="https://img.shields.io/badge/Discord-Online-brightgreen.svg" alt="Discord"/></a>
@@ -52,16 +54,6 @@ your workflow — whether on a personal workstation, a Linux server, or a headle
 - Works on **any Linux server**
 - Sync files to/from any Sync-in server
 - Perfect for automation, headless servers, cron jobs, or scripts
-
----
-
-### 🧩 Project Resources
-
-- 🌍 **Official website**: [https://sync-in.com](https://sync-in.com)
-- 📖 **Documentation**: [https://sync-in.com/docs](https://sync-in.com/docs)
-- 🗄️ **Server** : [https://github.com/Sync-in/server](https://github.com/Sync-in/server)
-- 📟 **Desktop & CLI** - Cross-platform desktop app and command-line interface : [https://github.com/Sync-in/desktop](https://github.com/Sync-in/desktop)
-- 🐳 **Docker** - Setup & Deployment Guide : [https://sync-in.com/docs/setup-guide/docker](https://sync-in.com/docs/setup-guide/docker)
 
 ---
 

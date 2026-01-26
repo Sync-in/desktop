@@ -226,8 +226,7 @@ export class EventsManager {
           if (!status.ok) {
             return status
           }
-          this.viewsManager.mainWindow.contentView.removeChildView(this.viewsManager.allViews[server.id])
-          delete this.viewsManager.allViews[server.id]
+          await this.viewsManager.destroyView(server)
           if (this.viewsManager.currentServer.id === server.id) {
             const firstLoadedServer = ServersManager.list.find((srv) => srv.id !== 0 && srv.available)
             if (firstLoadedServer) {

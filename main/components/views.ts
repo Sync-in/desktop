@@ -137,12 +137,23 @@ export class ViewsManager {
   }
 
   reloadView(serverId?: number, clear = false) {
-    const targetView = serverId ? this.allViews[serverId] : this.currentView
+    const view = serverId ? this.allViews[serverId] : this.currentView
     if (clear) {
-      session.defaultSession.clearCache().then(() => targetView.webContents.reloadIgnoringCache())
+      session.defaultSession.clearCache().then(() => view.webContents.reloadIgnoringCache())
     } else {
-      targetView.webContents.reload()
+      view.webContents.reload()
     }
+  }
+
+  async destroyView(server: Server) {
+    const view = this.allViews[server.id]
+    this.mainWindow.contentView.removeChildView(view)
+    view.webContents.close()
+    delete this.allViews[server.id]
+    const s = session.defaultSession
+    const u = new URL(server.url)
+    const cookies = await s.cookies.get({ domain: u.hostname })
+    await Promise.all(cookies.map((c) => s.cookies.remove(`${u.protocol}//${u.hostname}`, c.name)))
   }
 
   sendServersUpdate() {

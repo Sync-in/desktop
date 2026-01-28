@@ -8,7 +8,6 @@ import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal'
 import { LOCAL_RENDERER, REMOTE_RENDERER } from '../../../main/constants/events'
 import { BehaviorSubject, fromEvent, map, mergeWith, Observable, Subject } from 'rxjs'
 import { L10nTranslationService } from 'angular-l10n'
-import { BsLocaleService } from 'ngx-bootstrap/datepicker'
 import { getTheme } from './common/functions/utils'
 import type { ElectronIpcRenderer } from './common/interfaces/electron'
 import type { SyncServer } from '../../../core/components/interfaces/server.interface'
@@ -54,12 +53,11 @@ export class AppService {
     available: true,
     authTokenExpired: false
   })
-  private readonly bsLocale = inject(BsLocaleService)
   private readonly bsModal = inject(BsModalService)
   private readonly faConfig = inject(FaConfig)
   private modalRef: BsModalRef = null
   private readonly modalConfig = { animated: true, keyboard: true, backdrop: true, ignoreBackdropClick: true }
-  private readonly modalClass = 'modal-lg modal-primary modal-dialog-centered'
+  private readonly modalClass = 'modal-md modal-primary modal-dialog-centered'
   // Observable Network
   private _networkIsOnline = new BehaviorSubject<boolean>(navigator.onLine)
   public networkIsOnline: Observable<boolean> = this._networkIsOnline

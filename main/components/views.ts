@@ -126,8 +126,8 @@ export class ViewsManager {
       this.mainWindow.contentView.addChildView(this.wrapperView)
       this.wrapperView.webContents.focus()
     } else {
-      // avoid to lose focus on TopView if modal is open or the active server has no content
-      if (this.isModalOpen || !this.currentServer.available || this.currentServer.authTokenExpired) {
+      // Avoid losing focus on TopView if modal is open or the active server has no content
+      if (this.isModalOpen || !this.currentServer.available) {
         return
       }
       this.mainWindow.contentView.addChildView(this.currentView)

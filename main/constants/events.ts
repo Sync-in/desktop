@@ -60,8 +60,9 @@ export const LOCAL_RENDERER = {
 }
 // REMOTE RENDERER
 export const REMOTE_RENDERER = {
-  // authentication
+  // server
   SERVER: {
+    REGISTRATION: 'server-registration',
     AUTHENTICATION: 'server-authentication',
     AUTHENTICATION_FAILED: 'server-authentication-failed',
     AUTHENTICATION_TOKEN_UPDATE: 'server-authentication-token-update',

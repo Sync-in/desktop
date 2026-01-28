@@ -49,7 +49,7 @@ const serverADD: CommandModule = {
     },
     code: {
       alias: 'c',
-      describe: 'Two-Fa Authentication Code',
+      describe: '2FA authentication code (or recovery code)',
       demandOption: false,
       type: 'string'
     }
@@ -57,9 +57,9 @@ const serverADD: CommandModule = {
   handler: async (argv: any) => {
     const server = new Server({ name: argv.name, url: argv.url })
     console.log('Adding the server')
+    ServersManager.checkUpdatedProperties(server)
     const manager = new ServersManager(server, false)
-    await manager.checkUpdatedProperties(server)
-    const [ok, msg] = await manager.add(argv.login, argv.password, argv.code)
+    const [ok, msg] = await manager.add({ login: argv.login, password: argv.password, code: argv.code })
     if (ok) {
       console.log('Server authentication & registration OK')
       console.log(server.toString())

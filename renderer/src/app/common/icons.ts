@@ -17,7 +17,6 @@ import {
   faEllipsisVertical,
   faFolderOpen,
   faGlobe,
-  faKey,
   faLock,
   faPause,
   faPencil,
@@ -67,6 +66,5 @@ export const faIcons = {
   faGlobe,
   faUserAlt,
   faLock,
-  faKey,
   faQrcode
 }

@@ -11,7 +11,7 @@ import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } fr
 import { AutofocusDirective } from '../common/directives/auto-focus.directive'
 import { FaIconComponent, IconDefinition } from '@fortawesome/angular-fontawesome'
 import { faIcons } from '../common/icons'
-import { SyncServer } from '../../../../core/components/interfaces/server.interface'
+import { SyncServer, SyncServerEvent } from '../../../../core/components/interfaces/server.interface'
 import { SERVER_ACTION } from '../../../../core/components/constants/server'
 
 @Component({
@@ -33,7 +33,6 @@ export class ModalServerComponent implements OnInit {
   protected icons = faIcons
   protected isAddModal = false
   protected isRemoveModal = false
-  protected isAuthenticationModal = false
   private readonly appService = inject(AppService)
   private readonly fb = inject(UntypedFormBuilder)
 
@@ -48,42 +47,20 @@ export class ModalServerComponent implements OnInit {
         this.titleIcon = this.icons.faPlus
         this.titleText = 'Connect to a server'
         break
-      case SERVER_ACTION.AUTHENTICATE:
-        this.isAuthenticationModal = true
-        this.titleIcon = this.icons.faKey
-        this.titleText = 'Authenticate on the server'
-        break
       case SERVER_ACTION.REMOVE:
         this.isRemoveModal = true
         this.titleIcon = this.icons.faTrashAlt
         this.titleText = 'Delete the server'
         break
       default:
+        // Edit
         this.titleIcon = this.icons.faPencil
         this.titleText = 'Edit the server'
     }
-    if (this.isAddModal) {
-      this.loginForm = this.fb.group({
-        name: this.fb.control(this.isAddModal ? '' : this.config.server.name, [Validators.required]),
-        url: this.fb.control(this.isAddModal ? '' : this.config.server.url, [Validators.required]),
-        login: this.fb.control('', [Validators.required]),
-        password: this.fb.control('', [Validators.required]),
-        code: this.fb.control('')
-      })
-    } else {
-      // remove / edit / auth modal
-      this.loginForm = this.fb.group({
-        name: this.fb.control({ value: this.config.server.name, disabled: this.isAuthenticationModal }, [Validators.required]),
-        url: this.fb.control({ value: this.config.server.url, disabled: true }, [Validators.required]),
-        ...(this.isAuthenticationModal
-          ? {
-              login: this.fb.control('', [Validators.required]),
-              password: this.fb.control('', [Validators.required]),
-              code: this.fb.control('')
-            }
-          : {})
-      })
-    }
+    this.loginForm = this.fb.group({
+      name: this.fb.control({ value: this.isAddModal ? '' : this.config.server.name, disabled: this.isRemoveModal }, [Validators.required]),
+      url: this.fb.control({ value: this.isAddModal ? '' : this.config.server.url, disabled: !this.isAddModal }, [Validators.required])
+    })
   }
 
   closeModal() {
@@ -98,21 +75,16 @@ export class ModalServerComponent implements OnInit {
     this.textError = ''
     this.submitted = true
     this.appService.ipcRenderer
-      .invoke(
-        LOCAL_RENDERER.SERVER.ACTION,
-        this.config.type,
-        {
-          id: this.config.server ? this.config.server.id : null,
-          name: this.serverName(),
-          url: this.serverURL(),
-          available: this.config.server ? this.config.server.available : false
-        },
-        { login: this.loginForm.value.login, password: this.loginForm.value.password, code: this.loginForm.value.code }
-      )
-      .then((info: { ok: boolean; msg?: string }) => this.onServerCheck(info))
+      .invoke(LOCAL_RENDERER.SERVER.ACTION, this.config.type, {
+        id: this.config.server ? this.config.server.id : null,
+        name: this.serverName(),
+        url: this.serverURL(),
+        available: this.config.server ? this.config.server.available : false
+      })
+      .then((info: SyncServerEvent) => this.onServerCheck(info))
   }
 
-  private onServerCheck(info: { ok: boolean; msg?: string }) {
+  private onServerCheck(info: SyncServerEvent) {
     if (info.ok) {
       this.closeModal()
     } else {

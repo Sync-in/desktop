@@ -77,7 +77,7 @@ export class PathsManager {
         delete: number[]
         update: Partial<Record<keyof SyncPathSettings, any>>[]
       },
-      any
+      unknown
     >
     try {
       r = await this.req.http.put(API.PATHS, syncPaths)

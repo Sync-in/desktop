@@ -41,10 +41,7 @@
   "Please wait": "잠시만 기다려 주세요",
   "Server display name": "서버 표시 이름",
   "No server configured": "구성된 서버가 없습니다",
-  "For security reasons, please log in again": "보안상의 이유로 다시 로그인해 주세요",
-  "Authenticate": "인증",
   "Connect to a server": "서버에 연결",
-  "Authenticate on the server": "서버에서 인증",
   "Delete the server": "서버 삭제",
   "Edit the server": "서버 편집",
   "Login or Email": "로그인 또는 이메일",
@@ -80,5 +77,7 @@
   "Support": "지원",
   "Hide Dock Icon": "Dock 아이콘 숨기기",
   "Preferences": "환경설정",
-  "About": "정보"
+  "About": "정보",
+  "Name is already used": "이름이 이미 사용 중입니다",
+  "URL is already used": "URL이 이미 사용 중입니다"
 }

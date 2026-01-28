@@ -11,3 +11,8 @@ export interface SyncServer {
   available: boolean
   authTokenExpired: boolean
 }
+
+export interface SyncServerEvent {
+  ok: boolean
+  msg?: string
+}

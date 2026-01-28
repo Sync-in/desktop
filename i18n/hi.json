@@ -41,10 +41,7 @@
   "Please wait": "कृपया प्रतीक्षा करें",
   "Server display name": "सर्वर का प्रदर्शित नाम",
   "No server configured": "कोई सर्वर कॉन्फ़िगर नहीं है",
-  "For security reasons, please log in again": "सुरक्षा कारणों से कृपया दोबारा लॉग इन करें",
-  "Authenticate": "प्रमाणित करें",
   "Connect to a server": "किसी सर्वर से कनेक्ट करें",
-  "Authenticate on the server": "सर्वर पर प्रमाणित करें",
   "Delete the server": "सर्वर हटाएँ",
   "Edit the server": "सर्वर संपादित करें",
   "Login or Email": "लॉगिन या ईमेल",
@@ -80,5 +77,7 @@
   "Support": "समर्थन",
   "Hide Dock Icon": "डॉक आइकन छिपाएँ",
   "Preferences": "प्राथमिकताएँ",
-  "About": "के बारे में"
+  "About": "के बारे में",
+  "Name is already used": "नाम पहले से उपयोग में है",
+  "URL is already used": "URL पहले से उपयोग में है"
 }

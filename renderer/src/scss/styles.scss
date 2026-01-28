@@ -6,7 +6,7 @@
 
 @import 'variables';
 // Load Bootstrap 5
-@import '../../../node_modules/bootstrap/scss/bootstrap';
+@import 'bootstrap/scss/bootstrap';
 @import 'components/index';
 // used for date picker
-@import '../../../node_modules/ngx-bootstrap/datepicker/bs-datepicker';
+@import 'ngx-bootstrap/datepicker/bs-datepicker';

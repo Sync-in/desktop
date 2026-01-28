@@ -29,6 +29,7 @@ import { PATH_ACTION } from '../constants/paths'
 import { SyncStatus } from '@sync-in-desktop/core/components/interfaces/sync-status.interface'
 import { appSettings } from './settings'
 import { IS_MACOS } from '@sync-in-desktop/core/constants'
+import type { SyncServerEvent } from '@sync-in-desktop/core/components/interfaces/server.interface'
 
 export const appEvents: any = new EventEmitter()
 // hook to delete to trash bin during sync
@@ -57,6 +58,17 @@ export class EventsManager {
     powerMonitor.on('suspend', () => this.managePowerSuspension(true))
     powerMonitor.on('resume', () => this.managePowerSuspension(false))
     nativeTheme.on('updated', async () => this.checkNativeTheme())
+    ipcMain.handle(
+      REMOTE_RENDERER.SERVER.REGISTRATION,
+      (
+        ev: IpcMainEventServer,
+        auth: {
+          login: string
+          password: string
+          code?: string
+        }
+      ): Promise<SyncServerEvent> => this.serverRegistration(ev, auth)
+    )
     ipcMain.handle(REMOTE_RENDERER.SERVER.AUTHENTICATION, (ev) => this.serverAuthentication(ev))
     ipcMain.on(REMOTE_RENDERER.SERVER.AUTHENTICATION_FAILED, (ev) => this.serverAuthFailed(ev))
     ipcMain.on(REMOTE_RENDERER.SERVER.AUTHENTICATION_TOKEN_UPDATE, (ev, token: string) => this.serverAuthTokenUpdate(ev, token))
@@ -72,9 +84,11 @@ export class EventsManager {
         auth: {
           login: string
           password: string
+          code?: string
         }
-      ) => this.serverOnAction(action, server, auth)
+      ): Promise<SyncServerEvent> => this.serverOnAction(action, server, auth)
     )
+
     ipcMain.on(LOCAL_RENDERER.SERVER.SET_ACTIVE, (_ev, id: number) => this.serverOnActiveView(id))
     appEvents.on(LOCAL_RENDERER.SERVER.SET_ACTIVE, (id: number) => this.serverOnActiveView(id, true))
     ipcMain.on(LOCAL_RENDERER.SERVER.LIST, () => this.viewsManager.sendServersUpdate())
@@ -147,7 +161,6 @@ export class EventsManager {
       return
     }
     server.authTokenExpired = true
-    this.viewsManager.switchViewFocus(true)
     this.viewsManager.sendServersUpdate()
   }
 
@@ -173,20 +186,29 @@ export class EventsManager {
     }
   }
 
+  private async serverRegistration(ev: any, auth: { login: string; password: string; code?: string }): Promise<SyncServerEvent> {
+    const server = ServersManager.find(ev.sender.serverId)
+    try {
+      const manager = new ServersManager(server, false)
+      await manager.register(auth.login, auth.password, auth.code)
+      coreEvents.emit(CORE.SAVE_SETTINGS)
+      return { ok: true }
+    } catch (e) {
+      return { ok: false, msg: e }
+    }
+  }
+
   private async serverOnAction(
     action: SERVER_ACTION,
     server: Server,
-    auth: { login: string; password: string; code?: string }
-  ): Promise<{
-    ok: boolean
-    msg?: string
-  }> {
+    auth?: { login: string; password: string; code?: string }
+  ): Promise<SyncServerEvent> {
     switch (action) {
       case SERVER_ACTION.ADD:
         server = new Server(server)
         try {
           const manager = new ServersManager(server, false)
-          const [ok, msg] = await manager.add(auth.login, auth.password, auth.code)
+          const [ok, msg] = await manager.add(null)
           if (!ok) {
             return { ok: false, msg: msg }
           }
@@ -199,30 +221,32 @@ export class EventsManager {
         } catch (e) {
           return { ok: false, msg: e }
         }
+      case SERVER_ACTION.REGISTER:
+        if (!auth) {
+          return { ok: false, msg: 'Authentication data is missing' }
+        }
+        try {
+          const manager = new ServersManager(server, false)
+          await manager.register(auth.login, auth.password, auth.code)
+          this.viewsManager.sendServersUpdate()
+          coreEvents.emit(CORE.SAVE_SETTINGS)
+          return { ok: true }
+        } catch (e) {
+          return { ok: false, msg: e }
+        }
       case SERVER_ACTION.EDIT:
         try {
-          const manager = new ServersManager(ServersManager.find(server.id))
-          await manager.checkUpdatedProperties(server)
+          const s = ServersManager.find(server.id)
+          ServersManager.checkUpdatedProperties(server, s)
           coreEvents.emit(CORE.SAVE_SETTINGS)
           this.viewsManager.sendServersUpdate()
           return { ok: true }
         } catch (e) {
           return { ok: false, msg: e }
         }
-      case SERVER_ACTION.AUTHENTICATE:
-        try {
-          const manager = new ServersManager(ServersManager.find(server.id), false)
-          await manager.register(auth.login, auth.password, auth.code)
-          this.viewsManager.sendServersUpdate()
-          coreEvents.emit(CORE.SAVE_SETTINGS, true)
-          this.viewsManager.reloadView(server.id)
-          return { ok: true }
-        } catch (e) {
-          return { ok: false, msg: e }
-        }
       case SERVER_ACTION.REMOVE:
         try {
-          const status = await ServersManager.unregister(server)
+          const status: SyncServerEvent = await ServersManager.unregister(server)
           if (!status.ok) {
             return status
           }

@@ -13,8 +13,6 @@ import { TopBarComponent } from './components/top-bar.component'
 import { BottomBarComponent } from './components/bottom-bar-component'
 import { faIcons } from './common/icons'
 import type { SyncServer } from '@sync-in-desktop/core/components/interfaces/server.interface'
-import { ModalServerComponent } from './components/modal-server.component'
-import { SERVER_ACTION } from '@sync-in-desktop/core/components/constants/server'
 
 @Component({
   selector: 'app-root',
@@ -43,12 +41,6 @@ export class AppComponent implements OnInit {
     this.isRetrying = true
     this.appService.ipcRenderer.invoke(LOCAL_RENDERER.SERVER.RETRY, this.activeServer.id).then((state: boolean) => {
       this.retryServer(state)
-    })
-  }
-
-  reAuthenticateOnServer() {
-    this.appService.openDialog(ModalServerComponent, {
-      initialState: { config: { type: SERVER_ACTION.AUTHENTICATE, server: this.activeServer } } as ModalServerComponent
     })
   }
 

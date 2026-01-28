@@ -5,8 +5,8 @@
   -->
 <div class="app-main {{appService.themeMode()}}">
   <app-top-bar-component></app-top-bar-component>
-  @if (!activeServer.id || !activeServer.available || activeServer.authTokenExpired) {
-    <div class="position-fixed bg-primary h-100 w-100">
+  @if (!activeServer.id || !activeServer.available) {
+    <div class="app-content">
       @if (!activeServer.available) {
         <div class="d-flex align-items-center justify-content-center h-100">
           <div class="d-flex flex-column">
@@ -20,18 +20,6 @@
             <button (click)="retryLoad()" type="button" class="btn btn-dark ms-auto me-auto">
               <span class="me-1" l10nTranslate>Retry</span>
               <fa-icon [icon]="icons.faArrowsRotate" [animation]="isRetrying ? 'spin' : null"/>
-            </button>
-          </div>
-        </div>
-      } @else if (activeServer.authTokenExpired) {
-        <div class="d-flex align-items-center justify-content-center h-100">
-          <div class="d-flex flex-column">
-            <div class="text-white mb-2">
-              <span l10nTranslate>For security reasons, please log in again</span>
-            </div>
-            <button (click)="reAuthenticateOnServer()" type="button" class="btn btn-dark ms-auto me-auto">
-              <span class="me-1" l10nTranslate>Authenticate</span>
-              <fa-icon [icon]="icons.faKey"/>
             </button>
           </div>
         </div>

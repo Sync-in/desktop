@@ -41,10 +41,7 @@
   "Please wait": "Lütfen bekleyin",
   "Server display name": "Sunucu görünen adı",
   "No server configured": "Yapılandırılmış sunucu yok",
-  "For security reasons, please log in again": "Güvenlik nedeniyle lütfen tekrar giriş yapın",
-  "Authenticate": "Kimlik doğrula",
   "Connect to a server": "Sunucuya bağlan",
-  "Authenticate on the server": "Sunucuda kimlik doğrula",
   "Delete the server": "Sunucuyu sil",
   "Edit the server": "Sunucuyu düzenle",
   "Login or Email": "Giriş adı veya E-posta",
@@ -80,5 +77,7 @@
   "Support": "Destek",
   "Hide Dock Icon": "Dock simgesini gizle",
   "Preferences": "Tercihler",
-  "About": "Hakkında"
+  "About": "Hakkında",
+  "Name is already used": "Ad zaten kullanılıyor",
+  "URL is already used": "URL zaten kullanılıyor"
 }

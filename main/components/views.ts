@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { defaultViewProps, RENDERER_FILE, TAB_BAR_HEIGHT, WRAPPER_VIEW_OFFSET_HEIGHT } from '../constants/windows'
+import { partitionFor, RENDERER_FILE, TAB_BAR_HEIGHT, viewProps, WRAPPER_VIEW_OFFSET_HEIGHT } from '../constants/windows'
 import {
   BrowserWindow,
   dialog,
@@ -75,7 +75,7 @@ export class ViewsManager {
   }
 
   async createWebView(server: Server): Promise<AppWebContentsView> {
-    const webView = new WebContentsView(defaultViewProps) as AppWebContentsView
+    const webView = new WebContentsView(viewProps(server.id)) as AppWebContentsView
     webView.webContents.serverName = server.name
     webView.webContents.serverId = server.id
     webView.webContents.on('will-navigate', (event: Event<WebContentsWillNavigateEventParams>) => {
@@ -147,13 +147,13 @@ export class ViewsManager {
 
   async destroyView(server: Server) {
     const view = this.allViews[server.id]
+    if (!view) return
     this.mainWindow.contentView.removeChildView(view)
     view.webContents.close()
     delete this.allViews[server.id]
-    const s = session.defaultSession
-    const u = new URL(server.url)
-    const cookies = await s.cookies.get({ domain: u.hostname })
-    await Promise.all(cookies.map((c) => s.cookies.remove(`${u.protocol}//${u.hostname}`, c.name)))
+    const s = session.fromPartition(partitionFor(server.id))
+    await s.clearStorageData({ storages: ['cookies', 'localstorage', 'cachestorage', 'filesystem'] })
+    await s.clearCache()
   }
 
   sendServersUpdate() {
@@ -185,7 +185,7 @@ export class ViewsManager {
         this.resizeViews()
       }
     })
-    this.wrapperView = new WebContentsView(defaultViewProps)
+    this.wrapperView = new WebContentsView(viewProps('wrapper'))
     this.mainWindow.contentView.addChildView(this.wrapperView)
     this.wrapperView.webContents.loadFile(RENDERER_FILE).then(() => {
       this.wrapperView.webContents.setZoomFactor(1)

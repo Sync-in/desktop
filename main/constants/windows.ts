@@ -35,13 +35,20 @@ export const defaultWindowProps: BrowserWindowConstructorOptions = {
   backgroundColor: THEMES[nativeTheme.shouldUseDarkColors ? THEME.DARK : THEME.LIGHT]
 }
 
-export const defaultViewProps: WebContentsViewConstructorOptions = {
-  webPreferences: {
-    // Disabled Node integration
-    nodeIntegration: false,
-    // protect against prototype pollution
-    contextIsolation: true,
-    preload: PRELOAD_FILE,
-    transparent: true
+export function partitionFor(id: number | string): string {
+  return `persist:${id}`
+}
+
+export function viewProps(id: number | string): WebContentsViewConstructorOptions {
+  return {
+    webPreferences: {
+      partition: partitionFor(id),
+      // Disabled Node integration
+      nodeIntegration: false,
+      // protect against prototype pollution
+      contextIsolation: true,
+      preload: PRELOAD_FILE,
+      transparent: true
+    }
   }
 }

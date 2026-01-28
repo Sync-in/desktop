@@ -52,10 +52,12 @@ export class ModalServerComponent implements OnInit {
         this.titleIcon = this.icons.faTrashAlt
         this.titleText = 'Delete the server'
         break
-      default:
-        // Edit
+      case SERVER_ACTION.EDIT:
         this.titleIcon = this.icons.faPencil
         this.titleText = 'Edit the server'
+        break
+      default:
+        throw new Error(`Unknown server action: ${this.config.type}`)
     }
     this.loginForm = this.fb.group({
       name: this.fb.control({ value: this.isAddModal ? '' : this.config.server.name, disabled: this.isRemoveModal }, [Validators.required]),

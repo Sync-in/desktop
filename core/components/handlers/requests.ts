@@ -32,7 +32,7 @@ export class RequestsManager {
   private countReqsRetry = 0
   private countRetry = 0
   private maxRetry = 3
-  private retryDelay = 3000
+  private retryDelay = 2000
   // config
   public server: Server
   private httpController = new AbortController()

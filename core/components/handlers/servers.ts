@@ -13,6 +13,7 @@ import { API } from '../constants/requests'
 import { SYNC_SERVER } from '../constants/auth'
 import type { SyncServerEvent } from '../interfaces/server.interface'
 import { NAME_ALREADY_USED, URL_ALREADY_USED } from '../constants/errors'
+import type { SyncClientAuthRegistration, SyncClientRegistration } from '../interfaces/sync-client-auth.interface'
 
 export class ServersManager {
   server: Server
@@ -96,7 +97,7 @@ export class ServersManager {
     }
   }
 
-  async add(auth?: { login: string; password: string; code?: string }): Promise<[boolean, string]> {
+  async add(auth?: SyncClientRegistration): Promise<[boolean, string]> {
     // `auth` is null only when adding a server in the desktop app.
     try {
       const [ok, msg] = await this.check()
@@ -135,7 +136,7 @@ export class ServersManager {
     }
     let r: AxiosResponse
     try {
-      r = await this.req.http.post<{ clientToken: string }>(API.REGISTER, {
+      r = await this.req.http.post<SyncClientAuthRegistration>(API.REGISTER, {
         login,
         password,
         code,

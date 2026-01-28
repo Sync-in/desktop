@@ -7,6 +7,7 @@
 import { Argv, CommandModule } from 'yargs'
 import { ServersManager } from '../../core/components/handlers/servers'
 import { Server } from '../../core/components/models/server'
+import type { SyncClientRegistration } from '@sync-in-desktop/core/components/interfaces/sync-client-auth.interface'
 
 const serverLS: CommandModule = {
   command: 'list',
@@ -59,7 +60,7 @@ const serverADD: CommandModule = {
     console.log('Adding the server')
     ServersManager.checkUpdatedProperties(server)
     const manager = new ServersManager(server, false)
-    const [ok, msg] = await manager.add({ login: argv.login, password: argv.password, code: argv.code })
+    const [ok, msg] = await manager.add({ login: argv.login, password: argv.password, code: argv.code } satisfies SyncClientRegistration)
     if (ok) {
       console.log('Server authentication & registration OK')
       console.log(server.toString())

@@ -20,7 +20,7 @@ import { Logger } from 'winston'
 import { getLogger } from '../../core/components/handlers/loggers'
 import { genClientInfos } from '../../core/components/utils/functions'
 import { THEMES } from '../constants/windows'
-import { SyncClientAuth } from '../../core/components/interfaces/sync-client-auth.interface'
+import { SyncClientAuth, SyncClientAuthRegistration, SyncClientRegistration } from '../../core/components/interfaces/sync-client-auth.interface'
 import { SyncTransfer } from '@sync-in-desktop/core/components/interfaces/sync-transfer.interface'
 import { IpcMainEventServer, IpcMainInvokeEventServer } from '../interfaces/ipc-main-event.interface'
 import { THEME } from '../constants/themes'
@@ -62,12 +62,13 @@ export class EventsManager {
       REMOTE_RENDERER.SERVER.REGISTRATION,
       (
         ev: IpcMainEventServer,
-        auth: {
+        auth?: {
           login: string
           password: string
           code?: string
-        }
-      ): Promise<SyncServerEvent> => this.serverRegistration(ev, auth)
+        },
+        externalAuth?: SyncClientAuthRegistration
+      ): Promise<SyncServerEvent> => this.serverRegistration(ev, auth, externalAuth)
     )
     ipcMain.handle(REMOTE_RENDERER.SERVER.AUTHENTICATION, (ev) => this.serverAuthentication(ev))
     ipcMain.on(REMOTE_RENDERER.SERVER.AUTHENTICATION_FAILED, (ev) => this.serverAuthFailed(ev))
@@ -77,16 +78,7 @@ export class EventsManager {
     ipcMain.on(LOCAL_RENDERER.SERVER.RELOAD, (_ev, id: number) => this.serverReload(id))
     ipcMain.handle(
       LOCAL_RENDERER.SERVER.ACTION,
-      (
-        _ev,
-        action: SERVER_ACTION,
-        server: Server,
-        auth: {
-          login: string
-          password: string
-          code?: string
-        }
-      ): Promise<SyncServerEvent> => this.serverOnAction(action, server, auth)
+      (_ev, action: SERVER_ACTION, server: Server): Promise<SyncServerEvent> => this.serverOnAction(action, server)
     )
 
     ipcMain.on(LOCAL_RENDERER.SERVER.SET_ACTIVE, (_ev, id: number) => this.serverOnActiveView(id))
@@ -143,8 +135,9 @@ export class EventsManager {
   }
 
   private serverAuthentication(ev: any): SyncClientAuth {
+    // Get information about client authentication
     const server = ServersManager.find(ev.sender.serverId)
-    return { clientId: server.authID, token: server.authToken, info: genClientInfos() }
+    return { clientId: server.authID, token: server.authToken, tokenHasExpired: server.authTokenExpired, info: genClientInfos() }
   }
 
   private serverAuthTokenUpdate(ev: any, token: string) {
@@ -186,11 +179,21 @@ export class EventsManager {
     }
   }
 
-  private async serverRegistration(ev: any, auth: { login: string; password: string; code?: string }): Promise<SyncServerEvent> {
+  private async serverRegistration(ev: any, auth?: SyncClientRegistration, externalAuth?: SyncClientAuthRegistration): Promise<SyncServerEvent> {
     const server = ServersManager.find(ev.sender.serverId)
+    // If `auth` is provided, the client handles the registration.
+    // If `externalAuth` is provided, the registration has already been completed on the server, and the client must be updated accordingly.
     try {
-      const manager = new ServersManager(server, false)
-      await manager.register(auth.login, auth.password, auth.code)
+      if (auth) {
+        this.logger.debug(`${this.serverRegistration.name} - auth received`)
+        const manager = new ServersManager(server, false)
+        await manager.register(auth.login, auth.password, auth.code)
+      } else if (externalAuth) {
+        this.logger.debug(`${this.serverRegistration.name} - external auth received`)
+        server.authID = externalAuth.clientId
+        server.authToken = externalAuth.clientToken
+        server.authTokenExpired = false
+      }
       coreEvents.emit(CORE.SAVE_SETTINGS)
       return { ok: true }
     } catch (e) {
@@ -198,11 +201,7 @@ export class EventsManager {
     }
   }
 
-  private async serverOnAction(
-    action: SERVER_ACTION,
-    server: Server,
-    auth?: { login: string; password: string; code?: string }
-  ): Promise<SyncServerEvent> {
+  private async serverOnAction(action: SERVER_ACTION, server: Server): Promise<SyncServerEvent> {
     switch (action) {
       case SERVER_ACTION.ADD:
         server = new Server(server)
@@ -216,19 +215,6 @@ export class EventsManager {
           this.viewsManager.allViews[server.id] = webView
           // fix for windows & linux, webview is not painting if view is not resized
           webView.webContents.once('did-finish-load', () => this.viewsManager.resizeViews())
-          coreEvents.emit(CORE.SAVE_SETTINGS)
-          return { ok: true }
-        } catch (e) {
-          return { ok: false, msg: e }
-        }
-      case SERVER_ACTION.REGISTER:
-        if (!auth) {
-          return { ok: false, msg: 'Authentication data is missing' }
-        }
-        try {
-          const manager = new ServersManager(server, false)
-          await manager.register(auth.login, auth.password, auth.code)
-          this.viewsManager.sendServersUpdate()
           coreEvents.emit(CORE.SAVE_SETTINGS)
           return { ok: true }
         } catch (e) {

@@ -7,8 +7,7 @@
 export enum SERVER_ACTION {
   ADD = 'add',
   EDIT = 'edit',
-  REMOVE = 'remove',
-  REGISTER = 'register'
+  REMOVE = 'remove'
 }
 
 export enum SERVER_SCHEDULER_STATE {

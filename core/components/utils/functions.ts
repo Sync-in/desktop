@@ -7,7 +7,7 @@
 import os from 'node:os'
 import path from 'node:path'
 import fs from 'node:fs/promises'
-import { createReadStream, createWriteStream, writeFileSync, readFileSync, existsSync } from 'node:fs'
+import { createReadStream, createWriteStream, existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { ENVIRONMENT, HAS_TTY, IS_WINDOWS } from '../../constants'
 import { DEFAULT_HIGH_WATER_MARK, INCOMPLETE_PREFIX, SYNC_CHECKSUM_ALG } from '../constants/handlers'
 import { TransferProgress } from '../handlers/transfers'
@@ -118,6 +118,10 @@ export async function isPathExistsBool(path: string): Promise<boolean> {
   } catch {
     return false
   }
+}
+
+export function capitalize(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1)
 }
 
 export function fileBaseName(filePath: string): string {

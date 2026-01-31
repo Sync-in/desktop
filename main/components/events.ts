@@ -30,6 +30,7 @@ import { SyncStatus } from '@sync-in-desktop/core/components/interfaces/sync-sta
 import { appSettings } from './settings'
 import { IS_MACOS } from '@sync-in-desktop/core/constants'
 import type { SyncServerEvent } from '@sync-in-desktop/core/components/interfaces/server.interface'
+import { LoopbackServer, OIDCCallbackParams } from './loopback-server'
 
 export const appEvents: any = new EventEmitter()
 // hook to delete to trash bin during sync
@@ -58,6 +59,35 @@ export class EventsManager {
     powerMonitor.on('suspend', () => this.managePowerSuspension(true))
     powerMonitor.on('resume', () => this.managePowerSuspension(false))
     nativeTheme.on('updated', async () => this.checkNativeTheme())
+    // CORE EVENTS
+    coreEvents.on(CORE.SYNC_STATUS, (params: SyncStatus) => this.viewsManager.sendToWebRenderer(params.serverId, CORE.SYNC_STATUS, params))
+    // APP EVENTS
+    appEvents.on(REMOTE_RENDERER.SYNC.REPORT_TRANSFER, (tr: SyncTransfer) =>
+      this.viewsManager.sendToWebRenderer(tr.serverId, REMOTE_RENDERER.SYNC.REPORT_TRANSFER, tr)
+    )
+    appEvents.on(REMOTE_RENDERER.SYNC.TASKS_COUNT, (params) =>
+      this.viewsManager.sendToWebRenderer(params.serverId, REMOTE_RENDERER.SYNC.TASKS_COUNT, params)
+    )
+    appEvents.on(LOCAL_RENDERER.SERVER.SET_ACTIVE, (id: number) => this.serverOnActiveView(id, true))
+    appEvents.on(REMOTE_RENDERER.SYNC.TRANSFER, (tr: SyncTransfer) => this.viewsManager.sendToWrapperRenderer(REMOTE_RENDERER.SYNC.TRANSFER, tr))
+    appEvents.on(LOCAL_RENDERER.WINDOW.ZOOM.IN, () => this.windowZoomIn())
+    appEvents.on(LOCAL_RENDERER.WINDOW.ZOOM.OUT, () => this.windowZoomOut())
+    appEvents.on(LOCAL_RENDERER.WINDOW.ZOOM.RESET, () => this.windowZoomReset())
+    appEvents.on(LOCAL_RENDERER.UPDATE.DOWNLOADED, (msg: string) => this.viewsManager.sendToWrapperRenderer(LOCAL_RENDERER.UPDATE.DOWNLOADED, msg))
+    appEvents.on(LOCAL_RENDERER.POWER.PREVENT_APP_SUSPENSION, (state: boolean) => this.manageAppPreventSuspension(state))
+    appEvents.on(LOCAL_RENDERER.SETTINGS.HIDE_DOCK_ICON, () => this.hideDockIcon())
+    appEvents.on(LOCAL_RENDERER.SETTINGS.LAUNCH_AT_STARTUP, () => this.launchAtStartup())
+    appEvents.on(LOCAL_RENDERER.SETTINGS.START_HIDDEN, () => this.startHidden())
+    // LOCAL RENDERER
+    ipcMain.handle(LOCAL_RENDERER.SERVER.RETRY, (_ev, id: number) => this.serverOnRetry(id))
+    ipcMain.on(LOCAL_RENDERER.SERVER.RELOAD, (_ev, id: number) => this.serverReload(id))
+    ipcMain.handle(
+      LOCAL_RENDERER.SERVER.ACTION,
+      (_ev, action: SERVER_ACTION, server: Server): Promise<SyncServerEvent> => this.serverOnAction(action, server)
+    )
+    ipcMain.on(LOCAL_RENDERER.SERVER.SET_ACTIVE, (_ev, id: number) => this.serverOnActiveView(id))
+    ipcMain.on(LOCAL_RENDERER.SERVER.LIST, () => this.viewsManager.sendServersUpdate())
+    // REMOTE RENDERER
     ipcMain.handle(
       REMOTE_RENDERER.SERVER.REGISTRATION,
       (
@@ -74,16 +104,7 @@ export class EventsManager {
     ipcMain.on(REMOTE_RENDERER.SERVER.AUTHENTICATION_FAILED, (ev) => this.serverAuthFailed(ev))
     ipcMain.on(REMOTE_RENDERER.SERVER.AUTHENTICATION_TOKEN_UPDATE, (ev, token: string) => this.serverAuthTokenUpdate(ev, token))
     ipcMain.on(REMOTE_RENDERER.SERVER.AUTHENTICATION_TOKEN_EXPIRED, (ev) => this.serverAuthTokenExpired(ev))
-    ipcMain.handle(LOCAL_RENDERER.SERVER.RETRY, (_ev, id: number) => this.serverOnRetry(id))
-    ipcMain.on(LOCAL_RENDERER.SERVER.RELOAD, (_ev, id: number) => this.serverReload(id))
-    ipcMain.handle(
-      LOCAL_RENDERER.SERVER.ACTION,
-      (_ev, action: SERVER_ACTION, server: Server): Promise<SyncServerEvent> => this.serverOnAction(action, server)
-    )
-
-    ipcMain.on(LOCAL_RENDERER.SERVER.SET_ACTIVE, (_ev, id: number) => this.serverOnActiveView(id))
-    appEvents.on(LOCAL_RENDERER.SERVER.SET_ACTIVE, (id: number) => this.serverOnActiveView(id, true))
-    ipcMain.on(LOCAL_RENDERER.SERVER.LIST, () => this.viewsManager.sendServersUpdate())
+    ipcMain.on(REMOTE_RENDERER.SERVER.SET_ACTIVE_AND_SHOW, (ev: IpcMainEventServer) => this.serverOnActiveView(ev.sender.serverId, true))
     ipcMain.handle(REMOTE_RENDERER.SYNC.PATH_OPERATION, async (ev: IpcMainEventServer, action: PATH_ACTION, params) =>
       this.syncPathAction(ev, action, params)
     )
@@ -95,25 +116,18 @@ export class EventsManager {
         this.syncSchedulerOnAction(ev, action, state)
     )
     ipcMain.handle(REMOTE_RENDERER.SYNC.ERRORS, (ev: IpcMainEventServer) => this.listSyncsWithErrors(ev))
-    coreEvents.on(CORE.SYNC_STATUS, (params: SyncStatus) => this.viewsManager.sendToWebRenderer(params.serverId, CORE.SYNC_STATUS, params))
-    appEvents.on(REMOTE_RENDERER.SYNC.TASKS_COUNT, (params) =>
-      this.viewsManager.sendToWebRenderer(params.serverId, REMOTE_RENDERER.SYNC.TASKS_COUNT, params)
-    )
-    appEvents.on(REMOTE_RENDERER.SYNC.TRANSFER, (tr: SyncTransfer) => this.viewsManager.sendToWrapperRenderer(REMOTE_RENDERER.SYNC.TRANSFER, tr))
-    appEvents.on(REMOTE_RENDERER.SYNC.REPORT_TRANSFER, (tr: SyncTransfer) =>
-      this.viewsManager.sendToWebRenderer(tr.serverId, REMOTE_RENDERER.SYNC.REPORT_TRANSFER, tr)
-    )
     ipcMain.handle(REMOTE_RENDERER.SYNC.TRANSFER_LOGS, async (ev: IpcMainInvokeEventServer, action: string, syncPathId: number, query: string) =>
       this.onSyncTransferLogs(ev, action, syncPathId, query)
     )
-    appEvents.on(LOCAL_RENDERER.WINDOW.ZOOM.IN, () => this.windowZoomIn())
-    appEvents.on(LOCAL_RENDERER.WINDOW.ZOOM.OUT, () => this.windowZoomOut())
-    appEvents.on(LOCAL_RENDERER.WINDOW.ZOOM.RESET, () => this.windowZoomReset())
-    appEvents.on(LOCAL_RENDERER.UPDATE.DOWNLOADED, (msg: string) => this.viewsManager.sendToWrapperRenderer(LOCAL_RENDERER.UPDATE.DOWNLOADED, msg))
-    appEvents.on(LOCAL_RENDERER.POWER.PREVENT_APP_SUSPENSION, (state: boolean) => this.manageAppPreventSuspension(state))
-    appEvents.on(LOCAL_RENDERER.SETTINGS.HIDE_DOCK_ICON, () => this.hideDockIcon())
-    appEvents.on(LOCAL_RENDERER.SETTINGS.LAUNCH_AT_STARTUP, () => this.launchAtStartup())
-    appEvents.on(LOCAL_RENDERER.SETTINGS.START_HIDDEN, () => this.startHidden())
+    ipcMain.handle(REMOTE_RENDERER.OIDC.START_LOOPBACK, async (ev: IpcMainEventServer): Promise<{ redirectPort: number }> => {
+      const loopbackServer = LoopbackServer.getOrCreateLoopbackSession(ev.sender.serverId)
+      return await loopbackServer.start()
+    })
+    ipcMain.handle(REMOTE_RENDERER.OIDC.WAIT_CALLBACK, async (ev: IpcMainEventServer): Promise<OIDCCallbackParams> => {
+      const loopbackServer = LoopbackServer.sessions.get(ev.sender.serverId)
+      if (!loopbackServer) throw new Error('Unknown session')
+      return await loopbackServer.waitForCallback()
+    })
   }
 
   private async networkIsOnline(state: boolean) {

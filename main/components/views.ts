@@ -17,7 +17,8 @@ import {
   session,
   shell,
   WebContentsView,
-  WebContentsWillNavigateEventParams
+  WebContentsWillNavigateEventParams,
+  WebContentsWillRedirectEventParams
 } from 'electron'
 import { LOCAL_RENDERER, REMOTE_RENDERER } from '../constants/events'
 import { ServersManager } from '../../core/components/handlers/servers'
@@ -78,10 +79,17 @@ export class ViewsManager {
     const webView = new WebContentsView(viewProps(server.id)) as AppWebContentsView
     webView.webContents.serverName = server.name
     webView.webContents.serverId = server.id
-    webView.webContents.on('will-navigate', (event: Event<WebContentsWillNavigateEventParams>) => {
-      if (!event.url.startsWith(server.url)) {
-        event.preventDefault()
-        shell.openExternal(event.url).catch(console.error)
+    webView.webContents.on('will-navigate', (ev: Event<WebContentsWillNavigateEventParams>) => {
+      if (!ev.url.startsWith(server.url)) {
+        ev.preventDefault()
+        shell.openExternal(ev.url).catch(console.error)
+      }
+    })
+    webView.webContents.on('will-redirect', (ev: Event<WebContentsWillRedirectEventParams>) => {
+      // Important for OIDC provider redirection
+      if (!ev.url.startsWith(server.url)) {
+        ev.preventDefault()
+        shell.openExternal(ev.url).catch(console.error)
       }
     })
     this.mainWindow.contentView.addChildView(webView)

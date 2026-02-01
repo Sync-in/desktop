@@ -1,17 +1,10 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
-// modules
 import fs, { readFileSync } from 'node:fs'
 import { writeFile } from 'fs/promises'
 import path from 'node:path'
 import { execSync } from 'node:child_process'
 import crypto from 'node:crypto'
 import yaml from 'js-yaml'
-import { fileURLToPath } from 'node:url' // constants
+import { fileURLToPath } from 'node:url'
 
 // constants
 const __filename = fileURLToPath(import.meta.url)

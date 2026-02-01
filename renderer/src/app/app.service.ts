@@ -1,8 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
 import { inject, Injectable, NgZone, signal, WritableSignal } from '@angular/core'
 import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal'
 import { LOCAL_RENDERER, REMOTE_RENDERER } from '../../../main/constants/events'

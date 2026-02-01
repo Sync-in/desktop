@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { RequestsManager } from './requests'
 import { settingsManager } from './settings'
 import { findByNameOrID, genClientInfos, genUUID } from '../utils/functions'

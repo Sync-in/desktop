@@ -1,11 +1,3 @@
-/*
- * Sync-in | The open source file sync and share solution
- * Copyright (C) 2024-2025 Johan Legrand <johan@sync-in.com>
- * This program is licensed under the Affero General Public License (AGPL) version 3.
- * See the LICENSE file or <https://www.gnu.org/licenses/agpl-3.0.html> for more details.
- */
-
-// @ts-check
 import eslint from '@eslint/js'
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
 import globals from 'globals'

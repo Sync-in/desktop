@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { loadJsonFile, writeToFileSync } from '@sync-in-desktop/core/components/utils/functions'
 import { APP_CONF_FILE } from '../constants/settings'
 import { AppConfiguration } from '../interfaces/settings.interface'

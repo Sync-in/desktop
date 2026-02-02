@@ -83,7 +83,7 @@
     "bump:version": "commit-and-tag-version",
     "bump:version:dry": "commit-and-tag-version --dry-run",
     "docker:build": "docker build -t desktop-releases:local .",
-    "docker:buildx": "docker buildx build --platform linux/arm64,linux/amd64 --tag syncin/desktop-releases:latest --tag syncin/desktop-releases:${npm_package_version} . --push"
+    "docker:buildx": "docker buildx build --platform linux/arm64,linux/amd64 --tag syncin/desktop-releases:latest --tag syncin/desktop-releases:${npm_package_version} --tag syncin/desktop-releases:$(echo ${npm_package_version} | cut -d. -f1) . --push"
   },
   "private": true,
   "devDependencies": {

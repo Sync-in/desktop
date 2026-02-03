@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { RequestsManager } from './requests'
 import { settingsManager } from './settings'
 import { findByNameOrID, genClientInfos, genUUID } from '../utils/functions'
@@ -11,6 +5,9 @@ import { AxiosResponse } from 'axios'
 import { Server } from '../models/server'
 import { API } from '../constants/requests'
 import { SYNC_SERVER } from '../constants/auth'
+import type { SyncServerEvent } from '../interfaces/server.interface'
+import { NAME_ALREADY_USED, URL_ALREADY_USED } from '../constants/errors'
+import type { SyncClientAuthRegistration, SyncClientRegistration } from '../interfaces/sync-client-auth.interface'
 
 export class ServersManager {
   server: Server
@@ -33,7 +30,7 @@ export class ServersManager {
     return server
   }
 
-  static async unregister(s: Server): Promise<{ ok: boolean; msg?: string }> {
+  static async unregister(s: Server): Promise<SyncServerEvent> {
     const server = ServersManager.find(s.id)
     if (server.authToken) {
       const req = new RequestsManager(server)
@@ -57,20 +54,19 @@ export class ServersManager {
     settingsManager.writeServersSettings()
   }
 
-  async checkUpdatedProperties(server?: Server) {
-    if (!server) {
-      server = this.server
-    }
-    for (const s of ServersManager.list.filter((s: Server) => s.id !== server.id)) {
-      if (server.url && s.url.toLowerCase() === server.url.toLowerCase()) {
-        throw 'URL is already used'
+  static checkUpdatedProperties(serverProps: Partial<Server>, existingServer?: Server) {
+    for (const s of ServersManager.list.filter((s: Server) => s.id !== serverProps.id)) {
+      if (serverProps.url && s.url.toLowerCase() === serverProps.url.toLowerCase()) {
+        throw URL_ALREADY_USED
       }
-      if (s.name.toLowerCase() === server.name.toLowerCase()) {
-        throw 'Name is already used'
+      if (s.name.toLowerCase() === serverProps.name.toLowerCase()) {
+        throw NAME_ALREADY_USED
       }
     }
     // update server name
-    this.server.name = server.name
+    if (existingServer) {
+      existingServer.name = serverProps.name
+    }
   }
 
   async check(): Promise<[boolean, string]> {
@@ -95,7 +91,8 @@ export class ServersManager {
     }
   }
 
-  async add(login: string, password: string, code?: string): Promise<[boolean, string]> {
+  async add(auth?: SyncClientRegistration): Promise<[boolean, string]> {
+    // `auth` is null only when adding a server in the desktop app.
     try {
       const [ok, msg] = await this.check()
       if (!ok) {
@@ -107,18 +104,20 @@ export class ServersManager {
     let lastID = 0
     for (const srv of settingsManager.servers) {
       if (srv.name.toLowerCase() === this.server.name.toLowerCase()) {
-        return [false, 'Name is already used']
+        return [false, NAME_ALREADY_USED]
       }
       if (srv.url === this.server.url) {
-        return [false, 'URL is already used']
+        return [false, URL_ALREADY_USED]
       }
       lastID = Math.max(lastID, srv.id)
     }
     this.server.id = lastID + 1
-    try {
-      await this.register(login, password, code)
-    } catch (e) {
-      return [false, e]
+    if (auth) {
+      try {
+        await this.register(auth.login, auth.password, auth.code)
+      } catch (e) {
+        return [false, e]
+      }
     }
     settingsManager.servers.push(this.server)
     ServersManager.saveSettings()
@@ -131,7 +130,7 @@ export class ServersManager {
     }
     let r: AxiosResponse
     try {
-      r = await this.req.http.post<{ clientToken: string }>(API.REGISTER, {
+      r = await this.req.http.post<SyncClientAuthRegistration>(API.REGISTER, {
         login,
         password,
         code,

@@ -1,15 +1,9 @@
-/*!
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 /*
  * Component: modal
  * ----------------
  */
-.modal-lg {
-    max-width: 50% !important;
+.modal-md {
+    max-width: 45% !important;
 }
 
 .modal-header {
@@ -30,22 +24,6 @@
   font-size: $font-size-xs;
   padding: 8px 12px;
   background-color: $body-bg;
-}
-
-.modal-full {
-  max-width: 100%;
-  &.modal-dialog {
-    margin: 0;
-  }
-  .modal-content {
-    border: none;
-    .modal-header {
-      border: none;
-    }
-    .modal-body {
-      padding: 0;
-    }
-  }
 }
 
 //Modal variants
@@ -97,4 +75,20 @@
   .modal-footer {
     background-color: $gray-lightest;
   }
+}
+
+
+/* Initial state (before opening) */
+.modal.fade .modal-dialog {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.95);
+  transition:
+          transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+          opacity 0.3s ease-out;
+}
+
+/* Final state (modal visible) */
+.modal.show .modal-dialog {
+  opacity: 1;
+  transform: translateY(0) scale(1);
 }

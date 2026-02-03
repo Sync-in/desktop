@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { app, Menu } from 'electron'
 import { i18n } from './components/translate'
 import { WindowManager } from './components/windows'
@@ -15,6 +9,7 @@ import { UpdateManager } from './components/autoupdater'
 import { ENVIRONMENT, IS_MACOS, IS_PROD_ENV, IS_WINDOWS } from '../core/constants'
 import { createMenu } from './components/menus'
 import { appSettings } from './components/settings'
+import { LoopbackServer } from './components/loopback-server'
 
 class MainManager {
   trayManager: TrayManager
@@ -56,6 +51,7 @@ class MainManager {
     app.on('window-all-closed', () => console.log('all windows closed'))
     app.on('before-quit', (e: Event) => {
       e.preventDefault()
+      LoopbackServer.cleanupLoopbackSessions()
       this.eventsManager.runManager.exitGracefully()
       this.windowManager.setAppIsQuitting(true)
     })

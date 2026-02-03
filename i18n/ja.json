@@ -41,10 +41,7 @@
   "Please wait": "お待ちください",
   "Server display name": "サーバー表示名",
   "No server configured": "サーバーが設定されていません",
-  "For security reasons, please log in again": "セキュリティ上の理由により、再度ログインしてください",
-  "Authenticate": "認証",
   "Connect to a server": "サーバーに接続",
-  "Authenticate on the server": "サーバーで認証",
   "Delete the server": "サーバーを削除",
   "Edit the server": "サーバーを編集",
   "Login or Email": "ログイン名またはメール",
@@ -80,5 +77,7 @@
   "Support": "サポート",
   "Hide Dock Icon": "Dockアイコンを隠す",
   "Preferences": "環境設定",
-  "About": "このアプリについて"
+  "About": "このアプリについて",
+  "Name is already used": "名前はすでに使用されています",
+  "URL is already used": "URLはすでに使用されています"
 }

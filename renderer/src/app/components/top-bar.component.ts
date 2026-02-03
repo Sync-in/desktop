@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { Component, inject, ViewChild } from '@angular/core'
 import { AppService } from '../app.service'
 import { BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective } from 'ngx-bootstrap/dropdown'
@@ -51,8 +45,7 @@ export class TopBarComponent {
   }
 
   onActiveServer(_ev: Event, id: number) {
-    const server = this.findServerByID(id)
-    if (server.authTokenExpired || id !== this.activeServer.id) {
+    if (id !== this.activeServer.id) {
       this.appService.setActiveServer(this.findServerByID(id))
       this.appService.ipcRenderer.send(LOCAL_RENDERER.SERVER.SET_ACTIVE, id)
     }
@@ -69,19 +62,8 @@ export class TopBarComponent {
   openEditServerModal(ev: Event, server: SyncServer) {
     stopEventPropagation(ev)
     this.dropDownServer.hide()
-    if (server.authTokenExpired) {
-      this.openRenewServerModal(server)
-    } else {
-      this.appService.openDialog(ModalServerComponent, {
-        initialState: { config: { type: SERVER_ACTION.EDIT, server: server } } as ModalServerComponent
-      })
-    }
-  }
-
-  openRenewServerModal(server: SyncServer) {
-    this.dropDownServer.hide()
     this.appService.openDialog(ModalServerComponent, {
-      initialState: { config: { type: SERVER_ACTION.AUTHENTICATE, server: server } } as ModalServerComponent
+      initialState: { config: { type: SERVER_ACTION.EDIT, server: server } } as ModalServerComponent
     })
   }
 
@@ -95,11 +77,7 @@ export class TopBarComponent {
 
   onReload(ev: Event, server: SyncServer) {
     stopEventPropagation(ev)
-    if (server.authTokenExpired) {
-      this.openRenewServerModal(server)
-    } else {
-      this.appService.ipcRenderer.send(LOCAL_RENDERER.SERVER.RELOAD, server.id)
-    }
+    this.appService.ipcRenderer.send(LOCAL_RENDERER.SERVER.RELOAD, server.id)
   }
 
   enterMenuItem(i: number) {
@@ -117,9 +95,6 @@ export class TopBarComponent {
   private setActiveServer(server: SyncServer) {
     this.activeServer = server
     this.setServersAppsCounter(this.appService.serversAppsCounter.getValue())
-    if (this.activeServer.authTokenExpired) {
-      this.openRenewServerModal(this.activeServer)
-    }
   }
 
   private setServersAppsCounter(servers: ServerAppCounter[]) {

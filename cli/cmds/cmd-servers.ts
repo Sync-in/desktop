@@ -1,12 +1,7 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { Argv, CommandModule } from 'yargs'
 import { ServersManager } from '../../core/components/handlers/servers'
 import { Server } from '../../core/components/models/server'
+import type { SyncClientRegistration } from '@sync-in-desktop/core/components/interfaces/sync-client-auth.interface'
 
 const serverLS: CommandModule = {
   command: 'list',
@@ -49,7 +44,7 @@ const serverADD: CommandModule = {
     },
     code: {
       alias: 'c',
-      describe: 'Two-Fa Authentication Code',
+      describe: '2FA authentication code (or recovery code)',
       demandOption: false,
       type: 'string'
     }
@@ -57,9 +52,9 @@ const serverADD: CommandModule = {
   handler: async (argv: any) => {
     const server = new Server({ name: argv.name, url: argv.url })
     console.log('Adding the server')
+    ServersManager.checkUpdatedProperties(server)
     const manager = new ServersManager(server, false)
-    await manager.checkUpdatedProperties(server)
-    const [ok, msg] = await manager.add(argv.login, argv.password, argv.code)
+    const [ok, msg] = await manager.add({ login: argv.login, password: argv.password, code: argv.code } satisfies SyncClientRegistration)
     if (ok) {
       console.log('Server authentication & registration OK')
       console.log(server.toString())

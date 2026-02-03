@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import { setTimeout } from 'timers/promises'
 import http from 'http'
@@ -32,7 +26,7 @@ export class RequestsManager {
   private countReqsRetry = 0
   private countRetry = 0
   private maxRetry = 3
-  private retryDelay = 3000
+  private retryDelay = 2000
   // config
   public server: Server
   private httpController = new AbortController()

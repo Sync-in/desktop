@@ -1,13 +1,9 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
 import { getLogger } from './loggers'
 import { setTimeout } from 'timers/promises'
 import { TRANSFER_MIN_SIZE } from '../constants/handlers'
 import type { Logger } from 'winston'
 import type { SyncTransferContext } from '../interfaces/sync-transfer.interface'
+import { capitalize } from '../utils/functions'
 
 type Task = () => Promise<void>
 
@@ -81,7 +77,7 @@ export class TasksManager {
     }
 
     if (type === 'slow') queue.isDone = true
-    this.logger.debug(`${type.charAt(0).toUpperCase() + type.slice(1)} queue ${id} is done`)
+    this.logger.debug(`${capitalize(type)} queue ${id} is done`)
   }
 
   add(task: Task, size: number): void {

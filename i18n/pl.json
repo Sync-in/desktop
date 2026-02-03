@@ -41,10 +41,7 @@
   "Please wait": "Proszę czekać",
   "Server display name": "Wyświetlana nazwa serwera",
   "No server configured": "Nie skonfigurowano serwera",
-  "For security reasons, please log in again": "Ze względów bezpieczeństwa zaloguj się ponownie",
-  "Authenticate": "Uwierzytelnij",
   "Connect to a server": "Połącz z serwerem",
-  "Authenticate on the server": "Uwierzytelnij na serwerze",
   "Delete the server": "Usuń serwer",
   "Edit the server": "Edytuj serwer",
   "Login or Email": "Login lub e‑mail",
@@ -80,5 +77,7 @@
   "Support": "Wsparcie",
   "Hide Dock Icon": "Ukryj ikonę Docka",
   "Preferences": "Preferencje",
-  "About": "O programie"
+  "About": "O programie",
+  "Name is already used": "Nazwa jest już używana",
+  "URL is already used": "Adres URL jest już używany"
 }

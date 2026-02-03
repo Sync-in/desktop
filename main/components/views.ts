@@ -1,10 +1,4 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
-import { defaultViewProps, RENDERER_FILE, TAB_BAR_HEIGHT, WRAPPER_VIEW_OFFSET_HEIGHT } from '../constants/windows'
+import { partitionFor, RENDERER_FILE, TAB_BAR_HEIGHT, viewProps, WRAPPER_VIEW_OFFSET_HEIGHT } from '../constants/windows'
 import {
   BrowserWindow,
   dialog,
@@ -17,7 +11,8 @@ import {
   session,
   shell,
   WebContentsView,
-  WebContentsWillNavigateEventParams
+  WebContentsWillNavigateEventParams,
+  WebContentsWillRedirectEventParams
 } from 'electron'
 import { LOCAL_RENDERER, REMOTE_RENDERER } from '../constants/events'
 import { ServersManager } from '../../core/components/handlers/servers'
@@ -75,13 +70,20 @@ export class ViewsManager {
   }
 
   async createWebView(server: Server): Promise<AppWebContentsView> {
-    const webView = new WebContentsView(defaultViewProps) as AppWebContentsView
+    const webView = new WebContentsView(viewProps(server.id)) as AppWebContentsView
     webView.webContents.serverName = server.name
     webView.webContents.serverId = server.id
-    webView.webContents.on('will-navigate', (event: Event<WebContentsWillNavigateEventParams>) => {
-      if (!event.url.startsWith(server.url)) {
-        event.preventDefault()
-        shell.openExternal(event.url).catch(console.error)
+    webView.webContents.on('will-navigate', (ev: Event<WebContentsWillNavigateEventParams>) => {
+      if (!ev.url.startsWith(server.url)) {
+        ev.preventDefault()
+        shell.openExternal(ev.url).catch(console.error)
+      }
+    })
+    webView.webContents.on('will-redirect', (ev: Event<WebContentsWillRedirectEventParams>) => {
+      // Important for OIDC provider redirection
+      if (!ev.url.startsWith(server.url)) {
+        ev.preventDefault()
+        shell.openExternal(ev.url).catch(console.error)
       }
     })
     this.mainWindow.contentView.addChildView(webView)
@@ -126,8 +128,8 @@ export class ViewsManager {
       this.mainWindow.contentView.addChildView(this.wrapperView)
       this.wrapperView.webContents.focus()
     } else {
-      // avoid to lose focus on TopView if modal is open or the active server has no content
-      if (this.isModalOpen || !this.currentServer.available || this.currentServer.authTokenExpired) {
+      // Avoid losing focus on TopView if modal is open or the active server has no content
+      if (this.isModalOpen || !this.currentServer.available) {
         return
       }
       this.mainWindow.contentView.addChildView(this.currentView)
@@ -137,12 +139,23 @@ export class ViewsManager {
   }
 
   reloadView(serverId?: number, clear = false) {
-    const targetView = serverId ? this.allViews[serverId] : this.currentView
+    const view = serverId ? this.allViews[serverId] : this.currentView
     if (clear) {
-      session.defaultSession.clearCache().then(() => targetView.webContents.reloadIgnoringCache())
+      session.defaultSession.clearCache().then(() => view.webContents.reloadIgnoringCache())
     } else {
-      targetView.webContents.reload()
+      view.webContents.reload()
     }
+  }
+
+  async destroyView(server: Server) {
+    const view = this.allViews[server.id]
+    if (!view) return
+    this.mainWindow.contentView.removeChildView(view)
+    view.webContents.close()
+    delete this.allViews[server.id]
+    const s = session.fromPartition(partitionFor(server.id))
+    await s.clearStorageData({ storages: ['cookies', 'localstorage', 'cachestorage', 'filesystem'] })
+    await s.clearCache()
   }
 
   sendServersUpdate() {
@@ -174,7 +187,7 @@ export class ViewsManager {
         this.resizeViews()
       }
     })
-    this.wrapperView = new WebContentsView(defaultViewProps)
+    this.wrapperView = new WebContentsView(viewProps('wrapper'))
     this.mainWindow.contentView.addChildView(this.wrapperView)
     this.wrapperView.webContents.loadFile(RENDERER_FILE).then(() => {
       this.wrapperView.webContents.setZoomFactor(1)

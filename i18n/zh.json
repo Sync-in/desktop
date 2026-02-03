@@ -41,10 +41,7 @@
   "Please wait": "请稍候",
   "Server display name": "服务器显示名称",
   "No server configured": "未配置服务器",
-  "For security reasons, please log in again": "出于安全原因，请重新登录",
-  "Authenticate": "认证",
   "Connect to a server": "连接到服务器",
-  "Authenticate on the server": "在服务器上进行认证",
   "Delete the server": "删除服务器",
   "Edit the server": "编辑服务器",
   "Login or Email": "登录名或电子邮件",
@@ -80,5 +77,7 @@
   "Support": "支持",
   "Hide Dock Icon": "隐藏程序坞图标",
   "Preferences": "偏好设置",
-  "About": "关于"
+  "About": "关于",
+  "Name is already used": "名称已被使用",
+  "URL is already used": "URL 已被使用"
 }

@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import {
   faArrowDown,
   faArrowRotateRight,
@@ -17,7 +11,6 @@ import {
   faEllipsisVertical,
   faFolderOpen,
   faGlobe,
-  faKey,
   faLock,
   faPause,
   faPencil,
@@ -67,6 +60,5 @@ export const faIcons = {
   faGlobe,
   faUserAlt,
   faLock,
-  faKey,
   faQrcode
 }

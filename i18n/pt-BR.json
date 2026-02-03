@@ -41,10 +41,7 @@
   "Please wait": "Por favor, aguarde",
   "Server display name": "Nome de exibição do servidor",
   "No server configured": "Nenhum servidor configurado",
-  "For security reasons, please log in again": "Por motivos de segurança, faça login novamente",
-  "Authenticate": "Autenticar",
   "Connect to a server": "Conectar a um servidor",
-  "Authenticate on the server": "Autenticar no servidor",
   "Delete the server": "Excluir o servidor",
   "Edit the server": "Editar o servidor",
   "Login or Email": "Login ou e-mail",
@@ -80,5 +77,7 @@
   "Support": "Suporte",
   "Hide Dock Icon": "Ocultar ícone do Dock",
   "Preferences": "Preferências",
-  "About": "Sobre"
+  "About": "Sobre",
+  "Name is already used": "O nome já está em uso",
+  "URL is already used": "A URL já está em uso"
 }

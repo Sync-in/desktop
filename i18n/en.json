@@ -39,10 +39,7 @@
   "Please wait": "Please wait",
   "Server display name": "Server display name",
   "No server configured": "No server configured",
-  "For security reasons, please log in again": "For security reasons, please log in again",
-  "Authenticate": "Authenticate",
   "Connect to a server": "Connect to a server",
-  "Authenticate on the server": "Authenticate on the server",
   "Delete the server": "Delete the server",
   "Edit the server": "Edit the server",
   "Login or Email": "Login or Email",
@@ -73,5 +70,7 @@
   "Support": "Support",
   "Hide Dock Icon": "Hide Dock Icon",
   "Preferences": "Preferences",
-  "About": "About"
+  "About": "About",
+  "Name is already used": "Name is already used",
+  "URL is already used": "URL is already used"
 }

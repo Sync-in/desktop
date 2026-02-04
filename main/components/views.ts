@@ -152,6 +152,8 @@ export class ViewsManager {
     if (!view) return
     this.mainWindow.contentView.removeChildView(view)
     view.webContents.close()
+    // Force destruction to ensure all connections are closed
+    ;(view.webContents as any).destroy?.()
     delete this.allViews[server.id]
     const s = session.fromPartition(partitionFor(server.id))
     await s.clearStorageData({ storages: ['cookies', 'localstorage', 'cachestorage', 'filesystem'] })

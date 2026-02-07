@@ -131,12 +131,12 @@ export class UpdateManager {
     }
   }
 
-  private async debug() {
-    // testing checking updates
-    await this.checkAndSetFeedUrl()
-    autoUpdater.forceDevUpdateConfig = true
-    autoUpdater.allowPrerelease = true
-    autoUpdater.autoDownload = false
-    autoUpdater.checkForUpdates().then((r) => console.log(r))
-  }
+  // private async debug() {
+  //   // testing checking updates
+  //   await this.checkAndSetFeedUrl()
+  //   autoUpdater.forceDevUpdateConfig = true
+  //   autoUpdater.allowPrerelease = true
+  //   autoUpdater.autoDownload = false
+  //   autoUpdater.checkForUpdates().then((r) => console.log(r))
+  // }
 }

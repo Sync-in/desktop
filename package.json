@@ -14,6 +14,9 @@
     "type": "git",
     "url": "git+https://github.com/Sync-in/desktop.git"
   },
+  "bugs": {
+    "url": "https://github.com/Sync-in/desktop/issues"
+  },
   "releasespage": "https://github.com/Sync-in/desktop/releases",
   "funding": [
     {
@@ -191,7 +194,7 @@
     "publish": [
       {
         "provider": "generic",
-        "url": "https://updates.sync-in.org/${name}/${os}"
+        "url": "https://releases.sync-in.org/${name}/${os}"
       }
     ],
     "nsis": {

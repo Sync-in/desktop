@@ -1,8 +1,21 @@
 #!/usr/bin/env node
+import process from 'node:process'
 import _yargs from 'yargs/yargs'
 import { hideBin } from 'yargs/helpers'
 import { getLogger } from '../core/components/handlers/loggers'
 import { getCMDS } from './cmds'
+
+// Catch deprecated warnings
+const originalEmitWarning = process.emitWarning.bind(process)
+process.emitWarning = ((...args: string[]) => {
+  if (args.indexOf('DEP0169') > -1) {
+    // todo: remove this when fixed
+    // https://github.com/axios/axios/issues/7228
+    // DeprecationWarning: url.parse() used in proxy resolution → Node DEP0169
+    return
+  }
+  return originalEmitWarning(...args)
+}) as any
 
 const logger = getLogger('CommandLine')
 

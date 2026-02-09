@@ -2,7 +2,8 @@
   "name": "sync-in-desktop",
   "productName": "Sync-in",
   "description": "Sync-in Desktop Application",
-  "version": "1.6.2",
+  "version": "2.0.0",
+  "private": true,
   "license": "AGPL-3.0-or-later",
   "main": "dist/main/main.js",
   "author": {
@@ -88,7 +89,13 @@
     "docker:build": "docker build -t desktop-releases:local .",
     "docker:buildx": "docker buildx build --platform linux/arm64,linux/amd64 --tag syncin/desktop-releases:latest --tag syncin/desktop-releases:${npm_package_version} --tag syncin/desktop-releases:$(echo ${npm_package_version} | cut -d. -f1) . --push"
   },
-  "private": true,
+  "commit-and-tag-version": {
+    "header": "",
+    "skip": {
+      "commit": true,
+      "tag": true
+    }
+  },
   "devDependencies": {
     "@eslint/js": "^9.18.0",
     "@swc/cli": "^0.7.7",
@@ -109,13 +116,6 @@
     "webpack": "^5.98.0",
     "webpack-cli": "^6.0.1",
     "webpack-shebang-plugin": "^1.1.8"
-  },
-  "commit-and-tag-version": {
-    "header": "",
-    "skip": {
-      "commit": true,
-      "tag": true
-    }
   },
   "build": {
     "asar": true,

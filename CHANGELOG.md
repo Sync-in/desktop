@@ -1,4 +1,20 @@
 
+## [2.0.0](https://github.com/Sync-in/desktop/compare/v1.6.2...v2.0.0) (2026-02-09)
+
+
+### Features
+
+* **auth:** refactor authentication services and delegate desktop client registration to server ([9c64f08](https://github.com/Sync-in/desktop/commit/9c64f086c146b7618dc0fa3bfab96b03747e7210))
+* **auth:** refactor server actions to streamline client registration and enhance type safety ([40de54b](https://github.com/Sync-in/desktop/commit/40de54b59eb5bd4aae032633357a23dbe79a87e7))
+* **main:** implement loopback callback server for desktop OIDC flow ([d13d0e1](https://github.com/Sync-in/desktop/commit/d13d0e1734081c2cc47e81b22d8799ccb1ac8878))
+
+
+### Bug Fixes
+
+* **main:views:** refactor view destruction to ensure cleanup of views, sessions, and cookies ([48028b3](https://github.com/Sync-in/desktop/commit/48028b3562d6bd2cfc02c33dbae3083208bdd2ec))
+* **main:** force view destruction to ensure all connections are closed ([a039f76](https://github.com/Sync-in/desktop/commit/a039f76fa57b6356a09dcae98c1345e212b4e8de))
+* **main:** refactor view creation and destruction to ensure session partitioning and cleanup ([ac4c8f0](https://github.com/Sync-in/desktop/commit/ac4c8f05e324f2006d08f24f19581d6cc1233d17))
+
 ## [1.6.2](https://github.com/Sync-in/desktop/compare/v1.6.1...v1.6.2) (2026-01-19)
 
 

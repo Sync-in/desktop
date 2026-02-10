@@ -16,11 +16,10 @@ _Welcome to the Sync-in desktop client repository!_
 <a href="#-license"><img src="https://img.shields.io/badge/Licence-AGPL%20v3.0-green.svg" alt="License"/></a>
 <a href="https://discord.gg/qhJyzwaymT" target="_blank"><img src="https://img.shields.io/badge/Discord-Online-brightgreen.svg" alt="Discord"/></a>
 
-The client for the **Sync-in** platform, bringing a complete local experience with advanced file sync and
-server management features.
+The client for the **Sync-in platform** provides a **local interface for synchronization, file management, and server interactions**.
 
-Available as a **desktop application** (Windows, macOS, Linux) and a **command line interface (CLI)**, Sync-in adapts to
-your workflow — whether on a personal workstation, a Linux server, or a headless environment...
+Available as both a **desktop application** (Windows, macOS, Linux) and a **command line interface (CLI)**, Sync-in adapts to different workflows —
+whether on a **personal workstation**, **automation environment**, or **headless server**.
 
 <picture>
   <source srcset="https://raw.githubusercontent.com/Sync-in/assets/main/desktop-dark.png" media="(prefers-color-scheme: dark)" />
@@ -33,27 +32,30 @@ your workflow — whether on a personal workstation, a Linux server, or a headle
 
 ### 💻 Desktop Application
 
-- ⚙️ **Full feature parity with the web version**
-- 🌐 **Multi-server support**: connect and manage multiple Sync-in servers
-- 🔁 **Local file synchronization**
-    - One-way sync (push or pull)
-    - Two-way sync
-- 🛡️ **Two sync modes**:
-    - **Secure**: checksum-based for maximum integrity
-    - **Fast**: metadata-based (date, size) for improved performance
-- 📆 **Plannable syncs**: schedule automatic synchronizations
-- 🎯 **Custom filters**: exclude specific files/folders from sync
-- 🧪 **Sync simulation**: preview what will happen before syncing
-- 📥 **Integrated download manager** offers a unified experience.
-- 👀 **Transfer visualization**: view real-time transfer logs
-- 🤖 **Smart assistant**: step-by-step sync configuration wizard
-- 🔄 **Automatic updates**: the application keeps itself up to date in the background
+- 🌐 Multi-server support: connect and manage multiple Sync-in servers from a single client
+- 🔁 Flexible file synchronization
+    - ⬆️⬇️ One-way sync (push or pull)
+    - 🔄 Two-way sync
+- 🛡️ Multiple sync strategies
+    - ✅ Secure mode: checksum-based verification for maximum integrity
+    - ⚡ Fast mode: metadata-based detection (date, size) for improved performance
+- 📆 Scheduled synchronization: automate sync tasks
+- 🎯 Custom filters: include or exclude files and folders
+- 🧪 Sync preview: simulate operations before applying changes
+- 📥 Integrated download and transfer manager
+- 👀 Transfer monitoring: real-time logs and synchronization tracking
+- 🤖 Guided configuration wizard: simplified setup and onboarding
+- 🔐 Modern authentication support compatible with Sync-in server identity flows
+- 🔄 Automatic updates: background update system
+
+---
 
 ### 📟 Command Line Interface (CLI)
 
-- Works on **any Linux server**
-- Sync files to/from any Sync-in server
-- Perfect for automation, headless servers, cron jobs, or scripts
+- 🧩 Runs in any environment supporting Node.js
+- 🔁 Synchronize files to and from any Sync-in server
+- ⚙️ Ideal for automation, scripting, cron jobs, CI/CD pipelines, and headless environments
+- 🔐 Compatible with Sync-in authentication and identity flows
 
 ---
 
@@ -66,15 +68,16 @@ If you find it useful, you can:
 - 🐛 Report issues and suggest improvements
 - 🤝 Contribute code, translations, or documentation
 - 💬 Join the community on :
-  - [GitHub Discussions](https://github.com/Sync-in/desktop/discussions)
-  - [Discord](https://discord.gg/qhJyzwaymT)
+    - [GitHub Discussions](https://github.com/Sync-in/desktop/discussions)
+    - [Discord](https://discord.gg/qhJyzwaymT)
 - 💖 Support the project !
-  - [GitHub Sponsors](https://github.com/sponsors/Sync-in)
-  - [Other ways to support](https://sync-in.com/support)
+    - [GitHub Sponsors](https://github.com/sponsors/Sync-in)
+    - [Other ways to support](https://sync-in.com/support)
 
 ---
 
 ## 🤝 Contributing
+
 Before submitting your pull request, please confirm the following:
 
 - ✅ I have read and followed the [contribution guide](CONTRIBUTING.md).
@@ -83,6 +86,7 @@ Before submitting your pull request, please confirm the following:
 ---
 
 ## 📜 License
+
 This project is licensed under the **GNU Affero General Public License (AGPL-3.0-or-later)**.  
 See [LICENSE](LICENSE) for the full text.
 

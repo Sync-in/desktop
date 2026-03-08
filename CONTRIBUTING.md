@@ -72,6 +72,7 @@ This structure enables shared tooling, coordinated builds, and simplified depend
 git clone git@github.com:Sync-in/desktop.git
 cd desktop
 ```
+
 ### Install dependencies
 
 ```bash
@@ -81,27 +82,32 @@ npm ci
 ### Build App & CLI for development
 
 Run these commands in separate terminals. Both run in watch mode.
+
 ```bash
 npm run angular:dev # build renderer (dist/renderer)
 npm run webpack:all:dev # build app (dist/main) & cli (releases/sync-in-cli)
 ```
 
 To build only App:
+
 ```bash
 npm run webpack:app:dev
 ```
 
 To build only CLI:
+
 ```bash
 npm run webpack:cli:dev
 ```
 
 ### Start App (dev mode)
+
 ```bash
 npm run app # restart after code changes in `main`; renderer changes are handled by `angular:dev`
 ```
 
 ### Start CLI (dev mode)
+
 ```bash
 ./releases/sync-in-cli/sync-in-cli-*.js --help
 ```
@@ -120,6 +126,18 @@ npm run app # restart after code changes in `main`; renderer changes are handled
 - Follow code style rules (`eslint.config.mjs`, `.prettierrc`)
 - Prefer clear naming and documentation within your code
 - Document significant architectural changes and updates
+
+## i18n Translations
+
+To declare a new language:
+
+1. Edit `i18n/index.ts` and add the language code to the `LANG_SUPPORTED` constant.
+2. Create a new language file in `i18n/` named `language-region.json`, using the same language code declared previously.
+3. Import the *ngx-bootstrap* locale in `renderer/src/i18n/lib/bs.i18n.ts`. Check if the locale exists in:  
+   https://github.com/valor-software/ngx-bootstrap/tree/development/src/chronos/i18n
+4. Import the *dayjs* locale in `renderer/src/i18n/lib/dayjs.i18n.ts`. Check if the locale exists in:  
+   https://github.com/iamkun/dayjs/tree/dev/src/locale
+5. Enable the *Electron* locale in `package.json` by adding the language code to the `electronLanguages` array.
 
 ## Troubleshooting
 

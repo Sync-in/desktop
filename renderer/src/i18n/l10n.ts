@@ -19,8 +19,15 @@ import { loadBootstrapLocale } from './lib/bs.i18n'
 export const STORAGE_SESSION_KEY = 'locale' as const
 export const LANG_FORMAT: L10nFormat = 'language-region' as const
 
+type L10nSchema = { locale: { language: i18nLocaleSupported }; dir: 'ltr' | 'rtl' }[]
+
+const LANG_SCHEMA: L10nSchema = Array.from(LANG_SUPPORTED, (language) => ({
+  locale: { language },
+  dir: 'ltr'
+}))
+
 export const l10nConfig: L10nConfig & {
-  schema: { locale: { language: i18nLocaleSupported }; dir: 'ltr' | 'rtl' }[]
+  schema: L10nSchema
 } = {
   format: LANG_FORMAT,
   providers: [{ name: 'app', asset: 'app' }],
@@ -28,22 +35,7 @@ export const l10nConfig: L10nConfig & {
   cache: true,
   keySeparator: '|',
   defaultLocale: { language: 'en' },
-  schema: [
-    { locale: { language: 'de' }, dir: 'ltr' },
-    { locale: { language: 'en' }, dir: 'ltr' },
-    { locale: { language: 'es' }, dir: 'ltr' },
-    { locale: { language: 'fr' }, dir: 'ltr' },
-    { locale: { language: 'hi' }, dir: 'ltr' },
-    { locale: { language: 'it' }, dir: 'ltr' },
-    { locale: { language: 'ja' }, dir: 'ltr' },
-    { locale: { language: 'ko' }, dir: 'ltr' },
-    { locale: { language: 'pl' }, dir: 'ltr' },
-    { locale: { language: 'pt' }, dir: 'ltr' },
-    { locale: { language: 'pt-BR' }, dir: 'ltr' },
-    { locale: { language: 'ru' }, dir: 'ltr' },
-    { locale: { language: 'tr' }, dir: 'ltr' },
-    { locale: { language: 'zh' }, dir: 'ltr' }
-  ]
+  schema: LANG_SCHEMA
 }
 
 @Injectable({ providedIn: 'root' })

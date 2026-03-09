@@ -125,16 +125,14 @@ export class ServersManager {
   }
 
   async register(login: string, password: string, code?: string): Promise<void> {
-    if (!this.server.authID) {
-      this.server.authID = genUUID()
-    }
+    const clientID = this.server.authID ?? genUUID()
     let r: AxiosResponse
     try {
       r = await this.req.http.post<SyncClientAuthRegistration>(API.REGISTER, {
         login,
         password,
         code,
-        clientId: this.server.authID,
+        clientId: clientID,
         info: genClientInfos()
       })
     } catch (e) {
@@ -152,6 +150,9 @@ export class ServersManager {
       this.server.authTokenExpired = false
     } else {
       throw 'Client token is missing'
+    }
+    if (!this.server.authID) {
+      this.server.authID = clientID
     }
   }
 }

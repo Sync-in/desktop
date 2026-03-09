@@ -1,4 +1,4 @@
-export const LANG_SUPPORTED = new Set(['de', 'en', 'es', 'fr', 'hi', 'it', 'ja', 'ko', 'pl', 'pt', 'pt-BR', 'ru', 'tr', 'zh'] as const)
+export const LANG_SUPPORTED = new Set(['de', 'en', 'es', 'fr', 'hi', 'it', 'ja', 'ko', 'nl', 'pl', 'pt', 'pt-BR', 'ru', 'tr', 'zh'] as const)
 export type i18nLocaleSupported = typeof LANG_SUPPORTED extends Set<infer T> ? T : never
 export const LANG_DEFAULT: i18nLocaleSupported = 'en'
 

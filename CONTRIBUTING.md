@@ -137,7 +137,6 @@ To declare a new language:
    https://github.com/valor-software/ngx-bootstrap/tree/development/src/chronos/i18n
 4. Import the *dayjs* locale in `renderer/src/i18n/lib/dayjs.i18n.ts`. Check if the locale exists in:  
    https://github.com/iamkun/dayjs/tree/dev/src/locale
-5. Enable the *Electron* locale in `package.json` by adding the language code to the `electronLanguages` array.
 
 ## Troubleshooting
 

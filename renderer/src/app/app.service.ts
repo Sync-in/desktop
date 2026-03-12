@@ -52,7 +52,7 @@ export class AppService {
   private readonly faConfig = inject(FaConfig)
   private modalRef: BsModalRef = null
   private readonly modalConfig = { animated: true, keyboard: true, backdrop: true, ignoreBackdropClick: true }
-  private readonly modalClass = 'modal-md modal-primary modal-dialog-centered'
+  private readonly modalBaseClass = 'modal-md modal-primary modal-dialog-centered'
   // Observable Network
   private _networkIsOnline = new BehaviorSubject<boolean>(navigator.onLine)
   public networkIsOnline: Observable<boolean> = this._networkIsOnline
@@ -83,7 +83,7 @@ export class AppService {
     }
     if (dialog) {
       this.ipcRenderer.send(LOCAL_RENDERER.UI.MODAL_TOGGLE, true)
-      this.modalRef = this.bsModal.show(dialog, Object.assign(componentStates, this.modalConfig, { class: this.modalClass }))
+      this.modalRef = this.bsModal.show(dialog, Object.assign(componentStates, this.modalConfig, { class: this.getModalClass() }))
     } else {
       this.modalRef = this.bsModal.show(
         ModalServerComponent,
@@ -92,7 +92,7 @@ export class AppService {
             initialState: { config: { type: SERVER_ACTION.ADD, server: null } } as ModalServerComponent
           },
           this.modalConfig,
-          { class: this.modalClass }
+          { class: this.getModalClass() }
         )
       )
     }
@@ -117,5 +117,9 @@ export class AppService {
   onHide() {
     this.modalRef = null
     this.ipcRenderer.send(LOCAL_RENDERER.UI.MODAL_TOGGLE, false)
+  }
+
+  private getModalClass() {
+    return `${this.modalBaseClass} ${this.themeMode()}`
   }
 }

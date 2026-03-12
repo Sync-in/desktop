@@ -2,11 +2,11 @@
 // Colors
 $white: #ffffff;
 $gray-dark: #384042;
-$gray: #9faecb;
-$gray-mid: #b9c5da;
-$gray-light: #d4dbe8;
-$gray-lighter: #e1e6ef;
-$gray-lightest: #eef1f6;
+$gray: #95a8c6;
+$gray-mid: #b3c2d9;
+$gray-light: #cfd9e7;
+$gray-lighter: #dde5f0;
+$gray-lightest: #edf2f8;
 $light-blue: #2e92ce;
 $lighter-blue: #94c7e8;
 $red: #dc3545;
@@ -23,7 +23,7 @@ $teal: #39CCCC;
 $dark-teal: #527a7a;
 $olive: #3D9970;
 $lime: #01FF70;
-$orange: #ff7700;
+$orange: #ff6f00;
 $yellow: #ffc107;
 $fuchsia: #F012BE;
 $purple: #9b59b6;
@@ -38,51 +38,62 @@ $info: $aqua;
 $warning: $orange;
 $danger: $red;
 $mark-bg: $light-green;
-$muted: #777;
-// Options
-// Font, line-height, and color for body text, headings, and more.
-$font-size-base: 0.9rem; // Assumes the browser default, typically `16px`
-$font-size-lg: 1rem;
-$font-size-md: .90rem;
-$font-size-sm: .80rem;
-$font-size-xs: .75rem;
-$font-size-xxs: .70rem;
-$font-size-xxxs: .60rem;
-$font-size-xxxxs: .55rem;
+$muted: #6d7278;
+
+// Typography scale (aligned with sync-in-server)
+$font-size-root: 16px;
+$font-size-3xl: 1.25rem; // 20px
+$font-size-2xl: 1.125rem; // 18px
+$font-size-xl: 1rem; // 16px
+$font-size-lg: 0.9375rem; // 15px
+$font-size-md: 0.875rem; // 14px
+$font-size-base: 0.8125rem; // 13px
+$font-size-sm: 0.75rem; // 12px
+$font-size-xs: 0.7125rem; // 11px
+$font-size-2xs: 0.65rem; // 10.4px
+$small-font-size: $font-size-sm;
+
+$h1-font-size: $font-size-3xl;
+$h2-font-size: $font-size-2xl;
+$h3-font-size: $font-size-xl;
+$h4-font-size: $font-size-lg;
+$h5-font-size: $font-size-md;
+$h6-font-size: $font-size-base;
+
+// Legacy aliases kept for desktop custom utility classes
+$font-size-xxs: $font-size-2xs;
+$font-size-xxxs: $font-size-2xs;
+$font-size-xxxxs: $font-size-2xs;
 
 //--------------------------------------------------------
 //Body background (Affects main content background only)
-$body-bg: transparent;
+$body-bg: $gray-lighter;
 $body-color: #333;
 $custom-color: #212529;
 $custom-light-color: #384047;
 $custom-dark-color: #28353b;
 $list-group-color: $custom-color;
-$placeholder-color: #8c8c8c;
+$placeholder-color: $muted;
 // Themed colors
 $dark-theme-bg-color: #222d32;
 $dark-theme-font-color: $gray-light;
 $dark-theme-border-color: #304047;
 $dark-theme-dropdown-bg-color: $dark-theme-border-color;
 $dark-theme-dropdown-item-color: lighten($dark-theme-bg-color, 60%);
+$dark-modal-text-color: $gray-light;
+$dark-modal-placeholder-color: darken($gray-light, 12%);
+$dark-modal-header-border-color: lighten($custom-dark-color, 6%);
+$dark-modal-body-bg: lighten($custom-dark-color, 1%);
+$dark-modal-footer-bg: darken($custom-dark-color, 4%);
 
 $light-theme-bg-color: $navy;
 $light-theme-font-color: $gray-lightest;
 $light-theme-border-color: lighten($light-theme-bg-color, 10%);
 $light-theme-dropdown-bg-color: lighten($light-theme-bg-color, 10%);
 $light-theme-dropdown-item-color: $gray-light;
+$light-modal-body-bg: lighten($body-bg, 2%);
+$light-modal-footer-bg: $gray-lightest;
 
-
-// Font, line-height, and color for body text, headings, and more.
-$font-size-base: 0.9rem; // Assumes the browser default, typically `16px`
-$font-size-xl: 1.1rem;
-$font-size-lg: 1rem;
-$font-size-md: .90rem;
-$font-size-sm: .80rem;
-$font-size-xs: .75rem;
-$font-size-xxs: .70rem;
-$font-size-xxxs: .65rem;
-$font-size-xxxxs: .60rem;
 // Quickly modify global styling by enabling or disabling optional features.
 $enable-transitions: true;
 $enable-rounded: true;
@@ -91,11 +102,22 @@ $enable-shadows: true;
 $enable-sidebar-nav-rounded: false;
 $border-color: $gray-lighter;
 $hr-color: $secondary;
-$btn-font-size: $font-size-xs !default;
-$btn-font-size-sm: $font-size-xs;
+$btn-font-size: $font-size-base !default;
+$btn-font-size-sm: $font-size-sm;
+$btn-font-size-lg: $font-size-base;
+$btn-padding-y: .25rem;
+$btn-padding-x: .5rem;
+$btn-padding-x-xs: .5rem !default;
+$btn-padding-y-xs: .2rem !default;
+$btn-padding-x-xxs: .2rem !default;
+$btn-padding-y-xxs: .1rem !default;
+$btn-padding-y-lg: .4rem !default;
+$btn-padding-x-lg: .9rem !default;
+$btn-disabled-opacity: 0.4;
 $btn-close-width: .75em !default;
 $btn-close-padding-x: .5em !default;
 $btn-box-shadow: false;
+$theme-btn-bg-hover-overlay-shadow: rgba(0, 0, 0, 0.2);
 // Dropdowns
 $btn-active-box-shadow: none;
 // Modals
@@ -107,8 +129,8 @@ $modal-content-bg: lighten($gray-lighter, 1%);
 // Inputs
 $input-bg: $white;
 $input-color: $custom-color;
-$input-font-size: $font-size-sm;
-$input-font-size-sm: $font-size-xs;
+$input-font-size: $font-size-base;
+$input-font-size-sm: $font-size-sm;
 $input-box-shadow: none !important;
 $input-focus-box-shadow: none !important;
 $input-disabled-color: $muted;

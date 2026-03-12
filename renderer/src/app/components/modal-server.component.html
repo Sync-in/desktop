@@ -4,11 +4,11 @@
     <fa-icon [icon]="icons.faServer"/>
     <span class="ms-1">{{ this.loginForm.value.name || this.config?.server?.name }}</span>
   </h4>
-  <h4 class="modal-title ms-auto">
+  <h4 class="modal-title ms-auto fw-normal">
     <span l10nTranslate>{{ titleText }}</span>
   </h4>
   @if (activeServer.id) {
-    <button type="button" class="btn-close close pull-right ms-2" aria-label="Close" (click)="closeModal()">
+    <button type="button" class="btn-close btn-close-white close pull-right ms-2" aria-label="Close" (click)="closeModal()">
       <span aria-hidden="true" class="visually-hidden">&times;</span>
     </button>
   }
@@ -54,11 +54,11 @@
 </div>
 <div class="modal-footer">
   @if (activeServer.id) {
-    <button type="button" class="btn btn-sm btn-secondary" (click)="closeModal()" l10nTranslate>Cancel</button>
+    <button type="button" class="btn btn-secondary" (click)="closeModal()" l10nTranslate>Cancel</button>
   }
   <button (click)="onSubmit()"
           [disabled]="submitted || loginForm.invalid"
-          class="btn btn-sm {{isRemoveModal ? 'btn-danger' : 'btn-primary'}}"
+          class="btn {{isRemoveModal ? 'btn-danger' : 'btn-primary'}}"
           type="submit"
           role="button">
     <span l10nTranslate>Confirm</span>

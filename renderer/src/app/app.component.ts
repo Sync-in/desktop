@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core'
+import { Component, effect, inject, OnInit } from '@angular/core'
 import { AppService } from './app.service'
 import { LOCAL_RENDERER } from '../../../main/constants/events'
 import { L10nTranslateDirective } from 'angular-l10n'
@@ -6,6 +6,7 @@ import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { TopBarComponent } from './components/top-bar.component'
 import { BottomBarComponent } from './components/bottom-bar-component'
 import { faIcons } from './common/icons'
+import { THEME } from '../../../main/constants/themes'
 import type { SyncServer } from '@sync-in-desktop/core/components/interfaces/server.interface'
 
 @Component({
@@ -22,6 +23,7 @@ export class AppComponent implements OnInit {
 
   constructor() {
     this.appService.activeServer.subscribe((server: SyncServer) => this.setActiveServer(server))
+    effect(() => this.setBodyThemeClass(this.appService.themeMode()))
   }
 
   ngOnInit() {
@@ -47,5 +49,10 @@ export class AppComponent implements OnInit {
 
   private setActiveServer(server: SyncServer) {
     this.activeServer = server
+  }
+
+  private setBodyThemeClass(theme: THEME) {
+    document.body.classList.remove(THEME.DARK, THEME.LIGHT)
+    document.body.classList.add(theme)
   }
 }

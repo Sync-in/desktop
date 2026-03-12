@@ -3,27 +3,44 @@
  * ----------------
  */
 .modal-md {
-    max-width: 45% !important;
+  max-width: 45% !important;
 }
 
-.modal-header {
-  @include border-top-radius(4px);
-  line-height: 1;
-}
+.modal {
+  background: rgba(0, 0, 0, .6);
 
-.modal-title {
-  @extend .truncate;
-  font-size: $font-size-sm;
-  line-height: 2;
-  i {
-    margin-right: 5px;
+  .modal-content {
+    background-color: transparent;
   }
-}
 
-.modal-body {
-  font-size: $font-size-xs;
-  padding: 8px 12px;
-  background-color: $body-bg;
+  .modal-header {
+    @include border-top-radius(4px);
+    max-height: 41.5px;
+    height: 41.5px;
+    line-height: 1;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .modal-title {
+    @extend .truncate;
+    font-size: $font-size-md;
+    line-height: 1;
+
+    > fa-icon,
+    i {
+      margin-right: .3rem;
+    }
+
+    &.ms-auto {
+      font-size: $font-size-base;
+    }
+  }
+
+  .modal-body {
+    font-size: $font-size-base;
+    padding: 10px;
+  }
 }
 
 //Modal variants
@@ -32,18 +49,12 @@
     @extend .bg-primary;
     color: white;
   }
-  .modal-footer {
-    background-color: $gray-lightest;
-  }
 }
 
 .modal-warning {
   .modal-header {
     @extend .bg-warning;
     color: white;
-  }
-  .modal-footer {
-    background-color: $gray-lightest;
   }
 }
 
@@ -52,18 +63,12 @@
     @extend .bg-info;
     color: white;
   }
-  .modal-footer {
-    background-color: $gray-lightest;
-  }
 }
 
 .modal-success {
   .modal-header {
     @extend .bg-success;
     color: white;
-  }
-  .modal-footer {
-    background-color: $gray-lightest;
   }
 }
 
@@ -72,11 +77,83 @@
     @extend .bg-danger;
     color: white;
   }
+}
+
+body.theme-light .modal,
+.modal .modal-dialog.theme-light {
+  .modal-body {
+    background-color: $light-modal-body-bg;
+  }
+
   .modal-footer {
-    background-color: $gray-lightest;
+    background-color: $light-modal-footer-bg;
   }
 }
 
+body.theme-dark .modal,
+.modal .modal-dialog.theme-dark {
+  .modal-content {
+    background: transparent !important;
+  }
+
+  .modal-header {
+    border-bottom-color: $dark-modal-header-border-color;
+  }
+
+  .modal-body {
+    color: $dark-modal-text-color;
+    background-color: $dark-modal-body-bg;
+  }
+
+  .modal-footer {
+    color: $dark-modal-text-color;
+    background-color: $dark-modal-footer-bg;
+    border-top-color: $dark-modal-footer-bg;
+  }
+
+  .form-control,
+  .form-select,
+  .input-group-text {
+    background-color: $dark-modal-footer-bg;
+    color: $white;
+    border-color: $dark-modal-header-border-color;
+    font-size: $font-size-md;
+  }
+
+  .form-control::placeholder {
+    color: $dark-modal-placeholder-color;
+    opacity: 1;
+  }
+
+  .form-control::-webkit-input-placeholder {
+    color: $dark-modal-placeholder-color;
+    opacity: 1;
+  }
+
+  .form-control:focus,
+  .form-select:focus {
+    background-color: $dark-modal-footer-bg;
+    color: $white;
+    border-color: $primary;
+    box-shadow: none;
+  }
+
+  .form-control:disabled,
+  .form-select:disabled {
+    color: $muted;
+    cursor: not-allowed;
+    background-color: lighten($dark-modal-footer-bg, 8%);
+    border-color: lighten($dark-modal-header-border-color, 4%);
+  }
+
+  .input-group:has(.form-control:disabled) .input-group-text,
+  .input-group:has(.form-select:disabled) .input-group-text {
+    color: $muted;
+    cursor: not-allowed;
+    background-color: lighten($dark-modal-footer-bg, 8%);
+    border-color: lighten($dark-modal-header-border-color, 4%);
+  }
+}
 
 /* Initial state (before opening) */
 .modal.fade .modal-dialog {

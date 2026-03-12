@@ -20,13 +20,13 @@
       align-items: center;
       height: $bottom-bar-height - 1px;
       flex-wrap: nowrap;
-      font-size: $font-size-xs;
+      font-size: $font-size-sm;
       width: 100%;
       padding: 0 0 0 10px;
 
       .bottomBar-syncProgress {
         position: relative;
-        min-width: 125px;
+        min-width: 150px;
         height: 100%;
         border-width: 0 0 0 .5px;
         border-style: solid;
@@ -42,7 +42,7 @@
           justify-content: center;
           position: absolute;
           width: 100%;
-          font-size: $font-size-xxxs;
+          font-size: $font-size-xs;
         }
       }
     }
@@ -62,7 +62,7 @@
           transform: translateY(-100%) !important;
 
           .dropdown-item {
-            width: 350px
+            max-width: 400px
           }
         }
 
@@ -82,14 +82,13 @@
         border-style: solid;
         padding: 0.65rem 0.5rem;
         border-radius: 0;
-        font-size: 0.8rem;
+        font-size: $font-size-md;
         min-width: 50px;
-        max-width: 300px;
+        max-width: 400px;
         overflow: hidden;
       }
 
       li {
-        min-width: 200px;
         max-width: 400px;
 
         a {

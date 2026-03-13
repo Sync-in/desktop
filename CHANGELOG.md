@@ -1,4 +1,21 @@
 
+## [2.1.0](https://github.com/Sync-in/desktop/compare/v2.0.0...v2.1.0) (2026-03-13)
+
+
+### Features
+
+* **i18n:** add nl ([47ceffd](https://github.com/Sync-in/desktop/commit/47ceffd3b0685c20cd324e5b1ca28bed20bf3bb8))
+* **renderer:** allow closing the server dialog via the cancel button ([dc49fce](https://github.com/Sync-in/desktop/commit/dc49fcec3a3da292ec10befa65717f3e92641c75))
+
+
+### Bug Fixes
+
+* **core:** login screen not showing after unauthorized desktop-app signup attempt ([d9b0ebc](https://github.com/Sync-in/desktop/commit/d9b0ebc944e214fc6bdf46af99ee439946b70199))
+* **main:** ensure AppImage startup compatibility on Ubuntu 23.10+ (and similar restricted-sandbox distros) by enforcing --no-sandbox + --disable-setuid-sandbox ([c770b5c](https://github.com/Sync-in/desktop/commit/c770b5c7391144a710d6d7cba854da1096e2a8a3))
+* **main:** fix DownloadManager regression after session partitioning by binding will-download on all sessions ([3e3a25a](https://github.com/Sync-in/desktop/commit/3e3a25a87ef3fc4be94236a03beac165cb35681a))
+* **main:** guard DownloadManager progress updates when window/webContents are destroyed ([6cdc929](https://github.com/Sync-in/desktop/commit/6cdc92907c6e1f9f00c4adc7c7e50ffdf17bb731))
+* **main:** harden throttleFunc timer scheduling to prevent invalid timeout warnings ([c21b0c4](https://github.com/Sync-in/desktop/commit/c21b0c4b2e3588db62a145999370b5793c2117f1))
+
 ## [2.0.0](https://github.com/Sync-in/desktop/compare/v1.6.2...v2.0.0) (2026-02-09)
 
 

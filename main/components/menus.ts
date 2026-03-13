@@ -3,14 +3,13 @@ import { i18n } from './translate'
 import { Menu, MenuItem, MenuItemConstructorOptions } from 'electron'
 import { LOCAL_RENDERER } from '../constants/events'
 import { appEvents } from './events'
-import { checkUpdateMenu, helpMenu, preferencesMenu, separatorItem, supportMenu } from '../constants/menus'
+import { checkUpdateMenu, helpMenu, preferencesMenu, separatorItem } from '../constants/menus'
 
 export function createTemplate() {
   const template = []
   let platformAppMenu = []
 
   if (IS_MACOS) {
-    platformAppMenu.push(supportMenu())
     platformAppMenu.push(checkUpdateMenu())
     platformAppMenu.push(separatorItem)
   }
@@ -46,7 +45,6 @@ export function createTemplate() {
   } else {
     platformAppMenu = platformAppMenu.concat([
       separatorItem,
-      supportMenu(),
       checkUpdateMenu(),
       separatorItem,
       {

@@ -9,14 +9,14 @@ export const separatorItem: MenuItemConstructorOptions = {
   type: 'separator'
 }
 
+const supportMenu: (withAppName?: boolean) => MenuItemConstructorOptions = (withAppName = true) => ({
+  label: `${i18n.tr('Support')}${withAppName ? ` ${ENVIRONMENT.appID} ` : ' '}💛`,
+  click: () => shell.openExternal(`${ENVIRONMENT.appHomePage}${i18n.language === 'fr' ? '/fr' : ''}/support/`)
+})
+
 export const checkUpdateMenu: () => MenuItemConstructorOptions = () => ({
   label: i18n.tr('Check for Updates'),
   click: () => appEvents.emit(LOCAL_RENDERER.UPDATE.CHECK)
-})
-
-export const supportMenu: (withAppName?: boolean) => MenuItemConstructorOptions = (withAppName = true) => ({
-  label: `${i18n.tr('Support')}${withAppName ? ` ${ENVIRONMENT.appID} ` : ' '}💛`,
-  click: () => shell.openExternal(`${ENVIRONMENT.appHomePage}${i18n.language === 'fr' ? '/fr' : ''}/support/`)
 })
 
 export const preferencesMenu: () => MenuItemConstructorOptions[] = () => [

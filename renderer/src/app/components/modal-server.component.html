@@ -53,9 +53,7 @@
   }
 </div>
 <div class="modal-footer">
-  @if (activeServer.id) {
-    <button type="button" class="btn btn-secondary" (click)="closeModal()" l10nTranslate>Cancel</button>
-  }
+  <button type="button" class="btn btn-secondary" (click)="closeModal()" l10nTranslate>Cancel</button>
   <button (click)="onSubmit()"
           [disabled]="submitted || loginForm.invalid"
           class="btn {{isRemoveModal ? 'btn-danger' : 'btn-primary'}}"

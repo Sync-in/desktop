@@ -102,10 +102,16 @@ export class DownloadManager {
   }
 
   private sendProgressItem(item: DownloadItem, withIcon = false) {
+    if (!this.canSendToWrapper()) {
+      return
+    }
     this.windowManager.sendToWrapperRenderer(LOCAL_RENDERER.DOWNLOAD.PROGRESS, this.exportItem(item, withIcon))
   }
 
   private sendGlobalProgress(item: IDownload) {
+    if (!this.canSendToWrapper()) {
+      return
+    }
     this.windowManager.sendToWrapperRenderer(LOCAL_RENDERER.DOWNLOAD.GLOBAL_PROGRESS, item)
   }
 
@@ -137,6 +143,9 @@ export class DownloadManager {
   }
 
   private setGlobalProgress(item: DownloadItem | any) {
+    if (!this.canUseMainWindow()) {
+      return
+    }
     const count = this.countInProgress()
     if (count === 1) {
       this.windowManager.mainWindow.setProgressBar(item.progress)
@@ -255,5 +264,15 @@ export class DownloadManager {
 
   private countInProgress(): number {
     return this.downloadItems.filter((dl) => dl.state === DOWNLOAD_STATE.PROGRESSING).length
+  }
+
+  private canUseMainWindow(): boolean {
+    const win = this.windowManager?.mainWindow
+    return !!win && !win.isDestroyed()
+  }
+
+  private canSendToWrapper(): boolean {
+    const wrapperWc = this.windowManager?.viewsManager?.wrapperView?.webContents
+    return this.canUseMainWindow() && !!wrapperWc && !wrapperWc.isDestroyed()
   }
 }

@@ -4,24 +4,31 @@ import type { SyncTransfer } from '@sync-in-desktop/core/components/interfaces/s
 
 const units = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
 
-export const throttleFunc = (context: any, func: (args?) => void, delay: number) => {
-  let lastFunc
-  let lastRan
-  return (...args) => {
-    if (!lastRan) {
+export const throttleFunc = (context: any, func: (args?: any) => void, delay: number) => {
+  let lastFunc: ReturnType<typeof setTimeout> | undefined
+  let lastRan = 0
+  const safeDelay = Number.isFinite(delay) && delay > 0 ? Math.trunc(delay) : 0
+
+  return (...args: any) => {
+    const now = Date.now()
+    if (!lastRan || now - lastRan >= safeDelay) {
+      if (lastFunc) {
+        clearTimeout(lastFunc)
+        lastFunc = undefined
+      }
       func.apply(context, args)
-      lastRan = Date.now()
+      lastRan = now
+      return
     } else {
       clearTimeout(lastFunc)
-      lastFunc = setTimeout(
-        function () {
-          if (Date.now() - lastRan >= delay) {
-            func.apply(context, args)
-            lastRan = Date.now()
-          }
-        },
-        delay - (Date.now() - lastRan)
-      )
+      const elapsed = Math.max(0, now - lastRan)
+      const remaining = Math.max(0, safeDelay - Math.min(elapsed, safeDelay))
+      lastFunc = setTimeout(function () {
+        if (Date.now() - lastRan >= safeDelay) {
+          func.apply(context, args)
+          lastRan = Date.now()
+        }
+      }, remaining)
     }
   }
 }

@@ -1,4 +1,4 @@
-import { app, DownloadItem, ipcMain, IpcMainInvokeEvent, shell } from 'electron'
+import { app, DownloadItem, ipcMain, IpcMainInvokeEvent, Session, session, shell } from 'electron'
 import path from 'node:path'
 import { i18n } from './translate'
 import { bytesToHuman, bytesToUnit, throttleFunc } from './utils'
@@ -9,6 +9,8 @@ import { WindowManager } from './windows'
 import { appEvents } from './events'
 import { DOWNLOAD_ACTION, DOWNLOAD_STATE } from '../constants/downloads'
 import { IDownload } from '../interfaces/download.interface'
+import { partitionFor } from '../constants/windows'
+import { ServersManager } from '../../core/components/handlers/servers'
 
 export class DownloadManager {
   throttledGlobalProgress: (...args: any) => void
@@ -16,16 +18,38 @@ export class DownloadManager {
   downloadItems: (DownloadItem | any)[] = []
   notifyManager: NotifyManager
   windowManager: WindowManager
+  private readonly observedSessions = new WeakSet<Session>()
 
   constructor(windowManager: WindowManager, notifyManager: NotifyManager) {
     this.throttledGlobalProgress = throttleFunc(this, this.setGlobalProgress, 2000)
     this.notifyManager = notifyManager
     this.windowManager = windowManager
-    this.windowManager.mainWindow.webContents.session.on('will-download', (ev: Event, item: DownloadItem) => this.onDownload(ev, item))
+    this.bindDownloadSessions()
     ipcMain.handle(LOCAL_RENDERER.DOWNLOAD.LIST, () => this.sendAllItems())
     ipcMain.handle(LOCAL_RENDERER.DOWNLOAD.ACTION, async (_ev: IpcMainInvokeEvent, downloadId: string, action: DOWNLOAD_ACTION) =>
       this.actionDownload(downloadId, action)
     )
+  }
+
+  private bindDownloadSessions() {
+    // Catch sessions created after startup (e.g. new server partitions).
+    app.on('session-created', (createdSession: Session) => this.observeSession(createdSession))
+    // Main/browser default sessions.
+    this.observeSession(session.defaultSession)
+    this.observeSession(this.windowManager.mainWindow.webContents.session)
+    this.observeSession(this.windowManager.viewsManager?.wrapperView?.webContents?.session)
+    // Already-known server partitions.
+    for (const server of ServersManager.list) {
+      this.observeSession(session.fromPartition(partitionFor(server.id)))
+    }
+  }
+
+  private observeSession(downloadSession: Session) {
+    if (!downloadSession || this.observedSessions.has(downloadSession)) {
+      return
+    }
+    this.observedSessions.add(downloadSession)
+    downloadSession.on('will-download', (ev: Event, item: DownloadItem) => this.onDownload(ev, item))
   }
 
   private onDownload(_ev: Event, item: DownloadItem) {

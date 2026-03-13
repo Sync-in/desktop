@@ -93,6 +93,14 @@ $button-dark-tones: (
   box-shadow: none !important;
 }
 
+// Keep Bootstrap dark colors, but align dimensions with project button sizing.
+.btn.btn-dark {
+  padding: 0.35rem 0.65rem;
+  font-size: $btn-font-size;
+  line-height: $btn-line-height;
+  border-radius: $btn-border-radius;
+}
+
 .btn.btn-primary,
 .btn.btn-secondary,
 .btn.btn-success,

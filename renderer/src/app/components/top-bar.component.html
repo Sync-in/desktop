@@ -74,24 +74,24 @@
                   class="btn border-start-0"
                   (click)="onActiveServer(null, server.id)">
             <div class="d-flex align-items-center no-text-select">
-              <fa-icon [icon]="icons.faRss" class="text-primary"/>
-              <div class="text-truncate ms-1 me-2">{{ server.name }}</div>
+              <fa-icon [icon]="icons.faRss" class="text-primary me-1"/>
+              <div class="text-truncate me-3">{{ server.name }}</div>
               @if (server.applications.syncs) {
                 <div>
                   <fa-icon [icon]="icons.faArrowsRotate" animation="spin"/>
-                  <span class="translate-middle badge rounded-pill bg-purple fs-xxxxs ms-1">{{ server.applications.syncs }}</span>
+                  <span class="translate-middle badge rounded-pill bg-purple fs-xxxs ms-1">{{ server.applications.syncs }}</span>
                 </div>
               }
               @if (server.applications.notifications) {
                 <div>
                   <fa-icon [icon]="icons.faBell"/>
-                  <span class="translate-middle badge rounded-pill bg-warning fs-xxxxs ms-1">{{ server.applications.notifications }}</span>
+                  <span class="translate-middle badge rounded-pill bg-warning fs-xxxs ms-1">{{ server.applications.notifications }}</span>
                 </div>
               }
               @if (server.applications.tasks) {
                 <div>
                   <fa-icon [icon]="icons.faFlag"/>
-                  <span class="translate-middle badge rounded-pill bg-maroon fs-xxxxs ms-1">{{ server.applications.tasks }}</span>
+                  <span class="translate-middle badge rounded-pill bg-maroon fs-xxxs ms-1">{{ server.applications.tasks }}</span>
                 </div>
               }
             </div>

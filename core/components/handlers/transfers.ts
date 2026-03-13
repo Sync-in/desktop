@@ -106,7 +106,7 @@ export class TransfersManager {
   public tasks = { count: 0, done: 0 }
   private store: TransferProgress[] = []
   private watching = false
-  private sendSyncEventDone: (...args) => void
+  private sendSyncEventDone: (...args: any) => void
   private sendTaskEventDone: () => void
 
   constructor(sync: SyncTransferContext, appEvents: EventEmitter = null, reportOnly = false) {

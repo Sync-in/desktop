@@ -14,10 +14,10 @@
           </div>
         }
         @if (dropdownView.id !== '0') {
-          <div class="d-flex flex-column text-truncate fs-sm">
-            <div class="text-start text-truncate">{{ dropdownView?.name }}</div>
+          <div class="d-flex flex-column text-truncate">
+            <div class="fs-base text-start text-truncate">{{ dropdownView?.name }}</div>
             @if (dropdownView.state === DOWNLOAD_STATE.PROGRESSING) {
-              <div class="d-flex justify-content-between text-gray fs-xs">
+              <div class="d-flex justify-content-between text-gray fs-sm">
                 <div>{{ dropdownView.humanSize?.done }}/{{ dropdownView.humanSize?.total }}{{ dropdownView.humanSize?.unit }}</div>
                 <div class="text-truncate px-3">{{ dropdownView.timeLeft | amDuration: 's' }}</div>
                 <div>{{ dropdownView.humanSpeed?.value }}&nbsp;{{ dropdownView.humanSpeed?.unit }}</div>
@@ -35,10 +35,10 @@
           }
           <a class="d-flex align-items-center dropdown-item no-text-select">
             <img class="align-self-center" height="30px" [src]="d.icon" alt="" />
-            <div class="d-flex flex-column text-truncate fs-sm me-2 w-100">
+            <div class="d-flex flex-column text-truncate fs-base me-2 w-100">
               <div class="text-start text-truncate">{{ d.name }}</div>
               @if (d.state === DOWNLOAD_STATE.PROGRESSING) {
-                <div class="d-flex justify-content-between text-gray fs-xs">
+                <div class="d-flex justify-content-between text-gray fs-sm">
                   <div>{{ d.humanSize.done }}/{{ d.humanSize.total }}{{ d.humanSize.unit }}</div>
                   <div class="text-truncate px-3">{{ d.timeLeft | amDuration: 's' }}</div>
                   <div>{{ d.humanSpeed.value }}&nbsp;{{ d.humanSpeed.unit }}</div>

@@ -28,7 +28,7 @@
         height: 100%;
 
         &:first-child {
-          min-width: 135px;
+          min-width: 180px;
         }
       }
 
@@ -41,13 +41,13 @@
         padding: 0.65rem 0.5rem;
         border-radius: 0;
         font-size: $font-size-base;
-        min-width: 180px;
+        min-width: 135px;
         max-width: 400px;
         overflow: hidden;
 
 
         &.app-btn {
-          min-width: 50px;
+          min-width: 45px;
           max-width: 100px;
         }
       }

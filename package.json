@@ -118,6 +118,7 @@
     "webpack-shebang-plugin": "^1.1.8"
   },
   "build": {
+    "afterPack": "build/after-pack-linux-wrapper.cjs",
     "asar": true,
     "appId": "Sync-in",
     "copyright": "Copyright © 2012-2026 Sync-in <contact@sync-in.com>",

@@ -1,76 +1,45 @@
-import { app, Menu } from 'electron'
-import { i18n } from './components/translate'
-import { WindowManager } from './components/windows'
-import { TrayManager } from './components/tray'
-import { DownloadManager } from './components/downloads'
-import { NotifyManager } from './components/notifications'
-import { EventsManager } from './components/events'
-import { UpdateManager } from './components/autoupdater'
-import { ENVIRONMENT, IS_MACOS, IS_PROD_ENV, IS_WINDOWS } from '../core/constants'
-import { createMenu } from './components/menus'
-import { appSettings } from './components/settings'
-import { LoopbackServer } from './components/loopback-server'
+import { app } from 'electron'
+import { IS_LINUX } from '../core/constants'
 
-class MainManager {
-  trayManager: TrayManager
-  windowManager: WindowManager
-  downloadManager: DownloadManager
-  notifyManager: NotifyManager
-  eventsManager: EventsManager
-  updateManager: UpdateManager
-
-  constructor() {
-    // app.disableHardwareAcceleration()
-    // app.commandLine.appendSwitch('log-file', MAIN_LOGS_FILE)
-    // app.commandLine.appendSwitch('enable-logging')
-    // app.commandLine.appendSwitch('lang', 'zh-CN')
-    app.commandLine.appendSwitch('ignore-certificate-errors')
-    app.whenReady().then(() => this.appIsReady())
+function ensureLinuxAppImageNoSandbox() {
+  if (!IS_LINUX || !process.env.APPIMAGE) {
+    return false
+  }
+  const hasNoSandbox = process.argv.includes('--no-sandbox')
+  const hasDisableSetuidSandbox = process.argv.includes('--disable-setuid-sandbox')
+  if (hasNoSandbox && hasDisableSetuidSandbox) {
+    return false
   }
 
-  appIsReady() {
-    if (!app.requestSingleInstanceLock()) {
-      console.log('Sync-in App is already started')
-      app.quit()
-      return
-    }
-    if (IS_WINDOWS) {
-      app.setAppUserModelId(ENVIRONMENT.appID)
-    }
-    this.checkStartUp()
-    // `app.getLocale()` returns English by default if the language is not listed in `electronLanguages` in the main package.json
-    i18n.updateLanguage(app.getLocale())
-    Menu.setApplicationMenu(createMenu())
-    this.trayManager = new TrayManager()
-    this.windowManager = new WindowManager()
-    this.eventsManager = new EventsManager(this.windowManager.viewsManager)
-    this.notifyManager = new NotifyManager(this.windowManager.viewsManager)
-    this.downloadManager = new DownloadManager(this.windowManager, this.notifyManager)
-    this.updateManager = new UpdateManager()
-    app.on('activate', () => this.windowManager.show())
-    app.on('window-all-closed', () => console.log('all windows closed'))
-    app.on('before-quit', (e: Event) => {
-      e.preventDefault()
-      LoopbackServer.cleanupLoopbackSessions()
-      this.eventsManager.runManager.exitGracefully()
-      this.windowManager.setAppIsQuitting(true)
-    })
-    this.windowManager.setAppIsQuitting(false)
+  const args = [...process.argv.slice(1)]
+  if (!hasNoSandbox) {
+    args.push('--no-sandbox')
+  }
+  if (!hasDisableSetuidSandbox) {
+    args.push('--disable-setuid-sandbox')
   }
 
-  private checkStartUp() {
-    if (IS_MACOS && appSettings.configuration.hideDockIcon) {
-      app.dock.hide()
-    }
-    if (!IS_PROD_ENV) return
-    const loginItem = app.getLoginItemSettings()
-    if (appSettings.configuration.launchAtStartup !== loginItem.openAtLogin) {
-      app.setLoginItemSettings({ openAtLogin: appSettings.configuration.launchAtStartup })
-    }
-    if (app.commandLine.hasSwitch('hidden') || process.env.SYNC_IN_HIDDEN === '1') {
-      appSettings.configuration.startHidden = true
-    }
-  }
+  app.relaunch({ args })
+  app.exit(0)
+  return true
 }
 
-new MainManager()
+function applyElectronSwitches() {
+  // app.disableHardwareAcceleration()
+  // app.commandLine.appendSwitch('log-file', MAIN_LOGS_FILE)
+  // app.commandLine.appendSwitch('enable-logging')
+  // app.commandLine.appendSwitch('lang', 'zh-CN')
+  app.commandLine.appendSwitch('ignore-certificate-errors')
+}
+
+async function bootstrap() {
+  if (ensureLinuxAppImageNoSandbox()) {
+    return
+  }
+  applyElectronSwitches()
+  const { MainManager } = await import('./components/main-manager')
+  const mainManager = new MainManager()
+  mainManager.start()
+}
+
+bootstrap().catch(console.error)

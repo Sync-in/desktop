@@ -12,6 +12,7 @@ export const ENVIRONMENT = {
 export const USER_AGENT = `${ENVIRONMENT.appName}/${ENVIRONMENT.appVersion}`
 export const IS_MACOS = process.platform === 'darwin'
 export const IS_WINDOWS = process.platform === 'win32'
+export const IS_LINUX = process.platform === 'linux'
 export const IS_PROD_ENV = process.env.NODE_ENV === 'production'
 export const IS_DEV_ENV = process.env.NODE_ENV === 'development'
 export const HAS_TTY = (IS_WINDOWS && IS_DEV_ENV) || Boolean(process.stdout.isTTY)

@@ -1,3 +1,6 @@
+<a href="#-license"><img src="https://img.shields.io/badge/Licence-AGPL%20v3.0-green.svg" alt="License"/></a>
+<a href="https://discord.gg/qhJyzwaymT" target="_blank"><img src="https://img.shields.io/badge/Discord-Online-brightgreen.svg" alt="Discord"/></a>
+
 <a href="https://sync-in.com" target="_blank" rel="noopener">
 <picture>
   <source srcset="https://raw.githubusercontent.com/Sync-in/assets/main/logo-dark.svg" media="(prefers-color-scheme: dark)" />
@@ -13,9 +16,6 @@ _Welcome to the Sync-in desktop client repository!_
 - 🗄️ [GitHub Server Repository](https://github.com/Sync-in/server)
 - 💻 [GitHub Desktop & CLI Repository](https://github.com/Sync-in/desktop)
 
-<a href="#-license"><img src="https://img.shields.io/badge/Licence-AGPL%20v3.0-green.svg" alt="License"/></a>
-<a href="https://discord.gg/qhJyzwaymT" target="_blank"><img src="https://img.shields.io/badge/Discord-Online-brightgreen.svg" alt="Discord"/></a>
-
 **Sync-in provides a desktop and CLI client for file synchronization, management, and interaction with Sync-in servers.**
 It enables seamless file sync across devices, along with full access to server features from a local environment.
 
@@ -25,6 +25,8 @@ Available on Windows, macOS, and Linux, it adapts to different workflows — fro
   <source srcset="https://raw.githubusercontent.com/Sync-in/assets/main/desktop-dark.png" media="(prefers-color-scheme: dark)" />
   <img src="https://raw.githubusercontent.com/Sync-in/assets/main/desktop.png" alt="Sync-in" width="600"/>
 </picture>
+
+*This project is supported by the **Docker-Sponsored Open Source Program**.*
 
 ---
 

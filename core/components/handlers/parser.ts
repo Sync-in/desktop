@@ -33,6 +33,7 @@ import { API } from '../constants/requests'
 import type { SyncTransfer } from '../interfaces/sync-transfer.interface'
 import type { SyncDiff, SyncFileSpecialStats, SyncFileStats, SyncSnapShot } from '../interfaces/sync-diff.interface'
 import { NormalizedMap } from '../utils/normalizedMap'
+import { Readable } from 'node:stream'
 
 export class FilesParser {
   // constants
@@ -203,10 +204,12 @@ export class FilesParser {
       defaultFilters: [...DEFAULT_FILTERS],
       pathFilters: this.syncPathFilters ? this.syncPathFilters.toString().slice(1, -1) : null
     } satisfies SyncDiff)
+    let stream: Readable | undefined
+    let rl: readline.Interface | undefined
     try {
       const r = await this.req.http.post(`${API.DIFF}/${this.syncPath.id}`, data, config)
-      const stream = r.data.setEncoding('utf8')
-      const rl = readline.createInterface({
+      stream = r.data.setEncoding('utf8')
+      rl = readline.createInterface({
         input: stream,
         terminal: false,
         crlfDelay: Infinity
@@ -238,6 +241,11 @@ export class FilesParser {
       } else {
         this.logger.error(e)
         throw await RequestsManager.handleHttpError(e, true)
+      }
+    } finally {
+      rl?.close()
+      if (stream && !stream.destroyed && !stream.readableEnded) {
+        stream.destroy()
       }
     }
     if (done) {

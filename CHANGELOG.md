@@ -1,4 +1,11 @@
 
+## [2.1.1](https://github.com/Sync-in/desktop/compare/v2.1.0...v2.1.1) (2026-05-22)
+
+
+### Bug Fixes
+
+* **core:** close remote diff stream on early exit ([03eaceb](https://github.com/Sync-in/desktop/commit/03eaceb5e9a5ec86d16c584f64c796a69176349d))
+
 ## [2.1.0](https://github.com/Sync-in/desktop/compare/v2.0.0...v2.1.0) (2026-03-13)
 
 

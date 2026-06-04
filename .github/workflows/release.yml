@@ -35,6 +35,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   MAIN_BRANCH: main
   NODE_VERSION: '24'
   RELEASE_ROOT: releases/sync-in-desktop

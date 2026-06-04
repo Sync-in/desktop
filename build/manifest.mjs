@@ -1,5 +1,4 @@
 import fs, { readFileSync } from 'node:fs'
-import { writeFile } from 'fs/promises'
 import path from 'node:path'
 import { execSync } from 'node:child_process'
 import crypto from 'node:crypto'
@@ -15,12 +14,10 @@ const packageVersion = packageJson.version
 const updatesURL = packageJson.build.publish[0].url.split('/$')[0]
 const appName = 'sync-in-desktop'
 const cliName = 'sync-in-cli'
-const serverName = 'sync-in-server'
 const releasePath = path.join(appPath, 'releases')
 const latestJSON = 'latest.json'
 const releaseCliPath = path.join(releasePath, cliName)
 const releaseAppPath = path.join(releasePath, appName)
-const releaseServerPath = path.join(releasePath, serverName)
 const releaseCliFileName = `${cliName}-${packageVersion}.js`
 const releaseCliFilePath = path.join(releaseCliPath, releaseCliFileName)
 const regExpCleanUp = new RegExp('builder.*.ya?ml$|unpacked$|mac/mac.*|.icon-.*')
@@ -94,28 +91,13 @@ async function genDesktopLatest() {
   parseDirs(releaseAppPath)
 }
 
-async function getServerLatest() {
-  console.log(`Creating manifests for ${serverName} ...`)
-  try {
-    const url = `https://api.github.com/repos/sync-in/server/releases/latest`
-    const response = await fetch(url)
-    const latestContent = await response.json()
-    const latestReleasePath = `${releaseServerPath}/latest.json`
-    await writeFile(latestReleasePath, JSON.stringify(latestContent, null, 2))
-  } catch (e) {
-    console.error(`unable to retrieve last server release : ${e}`)
-    process.exit(1)
-  }
-}
-
 async function start() {
-  fs.mkdirSync(releaseServerPath, { recursive: true })
-  for (const p of [releasePath, releaseCliPath, releaseAppPath, releaseServerPath]) {
+  for (const p of [releasePath, releaseCliPath, releaseAppPath]) {
     if (!fs.existsSync(p)) {
       throw `${p} does not exist`
     }
   }
-  await Promise.all([genCliLatest(), genDesktopLatest(), getServerLatest()])
+  await Promise.all([genCliLatest(), genDesktopLatest()])
   fs.writeFileSync(path.join(releasePath, latestJSON), JSON.stringify(latestApp))
 }
 

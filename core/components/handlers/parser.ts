@@ -20,7 +20,7 @@ import {
   F_ACTION,
   F_SPECIAL_STAT,
   F_STAT,
-  INCOMPLETE_REGEXP,
+  INCOMPLETE_PREFIX,
   INCOMPLETE_RETENTION,
   SIDE,
   SYNC_DIFF_DONE
@@ -36,17 +36,6 @@ import { NormalizedMap } from '../utils/normalizedMap'
 import { Readable } from 'node:stream'
 
 export class FilesParser {
-  // constants
-  private readonly reportOnly: boolean
-  private readonly appEvents: EventEmitter
-  private readonly lPath: string
-  private readonly rPath: string
-  private readonly iPath: string
-  private readonly secureDiff: boolean
-  private readonly regexPath: RegExp
-  private readonly syncPathFilters: RegExp
-  private nbFiltered = 0
-  private syncPath: SyncPath
   public logger: Logger
   public req: RequestsManager
   public wasAborted = false
@@ -72,6 +61,17 @@ export class FilesParser {
   } = { local: new NormalizedMap<string, SyncFileStats>(), remote: new NormalizedMap<string, SyncFileStats>() }
   // parsing errors
   public errors = { local: new NormalizedMap<string, string>(), remote: new NormalizedMap<string, string>() }
+  // constants
+  private readonly reportOnly: boolean
+  private readonly appEvents: EventEmitter
+  private readonly lPath: string
+  private readonly rPath: string
+  private readonly iPath: string
+  private readonly secureDiff: boolean
+  private readonly regexPath: RegExp
+  private readonly syncPathFilters: RegExp
+  private nbFiltered = 0
+  private syncPath: SyncPath
 
   constructor(syncPath: SyncPath, req: RequestsManager, reportOnly = false, appEvents: EventEmitter = null) {
     this.syncPath = syncPath
@@ -96,6 +96,104 @@ export class FilesParser {
 
   stop() {
     this.wasAborted = true
+  }
+
+  async getStats(filePath: string, realPath: string, isDir: boolean): Promise<SyncFileStats> {
+    const stats = await fs.stat(realPath)
+    const mtime = Math.floor(stats.mtime.getTime() / 1000)
+    return [
+      isDir,
+      isDir ? 0 : stats.size,
+      mtime,
+      stats.ino,
+      !isDir && this.secureDiff ? await this.getChecksumFile(filePath, realPath, stats.size, stats.ino, mtime) : null
+    ]
+  }
+
+  propFile(side: string, filePath: string, property: number, value: any) {
+    try {
+      this.curSnap[side].get(filePath)[property] = value
+      this.logger.debug(`${side}Properties: ${filePath}`)
+    } catch (e) {
+      this.logger.warn(`${side}Properties: ${filePath}: ${e}`)
+    }
+  }
+
+  addFile(side: string, filePath: string, properties: any[]) {
+    this.curSnap[side].set(filePath, properties)
+    this.logger.debug(`${side}Added: ${filePath}`)
+  }
+
+  removeFile(side: string, filePath: string, parsingError = false) {
+    try {
+      if (parsingError || this.curSnap[side].get(filePath)[F_STAT.IS_DIR]) {
+        const isChild = regExpPathPattern(filePath)
+        for (const f of this.curSnap[side].keys()) {
+          if (isChild.test(f)) {
+            this.curSnap[side].delete(f)
+            this.logger.debug(`${side}Remove child: ${f}`)
+          }
+        }
+      }
+      this.curSnap[side].delete(filePath)
+      this.logger.debug(`${side}Remove: ${filePath}`)
+    } catch (e) {
+      this.logger.warn(`${side}Remove: ${filePath} : ${e}`)
+    }
+  }
+
+  moveFile(side: string, srcPath: string, dstPath: string) {
+    try {
+      if (this.curSnap[side].get(srcPath)[F_STAT.IS_DIR]) {
+        const isChild = regExpPathPattern(srcPath)
+        for (const f of this.curSnap[side].keys()) {
+          if (isChild.test(f)) {
+            const d = f.replace(srcPath, dstPath)
+            this.curSnap[side].set(d, this.curSnap[side].get(f))
+            this.curSnap[side].delete(f)
+            this.logger.debug(`${side}Move child: ${f} -> ${d}`)
+          }
+        }
+      }
+      this.curSnap[side].set(dstPath, this.curSnap[side].get(srcPath))
+      this.curSnap[side].delete(srcPath)
+      this.logger.debug(`${side}Move: ${srcPath} -> ${dstPath}`)
+    } catch (e) {
+      this.logger.warn(`${side}Move: ${srcPath} -> ${dstPath}: ${e}`)
+    }
+  }
+
+  addIncomplete(side: string, filePath: string, properties: any[]) {
+    this.curIncSnap[side].set(filePath, properties)
+    this.logger.debug(`Incomplete ${side}Added: ${filePath}`)
+  }
+
+  async removeIncomplete(side: string, filePath: string, realPath?: string, onlySnap = false) {
+    this.curIncSnap[side].delete(filePath)
+    if (onlySnap) {
+      this.logger.debug(`Incomplete ${side} removed: ${filePath}`)
+      return
+    }
+    try {
+      if (side === SIDE.LOCAL) {
+        if (await isPathExistsBool(realPath)) {
+          await fs.rm(realPath, { force: true })
+        }
+      } else {
+        await this.req.http.delete(this.syncPath.apiFromPath(API.OPERATION, filePath))
+      }
+      this.logger.debug(`Incomplete ${side} removed: ${filePath}`)
+    } catch (e) {
+      this.logger.warn(`Incomplete ${side} not removed: ${filePath}: ${e}`)
+    }
+  }
+
+  async saveSnapshots(wasStopped = false): Promise<void> {
+    if (wasStopped) {
+      await this.saveIncompleteSnapshot()
+    } else {
+      await Promise.all([this.saveLocalSnapshot(), this.saveRemoteSnapshot(), this.saveIncompleteSnapshot()])
+    }
   }
 
   private checkOnFirstSync() {
@@ -286,81 +384,9 @@ export class FilesParser {
     return await checksumFile(realPath)
   }
 
-  async getStats(filePath: string, realPath: string, isDir: boolean): Promise<SyncFileStats> {
-    const stats = await fs.stat(realPath)
-    const mtime = Math.floor(stats.mtime.getTime() / 1000)
-    return [
-      isDir,
-      isDir ? 0 : stats.size,
-      mtime,
-      stats.ino,
-      !isDir && this.secureDiff ? await this.getChecksumFile(filePath, realPath, stats.size, stats.ino, mtime) : null
-    ]
-  }
-
-  propFile(side: string, filePath: string, property: number, value: any) {
-    try {
-      this.curSnap[side].get(filePath)[property] = value
-      this.logger.debug(`${side}Properties: ${filePath}`)
-    } catch (e) {
-      this.logger.warn(`${side}Properties: ${filePath}: ${e}`)
-    }
-  }
-
-  addFile(side: string, filePath: string, properties: any[]) {
-    this.curSnap[side].set(filePath, properties)
-    this.logger.debug(`${side}Added: ${filePath}`)
-  }
-
-  removeFile(side: string, filePath: string, parsingError = false) {
-    try {
-      if (parsingError || this.curSnap[side].get(filePath)[F_STAT.IS_DIR]) {
-        const isChild = regExpPathPattern(filePath)
-        for (const f of this.curSnap[side].keys()) {
-          if (isChild.test(f)) {
-            this.curSnap[side].delete(f)
-            this.logger.debug(`${side}Remove child: ${f}`)
-          }
-        }
-      }
-      this.curSnap[side].delete(filePath)
-      this.logger.debug(`${side}Remove: ${filePath}`)
-    } catch (e) {
-      this.logger.warn(`${side}Remove: ${filePath} : ${e}`)
-    }
-  }
-
-  moveFile(side: string, srcPath: string, dstPath: string) {
-    try {
-      if (this.curSnap[side].get(srcPath)[F_STAT.IS_DIR]) {
-        const isChild = regExpPathPattern(srcPath)
-        for (const f of this.curSnap[side].keys()) {
-          if (isChild.test(f)) {
-            const d = f.replace(srcPath, dstPath)
-            this.curSnap[side].set(d, this.curSnap[side].get(f))
-            this.curSnap[side].delete(f)
-            this.logger.debug(`${side}Move child: ${f} -> ${d}`)
-          }
-        }
-      }
-      this.curSnap[side].set(dstPath, this.curSnap[side].get(srcPath))
-      this.curSnap[side].delete(srcPath)
-      this.logger.debug(`${side}Move: ${srcPath} -> ${dstPath}`)
-    } catch (e) {
-      this.logger.warn(`${side}Move: ${srcPath} -> ${dstPath}: ${e}`)
-    }
-  }
-
-  addIncomplete(side: string, filePath: string, properties: any[]) {
-    this.curIncSnap[side].set(filePath, properties)
-    this.logger.debug(`Incomplete ${side}Added: ${filePath}`)
-  }
-
   private async checkIncomplete(side: string, fileName: string, filePath: string, fileStats: SyncFileStats, realPath?: string) {
     // check if it is an incomplete file
-    if (!INCOMPLETE_REGEXP.test(fileName)) {
-      return false
-    }
+    if (!fileName.startsWith(INCOMPLETE_PREFIX)) return false
     // do not delete the incomplete file if it is not referenced in the snapshot, it may belong to another client
     if (currentTimeStamp() - fileStats[F_STAT.MTIME] > INCOMPLETE_RETENTION) {
       // if incomplete is outdated, remove it
@@ -375,34 +401,6 @@ export class FilesParser {
       this.logger.debug(`Incomplete ${side}: ${filePath}`)
     }
     return true
-  }
-
-  async removeIncomplete(side: string, filePath: string, realPath?: string, onlySnap = false) {
-    this.curIncSnap[side].delete(filePath)
-    if (onlySnap) {
-      this.logger.debug(`Incomplete ${side} removed: ${filePath}`)
-      return
-    }
-    try {
-      if (side === SIDE.LOCAL) {
-        if (await isPathExistsBool(realPath)) {
-          await fs.rm(realPath, { force: true })
-        }
-      } else {
-        await this.req.http.delete(this.syncPath.apiFromPath(API.OPERATION, filePath))
-      }
-      this.logger.debug(`Incomplete ${side} removed: ${filePath}`)
-    } catch (e) {
-      this.logger.warn(`Incomplete ${side} not removed: ${filePath}: ${e}`)
-    }
-  }
-
-  async saveSnapshots(wasStopped = false): Promise<void> {
-    if (wasStopped) {
-      await this.saveIncompleteSnapshot()
-    } else {
-      await Promise.all([this.saveLocalSnapshot(), this.saveRemoteSnapshot(), this.saveIncompleteSnapshot()])
-    }
   }
 
   private isFiltered(side: SIDE.LOCAL | SIDE.REMOTE, fileName: string, filePath: string, isDir: boolean, alreadyChecked = false): boolean {

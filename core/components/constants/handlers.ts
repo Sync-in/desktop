@@ -49,7 +49,6 @@ export const TRANSFER_MIN_SIZE = 10 * 1024 ** 2 // 10MB
 // parsers filters
 export const SYNC_DIFF_DONE = 'done'
 export const INCOMPLETE_PREFIX = '.sync-in.'
-export const INCOMPLETE_REGEXP = new RegExp(`^${INCOMPLETE_PREFIX}`)
 export const INCOMPLETE_RETENTION = 172800 // 48 hours in seconds
 export const DEFAULT_FILTERS = new Set([
   '.DS_Store',

@@ -1,13 +1,26 @@
-# Release source of truth: GitHub Actions builds every artifact from scratch,
-# then syncs the generated update feed to releases.sync-in.org for existing clients.
-# When created, GitHub releases are always drafts. Build/sign failures do not
-# create or update a GitHub release, and the HTTP update feed stays untouched.
+# Release source of truth: GitHub Actions builds every artifact from scratch and
+# generates the release manifest. Real releases then update a draft GitHub release
+# and sync the update feed to releases.sync-in.org for existing clients.
+# Build, signing, manifest, or payload validation failures happen before the draft
+# release is created or updated, so the GitHub release and HTTP feed stay untouched.
 # GitHub cannot branch-filter tag pushes; the prepare job is the preflight gate
 # and every build job depends on it.
 # Test rules:
-# - tag push: test=false, sync the HTTP update feed only after every build/signature succeeds.
-# - workflow_dispatch + test=true: any branch, build/sign only, no GitHub release and no HTTP sync.
-# - workflow_dispatch + test=false: main only, require v<package.json version>, then sync HTTP after success.
+# - tag push: test=false; require a tag reachable from main and matching v<package.json version>.
+# - workflow_dispatch + test=true: main only; build, sign, generate/validate manifests, and upload
+#   workflow artifacts only; do not create a GitHub release or sync the HTTP update feed.
+# - workflow_dispatch + test=false: main only; require v<package.json version>, update the draft
+#   GitHub release, upload its assets, then sync the HTTP update feed after success.
+# Windows signing flow (two SignPath requests):
+# 1. Build unsigned x64/arm64 app bundles, then run temporary NSIS builds to capture both uninstallers.
+# 2. Submit one ZIP containing the app bundles and uninstallers; SignPath signs every .exe recursively.
+# 3. Replace the app bundles with their signed versions and rebuild NSIS while the custom signing hook
+#    injects the signed uninstallers into the final installers.
+# 4. Submit both final NSIS installers together for their outer Authenticode signatures.
+# Test runs use the SignPath test signing policy; real releases use the release signing policy.
+# Real releases require every returned executable to have a Valid Authenticode signature.
+# Test runs still execute both SignPath requests and all structural checks, but skip Authenticode
+# trust validation because the test certificate can be self-signed and untrusted by GitHub runners.
 name: Release binaries
 
 on:
@@ -27,7 +40,7 @@ on:
         type: boolean
 
 permissions:
-  contents: write
+  contents: read
   actions: read
 
 concurrency:
@@ -35,7 +48,6 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   MAIN_BRANCH: main
   NODE_VERSION: '24'
   RELEASE_ROOT: releases/sync-in-desktop
@@ -51,7 +63,7 @@ jobs:
       target_sha: ${{ steps.meta.outputs.target_sha }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -61,7 +73,6 @@ jobs:
         env:
           INPUT_TAG: ${{ github.event.inputs.tag }}
           INPUT_TEST: ${{ github.event.inputs.test }}
-          RSYNC_PASSWORD: ${{ secrets.RSYNC_PASSWORD }}
         run: |
           set -euo pipefail
 
@@ -72,8 +83,8 @@ jobs:
 
           if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
             TEST="${INPUT_TEST:-true}"
-            if [ "$TEST" != "true" ] && [ "$GITHUB_REF_NAME" != "$MAIN_BRANCH" ]; then
-              echo "::error::Real releases must be started from ${MAIN_BRANCH}, got ${GITHUB_REF_NAME}."
+            if [ "$GITHUB_REF_NAME" != "$MAIN_BRANCH" ]; then
+              echo "::error::Manual release workflows must be started from ${MAIN_BRANCH}, got ${GITHUB_REF_NAME}."
               exit 1
             fi
             if [ "$TEST" = "true" ]; then
@@ -94,11 +105,6 @@ jobs:
 
           if [ "$TEST" != "true" ] && [ "$TAG" != "v${VERSION}" ]; then
             echo "::error::Release tag ${TAG} does not match expected v${VERSION}."
-            exit 1
-          fi
-
-          if [ "$TEST" != "true" ] && [ -z "${RSYNC_PASSWORD}" ]; then
-            echo "::error::Missing secret RSYNC_PASSWORD."
             exit 1
           fi
 
@@ -123,19 +129,19 @@ jobs:
     needs: prepare
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ needs.prepare.outputs.target_sha }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: package-lock.json
 
       - name: Cache Electron
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/Library/Caches/electron
@@ -186,32 +192,49 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
+      - name: Clean macOS workflow artifact
+        shell: bash
+        run: |
+          node -e "
+            const fs = require('node:fs');
+            const path = require('node:path');
+            const root = process.env.RELEASE_ROOT + '/mac';
+            for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
+              if (entry.isDirectory() || /^builder-.*\.ya?ml$/.test(entry.name)) {
+                fs.rmSync(path.join(root, entry.name), { recursive: true, force: true });
+              }
+            }
+          "
+
       - name: Upload macOS workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: macos-release
           path: ${{ env.RELEASE_ROOT }}/mac/*
           if-no-files-found: error
+          overwrite: true
 
   build-linux:
     name: Build Linux
     runs-on: ubuntu-latest
     needs: prepare
+    outputs:
+      cli_source_artifact_id: ${{ steps.upload-cli-source.outputs.artifact-id }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ needs.prepare.outputs.target_sha }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: package-lock.json
 
       - name: Cache Electron
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cache/electron
@@ -236,24 +259,46 @@ jobs:
       - name: Build Linux binaries
         run: npx electron-builder -l --publish never
 
+      - name: Clean Linux workflow artifact
+        shell: bash
+        run: |
+          node -e "
+            const fs = require('node:fs');
+            const path = require('node:path');
+            const root = process.env.RELEASE_ROOT + '/linux';
+            for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
+              if (entry.isDirectory() || /^builder-.*\.ya?ml$/.test(entry.name)) {
+                fs.rmSync(path.join(root, entry.name), { recursive: true, force: true });
+              }
+            }
+          "
+
       - name: Upload Linux workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: linux-release
           path: ${{ env.RELEASE_ROOT }}/linux/*
           if-no-files-found: error
+          overwrite: true
 
-      - name: Upload CLI workflow artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload CLI source workflow artifact
+        id: upload-cli-source
+        uses: actions/upload-artifact@v7
         with:
-          name: cli-release
+          name: cli-source
           path: releases/sync-in-cli/sync-in-cli-${{ needs.prepare.outputs.version }}.js
           if-no-files-found: error
+          overwrite: true
 
   build-windows:
     name: Build Windows
     runs-on: windows-latest
     needs: prepare
+    permissions:
+      contents: read
+      actions: write
+    env:
+      SIGNPATH_SIGNING_POLICY_SLUG: ${{ needs.prepare.outputs.test == 'true' && vars.SIGNPATH_TEST_SIGNING_POLICY_SLUG || vars.SIGNPATH_RELEASE_SIGNING_POLICY_SLUG }}
     steps:
       - name: Preserve LF line endings
         shell: bash
@@ -262,19 +307,19 @@ jobs:
           git config --global core.eol lf
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ needs.prepare.outputs.target_sha }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: package-lock.json
 
       - name: Cache Electron
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~\AppData\Local\electron
@@ -289,12 +334,13 @@ jobs:
           SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
           SIGNPATH_ORGANIZATION_ID: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
           SIGNPATH_PROJECT_SLUG: ${{ vars.SIGNPATH_PROJECT_SLUG }}
-          SIGNPATH_SIGNING_POLICY_SLUG: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          SIGNPATH_TEST_SIGNING_POLICY_SLUG: ${{ vars.SIGNPATH_TEST_SIGNING_POLICY_SLUG }}
+          SIGNPATH_RELEASE_SIGNING_POLICY_SLUG: ${{ vars.SIGNPATH_RELEASE_SIGNING_POLICY_SLUG }}
         run: |
           set -euo pipefail
 
           missing=0
-          for name in SIGNPATH_API_TOKEN SIGNPATH_ORGANIZATION_ID SIGNPATH_PROJECT_SLUG SIGNPATH_SIGNING_POLICY_SLUG; do
+          for name in SIGNPATH_API_TOKEN SIGNPATH_ORGANIZATION_ID SIGNPATH_PROJECT_SLUG SIGNPATH_TEST_SIGNING_POLICY_SLUG SIGNPATH_RELEASE_SIGNING_POLICY_SLUG SIGNPATH_SIGNING_POLICY_SLUG; do
             if [ -z "${!name-}" ]; then
               echo "::error::Missing SignPath setting ${name}."
               missing=1
@@ -315,19 +361,255 @@ jobs:
       - name: Build main and CLI bundles
         run: npm run webpack:all:prod
 
-      - name: Build unsigned Windows binaries
-        run: npx electron-builder -w --publish never
+      - name: Build unsigned Windows app bundles
+        run: npx electron-builder -w --dir --x64 --arm64 --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+      - name: Capture unsigned NSIS uninstallers
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          rm -rf nsis-uninstallers
+          mkdir -p nsis-uninstallers/unsigned nsis-uninstallers/metadata
+
+          export SYNC_IN_NSIS_UNINSTALLER_MODE=capture
+
+          export SYNC_IN_NSIS_UNINSTALLER_FILE="$PWD/nsis-uninstallers/unsigned/x64__uninstaller.exe"
+          export SYNC_IN_NSIS_UNINSTALLER_METADATA="$PWD/nsis-uninstallers/metadata/x64.json"
+          npx electron-builder -w nsis --x64 \
+            --prepackaged "$RELEASE_ROOT/win/win-unpacked" \
+            --publish never \
+            -c.directories.output="$RELEASE_ROOT/win-installer-capture-x64" \
+            -c.win.signtoolOptions.sign=build/nsis-uninstaller-signing.cjs
+
+          export SYNC_IN_NSIS_UNINSTALLER_FILE="$PWD/nsis-uninstallers/unsigned/arm64__uninstaller.exe"
+          export SYNC_IN_NSIS_UNINSTALLER_METADATA="$PWD/nsis-uninstallers/metadata/arm64.json"
+          npx electron-builder -w nsis --arm64 \
+            --prepackaged "$RELEASE_ROOT/win/win-arm64-unpacked" \
+            --publish never \
+            -c.directories.output="$RELEASE_ROOT/win-installer-capture-arm64" \
+            -c.win.signtoolOptions.sign=build/nsis-uninstaller-signing.cjs
+
+          test -s nsis-uninstallers/unsigned/x64__uninstaller.exe
+          test -s nsis-uninstallers/unsigned/arm64__uninstaller.exe
+          test -s nsis-uninstallers/metadata/x64.json
+          test -s nsis-uninstallers/metadata/arm64.json
+
+          rm -rf "$RELEASE_ROOT/win-installer-capture-x64" "$RELEASE_ROOT/win-installer-capture-arm64"
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+      # SignPath is configured to sign every .exe contained in submitted zip files.
+      # Keep both app bundles and uninstallers in one archive so they are signed in one request.
+      - name: Stage unsigned Windows payload for SignPath
+        shell: pwsh
+        run: |
+          $releaseWin = Join-Path $env:RELEASE_ROOT 'win'
+          $staging = 'signpath-windows-apps'
+          $archive = 'signpath-windows-apps.zip'
+          $bundles = @('win-unpacked', 'win-arm64-unpacked')
+          $uninstallers = Join-Path $staging 'uninstallers'
+
+          if (Test-Path $staging) {
+            Remove-Item -Path $staging -Recurse -Force
+          }
+          if (Test-Path $archive) {
+            Remove-Item -Path $archive -Force
+          }
+          New-Item -ItemType Directory -Path $staging | Out-Null
+          New-Item -ItemType Directory -Path $uninstallers | Out-Null
+
+          foreach ($bundle in $bundles) {
+            $source = Join-Path $releaseWin $bundle
+            if (-not (Test-Path $source)) {
+              Write-Error "Missing unsigned Windows app bundle: $source"
+              exit 1
+            }
+
+            Copy-Item -Path $source -Destination $staging -Recurse
+          }
+
+          foreach ($arch in @('x64', 'arm64')) {
+            $source = "nsis-uninstallers/unsigned/$($arch)__uninstaller.exe"
+            if (-not (Test-Path $source)) {
+              Write-Error "Missing captured NSIS uninstaller: $source"
+              exit 1
+            }
+
+            Copy-Item -Path $source -Destination $uninstallers
+          }
+
+          Compress-Archive -Path "$staging\*" -DestinationPath $archive -Force
+
+      - name: Upload unsigned Windows payload for SignPath
+        id: upload-unsigned-windows-apps
+        uses: actions/upload-artifact@v7
+        with:
+          name: unsigned-windows-apps-${{ needs.prepare.outputs.version }}
+          path: signpath-windows-apps.zip
+          if-no-files-found: error
+          retention-days: 1
+          overwrite: true
+
+      - name: Submit Windows payload to SignPath
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ env.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: windows-apps-and-uninstallers
+          github-artifact-id: ${{ steps.upload-unsigned-windows-apps.outputs.artifact-id }}
+          github-token: ${{ github.token }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 3600
+          output-artifact-directory: signed-windows-apps
+
+      - name: Replace unsigned Windows payload
+        shell: pwsh
+        env:
+          RELEASE_TEST: ${{ needs.prepare.outputs.test }}
+        run: |
+          $releaseWin = Join-Path $env:RELEASE_ROOT 'win'
+          $signedRoot = 'signed-windows-apps'
+          $expanded = 'signed-windows-apps-expanded'
+          $bundles = @('win-unpacked', 'win-arm64-unpacked')
+          $signedUninstallers = 'nsis-uninstallers/signed'
+          $signedArchives = @(Get-ChildItem -Path $signedRoot -Recurse -Filter *.zip -File)
+          $verifyAuthenticode = $env:RELEASE_TEST -ne 'true'
+
+          if ($signedArchives.Count -ne 1) {
+            Write-Error "SignPath returned $($signedArchives.Count) signed Windows payload archive(s), expected 1."
+            exit 1
+          }
+
+          if (Test-Path $expanded) {
+            Remove-Item -Path $expanded -Recurse -Force
+          }
+          New-Item -ItemType Directory -Path $expanded | Out-Null
+          Expand-Archive -Path $signedArchives[0].FullName -DestinationPath $expanded -Force
+
+          if ($verifyAuthenticode) {
+            foreach ($file in Get-ChildItem -Path $expanded -Recurse -Filter *.exe -File) {
+              $signature = Get-AuthenticodeSignature -FilePath $file.FullName
+              if ($signature.Status -ne 'Valid') {
+                Write-Error "Unsigned or invalid Windows executable returned by SignPath: $($file.FullName) ($($signature.Status))"
+                exit 1
+              }
+            }
+          }
+
+          foreach ($bundle in $bundles) {
+            $destination = Join-Path $releaseWin $bundle
+            $signedBundle = Join-Path $expanded $bundle
+
+            if (-not (Test-Path $signedBundle)) {
+              Write-Error "Could not find signed Windows app bundle returned by SignPath: $bundle"
+              exit 1
+            }
+
+            Copy-Item -Path (Join-Path $signedBundle '*') -Destination $destination -Recurse -Force
+          }
+
+          if (Test-Path $signedUninstallers) {
+            Remove-Item -Path $signedUninstallers -Recurse -Force
+          }
+          New-Item -ItemType Directory -Path $signedUninstallers | Out-Null
+
+          foreach ($arch in @('x64', 'arm64')) {
+            $signedUninstaller = Join-Path $expanded "uninstallers/$($arch)__uninstaller.exe"
+            if (-not (Test-Path $signedUninstaller)) {
+              Write-Error "Missing signed NSIS uninstaller returned by SignPath: $signedUninstaller"
+              exit 1
+            }
+
+            Copy-Item -Path $signedUninstaller -Destination $signedUninstallers
+          }
+
+          foreach ($bundle in $bundles) {
+            $bundlePath = Join-Path $releaseWin $bundle
+            $mainExe = Join-Path $bundlePath 'Sync-in.exe'
+
+            if (-not (Test-Path $mainExe)) {
+              Write-Error "Missing Windows app executable after SignPath replacement: $mainExe"
+              exit 1
+            }
+
+            if ($verifyAuthenticode) {
+              foreach ($file in Get-ChildItem -Path $bundlePath -Recurse -Filter *.exe -File) {
+                $signature = Get-AuthenticodeSignature -FilePath $file.FullName
+                if ($signature.Status -ne 'Valid') {
+                  Write-Error "Unsigned or invalid Windows app executable after SignPath replacement: $($file.FullName) ($($signature.Status))"
+                  exit 1
+                }
+              }
+            }
+          }
+
+          if ($verifyAuthenticode) {
+            foreach ($file in Get-ChildItem -Path $signedUninstallers -Filter *.exe -File) {
+              $signature = Get-AuthenticodeSignature -FilePath $file.FullName
+              if ($signature.Status -ne 'Valid') {
+                Write-Error "Unsigned or invalid NSIS uninstaller after SignPath replacement: $($file.FullName) ($($signature.Status))"
+                exit 1
+              }
+            }
+          }
+
+      - name: Delete unsigned Windows payload artifact
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.upload-unsigned-windows-apps.outputs.artifact-id }}
+        run: gh api --method DELETE "repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}"
+
+      - name: Build unsigned Windows installers with signed uninstallers
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          rm -rf nsis-uninstallers/receipts
+          mkdir -p nsis-uninstallers/receipts
+
+          export SYNC_IN_NSIS_UNINSTALLER_MODE=inject
+
+          export SYNC_IN_NSIS_UNINSTALLER_FILE="$PWD/nsis-uninstallers/signed/x64__uninstaller.exe"
+          export SYNC_IN_NSIS_UNINSTALLER_METADATA="$PWD/nsis-uninstallers/metadata/x64.json"
+          export SYNC_IN_NSIS_UNINSTALLER_RECEIPT="$PWD/nsis-uninstallers/receipts/x64.json"
+          npx electron-builder -w nsis --x64 \
+            --prepackaged "$RELEASE_ROOT/win/win-unpacked" \
+            --publish never \
+            -c.directories.output="$RELEASE_ROOT/win-installer-x64" \
+            -c.win.signtoolOptions.sign=build/nsis-uninstaller-signing.cjs
+
+          export SYNC_IN_NSIS_UNINSTALLER_FILE="$PWD/nsis-uninstallers/signed/arm64__uninstaller.exe"
+          export SYNC_IN_NSIS_UNINSTALLER_METADATA="$PWD/nsis-uninstallers/metadata/arm64.json"
+          export SYNC_IN_NSIS_UNINSTALLER_RECEIPT="$PWD/nsis-uninstallers/receipts/arm64.json"
+          npx electron-builder -w nsis --arm64 \
+            --prepackaged "$RELEASE_ROOT/win/win-arm64-unpacked" \
+            --publish never \
+            -c.directories.output="$RELEASE_ROOT/win-installer-arm64" \
+            -c.win.signtoolOptions.sign=build/nsis-uninstaller-signing.cjs
+
+          test -s nsis-uninstallers/receipts/x64.json
+          test -s nsis-uninstallers/receipts/arm64.json
+
+          cp "$RELEASE_ROOT"/win-installer-x64/*-x64.exe "$RELEASE_ROOT"/win/
+          cp "$RELEASE_ROOT"/win-installer-arm64/*-arm64.exe "$RELEASE_ROOT"/win/
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
 
       - name: Upload unsigned Windows installers for SignPath
         id: upload-unsigned-windows
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: unsigned-windows-${{ needs.prepare.outputs.version }}
           path: ${{ env.RELEASE_ROOT }}/win/*.exe
           if-no-files-found: error
           retention-days: 1
+          overwrite: true
 
       - name: Submit Windows installers to SignPath
         uses: signpath/github-action-submit-signing-request@v2
@@ -335,18 +617,22 @@ jobs:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
           project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
-          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          signing-policy-slug: ${{ env.SIGNPATH_SIGNING_POLICY_SLUG }}
+          artifact-configuration-slug: windows-installers
           github-artifact-id: ${{ steps.upload-unsigned-windows.outputs.artifact-id }}
           github-token: ${{ github.token }}
           wait-for-completion: true
           wait-for-completion-timeout-in-seconds: 3600
-          output-artifact-directory: signed-windows
+          output-artifact-directory: signed-windows-installers
 
       - name: Replace unsigned Windows installers
         shell: pwsh
+        env:
+          RELEASE_TEST: ${{ needs.prepare.outputs.test }}
         run: |
           $unsigned = @(Get-ChildItem -Path "$env:RELEASE_ROOT/win" -Filter *.exe -File)
-          $signed = @(Get-ChildItem -Path signed-windows -Recurse -Filter *.exe -File)
+          $signed = @(Get-ChildItem -Path signed-windows-installers -Recurse -Filter *.exe -File)
+          $verifyAuthenticode = $env:RELEASE_TEST -ne 'true'
 
           if ($unsigned.Count -eq 0) {
             Write-Error "No unsigned Windows installer found before SignPath replacement."
@@ -359,10 +645,12 @@ jobs:
           }
 
           foreach ($file in $signed) {
-            $signature = Get-AuthenticodeSignature -FilePath $file.FullName
-            if ($signature.Status -ne 'Valid') {
-              Write-Error "Invalid Authenticode signature for $($file.Name): $($signature.Status)."
-              exit 1
+            if ($verifyAuthenticode) {
+              $signature = Get-AuthenticodeSignature -FilePath $file.FullName
+              if ($signature.Status -ne 'Valid') {
+                Write-Error "Invalid Authenticode signature for $($file.Name): $($signature.Status)."
+                exit 1
+              }
             }
 
             $destination = Join-Path "$env:RELEASE_ROOT/win" $file.Name
@@ -374,23 +662,42 @@ jobs:
             Copy-Item -Path $file.FullName -Destination $destination -Force
           }
 
-          foreach ($file in Get-ChildItem -Path "$env:RELEASE_ROOT/win" -Filter *.exe -File) {
-            $signature = Get-AuthenticodeSignature -FilePath $file.FullName
-            if ($signature.Status -ne 'Valid') {
-              Write-Error "Installer remains unsigned or invalid after replacement: $($file.Name)."
-              exit 1
+          if ($verifyAuthenticode) {
+            foreach ($file in Get-ChildItem -Path "$env:RELEASE_ROOT/win" -Filter *.exe -File) {
+              $signature = Get-AuthenticodeSignature -FilePath $file.FullName
+              if ($signature.Status -ne 'Valid') {
+                Write-Error "Installer remains unsigned or invalid after replacement: $($file.Name)."
+                exit 1
+              }
             }
           }
+
+      - name: Delete unsigned Windows installers artifact
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.upload-unsigned-windows.outputs.artifact-id }}
+        run: gh api --method DELETE "repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}"
 
       - name: Refresh Windows update metadata
         run: node build/refresh-win-latest.mjs
 
+      - name: Clean Windows workflow artifact
+        shell: pwsh
+        run: |
+          Get-ChildItem -Path "$env:RELEASE_ROOT/win" -Directory |
+            Remove-Item -Recurse -Force
+          Get-ChildItem -Path "$env:RELEASE_ROOT/win" -File |
+            Where-Object { $_.Name -match '^builder-.*\.ya?ml$' } |
+            Remove-Item -Force
+
       - name: Upload Windows workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-release
           path: ${{ env.RELEASE_ROOT }}/win/*
           if-no-files-found: error
+          overwrite: true
 
   manifest:
     name: Generate release manifest
@@ -400,17 +707,14 @@ jobs:
       - build-macos
       - build-linux
       - build-windows
-    env:
-      GH_TOKEN: ${{ github.token }}
-      RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ needs.prepare.outputs.target_sha }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -428,27 +732,27 @@ jobs:
         run: mkdir -p releases/sync-in-desktop/mac releases/sync-in-desktop/linux releases/sync-in-desktop/win releases/sync-in-cli
 
       - name: Download macOS workflow artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: macos-release
           path: releases/sync-in-desktop/mac
 
       - name: Download Linux workflow artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: linux-release
           path: releases/sync-in-desktop/linux
 
       - name: Download Windows workflow artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: windows-release
           path: releases/sync-in-desktop/win
 
-      - name: Download CLI workflow artifact
-        uses: actions/download-artifact@v4
+      - name: Download CLI source workflow artifact
+        uses: actions/download-artifact@v8
         with:
-          name: cli-release
+          name: cli-source
           path: releases/sync-in-cli
 
       - name: Generate manifest and CLI archives
@@ -473,7 +777,7 @@ jobs:
 
           require_match "macOS x64 DMG" "$RELEASE_ROOT"/mac/*-"$RELEASE_VERSION"-x64.dmg
           require_match "macOS arm64 DMG" "$RELEASE_ROOT"/mac/*-"$RELEASE_VERSION"-arm64.dmg
-          require_match "Linux x64 AppImage" "$RELEASE_ROOT"/linux/*-"$RELEASE_VERSION"-x64.AppImage
+          require_match "Linux x86_64 AppImage" "$RELEASE_ROOT"/linux/*-"$RELEASE_VERSION"-x86_64.AppImage
           require_match "Linux arm64 AppImage" "$RELEASE_ROOT"/linux/*-"$RELEASE_VERSION"-arm64.AppImage
           require_match "Windows x64 installer" "$RELEASE_ROOT"/win/*-"$RELEASE_VERSION"-x64.exe
           require_match "Windows arm64 installer" "$RELEASE_ROOT"/win/*-"$RELEASE_VERSION"-arm64.exe
@@ -488,8 +792,79 @@ jobs:
             exit 1
           fi
 
+      - name: Upload CLI release workflow artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: cli-release
+          path: |
+            releases/sync-in-cli/*.zip
+            releases/sync-in-cli/*.tar.gz
+          if-no-files-found: error
+          overwrite: true
+
+      - name: Upload manifest workflow artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-manifest
+          path: releases/latest.json
+          if-no-files-found: error
+          overwrite: true
+
+  publish:
+    name: Publish release
+    if: needs.prepare.outputs.test == 'false'
+    runs-on: ubuntu-latest
+    needs:
+      - prepare
+      - manifest
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare.outputs.target_sha }}
+          persist-credentials: false
+
+      - name: Create release directories
+        shell: bash
+        run: mkdir -p releases/sync-in-desktop/mac releases/sync-in-desktop/linux releases/sync-in-desktop/win releases/sync-in-cli
+
+      - name: Download macOS workflow artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: macos-release
+          path: releases/sync-in-desktop/mac
+
+      - name: Download Linux workflow artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: linux-release
+          path: releases/sync-in-desktop/linux
+
+      - name: Download Windows workflow artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: windows-release
+          path: releases/sync-in-desktop/win
+
+      - name: Download CLI release workflow artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: cli-release
+          path: releases/sync-in-cli
+
+      - name: Download manifest workflow artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: release-manifest
+          path: releases
+
       - name: Extract changelog for current version
-        if: needs.prepare.outputs.test == 'false'
         shell: bash
         env:
           RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
@@ -508,7 +883,6 @@ jobs:
           fi
 
       - name: Create or update draft release
-        if: needs.prepare.outputs.test == 'false'
         shell: bash
         env:
           RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
@@ -546,7 +920,6 @@ jobs:
             --draft
 
       - name: Upload release assets to GitHub release
-        if: needs.prepare.outputs.test == 'false'
         shell: bash
         run: |
           set -euo pipefail
@@ -566,12 +939,16 @@ jobs:
             --clobber
 
       - name: Sync update feed
-        if: needs.prepare.outputs.test == 'false'
         shell: bash
         env:
           RSYNC_PASSWORD: ${{ secrets.RSYNC_PASSWORD }}
         run: |
           set -euo pipefail
+
+          if [ -z "${RSYNC_PASSWORD}" ]; then
+            echo "::error::Missing secret RSYNC_PASSWORD."
+            exit 1
+          fi
 
           rsync -rptoDvzc --progress \
             --exclude '.DS_Store' \
@@ -581,12 +958,20 @@ jobs:
             --exclude '*unpacked' \
             releases/ admin@releases.sync-in.org::sync-in-releases-admin
 
-      - name: Upload manifest workflow artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-manifest
-          path: |
-            releases/latest.json
-            releases/sync-in-cli/*.zip
-            releases/sync-in-cli/*.tar.gz
-          if-no-files-found: error
+  cleanup:
+    name: Clean workflow artifacts
+    if: always() && needs.build-linux.result == 'success'
+    runs-on: ubuntu-latest
+    needs:
+      - build-linux
+      - manifest
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Delete CLI source workflow artifact
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ needs.build-linux.outputs.cli_source_artifact_id }}
+        run: gh api --method DELETE "repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}"

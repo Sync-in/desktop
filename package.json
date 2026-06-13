@@ -135,6 +135,11 @@
       "gatekeeperAssess": false
     },
     "win": {
+      "signtoolOptions": {
+        "signingHashAlgorithms": [
+          "sha256"
+        ]
+      },
       "target": [
         {
           "target": "nsis",

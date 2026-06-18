@@ -1,5 +1,6 @@
-<a href="#-license"><img src="https://img.shields.io/badge/Licence-AGPL%20v3.0-green.svg" alt="License"/></a>
-<a href="https://discord.gg/qhJyzwaymT" target="_blank"><img src="https://img.shields.io/badge/Discord-Online-brightgreen.svg" alt="Discord"/></a>
+<a href="#license"><img src="https://img.shields.io/badge/License-AGPL%20v3.0-green.svg" alt="License"/></a>
+<a href="https://github.com/Sync-in/desktop/releases" target="_blank"><img src="https://img.shields.io/github/v/release/Sync-in/desktop?sort=semver&display_name=tag&style=flat&logo=github&label=Release" alt="GitHub Release"/></a>
+<a href="https://discord.gg/qhJyzwaymT" target="_blank"><img src="https://img.shields.io/discord/1391081837849346088?logo=discord&label=Discord" alt="Discord"/></a>
 
 <a href="https://sync-in.com" target="_blank" rel="noopener">
 <picture>
@@ -8,92 +9,85 @@
 </picture>
 </a>
 
-_Welcome to the Sync-in desktop client repository!_
+<p align="left">
+  <a href="https://sync-in.com">Website</a> •
+  <a href="https://sync-in.com/docs">Documentation</a> •
+  <a href="https://sync-in.com/downloads">Downloads</a> •
+  <a href="https://github.com/Sync-in/server">GitHub Server</a> •
+  <a href="https://github.com/Sync-in/desktop">GitHub Desktop & CLI</a>
+</p>
 
-- 🌍 [Website](https://sync-in.com)
-- 📄 [Documentation](https://sync-in.com/docs)
-- 📥 [Download the desktop app](https://sync-in.com/downloads)
-- 🗄️ [GitHub Server Repository](https://github.com/Sync-in/server)
-- 💻 [GitHub Desktop & CLI Repository](https://github.com/Sync-in/desktop)
+**Sync-in Desktop & CLI provides local synchronization and command-line access for Sync-in servers.**
 
-**Sync-in provides a desktop and CLI client for file synchronization, management, and interaction with Sync-in servers.**
-It enables seamless file sync across devices, along with full access to server features from a local environment.
+Keep files synchronized across workstations, servers, and automated environments while using the same access rules, authentication flows, and collaboration model as Sync-in Server.
 
-Available on Windows, macOS, and Linux, it adapts to different workflows — from personal workstations to automation and headless environments.
+Sync-in Desktop is designed for daily workstation use, while the CLI fits automation, scripts, scheduled tasks, CI/CD pipelines, and headless deployments.
 
 <picture>
   <source srcset="https://raw.githubusercontent.com/Sync-in/assets/main/desktop-dark.png" media="(prefers-color-scheme: dark)" />
-  <img src="https://raw.githubusercontent.com/Sync-in/assets/main/desktop.png" alt="Sync-in" width="600"/>
+  <img src="https://raw.githubusercontent.com/Sync-in/assets/main/desktop.png" alt="Sync-in Desktop" width="600"/>
 </picture>
 
-*This project is supported by the **Docker-Sponsored Open Source Program**.*
+## Features
 
----
-
-## 🚀 Features
-
-### 💻 Desktop Application
-
-- 🌐 Multi-server support: connect and manage multiple Sync-in servers from a single client
-- 🔁 Flexible file synchronization
-    - ⬆️⬇️ One-way sync (push or pull)
-    - 🔄 Two-way sync
-- 🛡️ Multiple sync strategies
-    - ✅ Secure mode: checksum-based verification for maximum integrity
-    - ⚡ Fast mode: metadata-based detection (date, size) for improved performance
-- 📆 Scheduled synchronization: automate sync tasks
-- 🎯 Custom filters: include or exclude files and folders
-- 🧪 Sync preview: simulate operations before applying changes
+- 💻 Desktop application for Windows, macOS, and Linux
+- 🌐 Multi-server support from a single local client
+- 🔁 One-way and two-way synchronization workflows
+- 🛡️ Secure checksum-based sync mode for stronger integrity checks
+- ⚡ Fast metadata-based sync mode for lighter synchronization
+- 📆 Scheduled synchronization for recurring tasks
+- 🎯 Include and exclude filters for files and folders
+- 🧪 Sync preview to simulate operations before applying changes
 - 📥 Integrated download and transfer manager
-- 👀 Transfer monitoring: real-time logs and synchronization tracking
-- 🤖 Guided configuration wizard: simplified setup and onboarding
-- 🔐 Modern authentication support compatible with Sync-in server identity flows
-- 🔄 Automatic updates: background update system
+- 👀 Real-time transfer monitoring, logs, and synchronization tracking
+- 🤖 Guided configuration wizard for simpler onboarding
+- 🔐 Authentication compatible with Sync-in Server identity flows
+- 🔄 Automatic background updates
+- 📟 CLI support for automation, scripting, cron jobs, CI/CD, and headless environments
 
 ---
 
-### 📟 Command Line Interface (CLI)
+## Sponsors
 
-- 🧩 Runs in any environment supporting Node.js
-- 🔁 Synchronize files to and from any Sync-in server
-- ⚙️ Ideal for automation, scripting, cron jobs, CI/CD pipelines, and headless environments
-- 🔐 Compatible with Sync-in authentication and identity flows
+Sync-in receives support from organizations that provide infrastructure, distribution, and security services to open source projects.
+
+<table>
+  <tr>
+    <td align="center" width="50%" valign="middle"><a href="https://www.docker.com/community/open-source/application/" target="_blank" rel="noopener"><img src="https://raw.githubusercontent.com/Sync-in/assets/main/sponsors/docker.png" alt="Docker" width="200" valign="middle" /></a></td>
+    <td align="center" width="50%" valign="middle"><a href="https://signpath.io/solutions/open-source-community" target="_blank" rel="noopener"><img src="https://raw.githubusercontent.com/Sync-in/assets/main/sponsors/signpath.png" alt="SignPath" width="200" valign="middle" /></a></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Docker-Sponsored Open Source Program</sub></td>
+    <td align="center"><sub>Free code signing on Windows provided by <a href="https://signpath.io/" target="_blank" rel="noopener">SignPath.io</a>, certificate by <a href="https://signpath.org/" target="_blank" rel="noopener">SignPath Foundation</a></sub></td>
+  </tr>
+</table>
 
 ---
 
-## 💛 Support
+## Support
 
-Sync-in is an independent open source project.  
-If you find it useful, you can:
+You can help by:
 
 - ⭐ Star the repositories
-- 🐛 Report issues and suggest improvements
-- 🤝 Contribute code, translations, or documentation
-- 💬 Join the community on :
-    - [GitHub Discussions](https://github.com/Sync-in/desktop/discussions)
-    - [Discord](https://discord.gg/qhJyzwaymT)
-- 💖 Support the project !
-    - [GitHub Sponsors](https://github.com/sponsors/Sync-in)
-    - [Other ways to support](https://sync-in.com/support)
+- 🤝 Contribute through issues, documentation, translations, or pull requests
+- 💖 Support the project:
+  - [GitHub Sponsors](https://github.com/sponsors/Sync-in)
+  - [Other ways to support](https://sync-in.com/support)
 
 ---
 
-## 🤝 Contributing
+## Community Guidelines
 
-Before submitting your pull request, please confirm the following:
-
-- ✅ I have read and followed the [contribution guide](CONTRIBUTING.md).
-- ✅ I am submitting this pull request in good faith and to help improve Sync-in.
+- Use [GitHub Issues](https://github.com/Sync-in/desktop/issues) for bug reports and feature requests.
+- Use [GitHub Discussions](https://github.com/Sync-in/desktop/discussions), [Discord](https://discord.gg/qhJyzwaymT), or [Reddit](https://www.reddit.com/r/SyncInPlatform/) for questions and community support.
+- Report security vulnerabilities privately through GitHub Security Advisories.
+- Please read the [Code of Conduct](CODE_OF_CONDUCT.md) and [Contributing Guide](CONTRIBUTING.md) before contributing.
 
 ---
 
-## 📜 License
+## License
 
 This project is licensed under the **GNU Affero General Public License (AGPL-3.0-or-later)**.  
 See [LICENSE](LICENSE) for the full text.
 
 Sync-in® is a registered trademark, see our [Trademark Policy](https://sync-in.com/trademark).
-
----
-
-_Thank you for using **Sync-in** ! 🚀_

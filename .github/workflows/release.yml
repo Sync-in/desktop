@@ -8,7 +8,9 @@
 # Test rules:
 # - tag push: test=false; require a tag reachable from main and matching v<package.json version>.
 # - workflow_dispatch + test=true: main only; build, sign, generate/validate manifests, and upload
-#   workflow artifacts only; do not create a GitHub release or sync the HTTP update feed.
+#   workflow artifacts only; do not create a GitHub release or sync the HTTP update feed. By default
+#   Windows uses the SignPath test signing policy, but production_signing=true uses the release
+#   signing policy and enables Authenticode validation while still skipping publish/feed sync.
 # - workflow_dispatch + test=false: main only; require v<package.json version>, update the draft
 #   GitHub release, upload its assets, then sync the HTTP update feed after success.
 # Windows signing flow (two SignPath requests):
@@ -19,8 +21,9 @@
 # 4. Submit both final NSIS installers together for their outer Authenticode signatures.
 # Test runs use the SignPath test signing policy; real releases use the release signing policy.
 # Real releases require every returned executable to have a Valid Authenticode signature.
-# Test runs still execute both SignPath requests and all structural checks, but skip Authenticode
-# trust validation because the test certificate can be self-signed and untrusted by GitHub runners.
+# Test runs still execute both SignPath requests and all structural checks. They skip Authenticode
+# trust validation when using the test signing policy because the test certificate can be self-signed
+# and untrusted by GitHub runners; production_signing=true keeps that validation enabled.
 name: Release binaries
 
 on:
@@ -37,6 +40,11 @@ on:
         description: 'Test run: use relaxed release notes/tag rules and do not sync the HTTP update feed.'
         required: true
         default: true
+        type: boolean
+      production_signing:
+        description: 'Test run only: use the production SignPath signing policy and validate Authenticode.'
+        required: true
+        default: false
         type: boolean
 
 permissions:
@@ -61,6 +69,8 @@ jobs:
       tag: ${{ steps.meta.outputs.tag }}
       test: ${{ steps.meta.outputs.test }}
       target_sha: ${{ steps.meta.outputs.target_sha }}
+      use_production_signpath: ${{ steps.meta.outputs.use_production_signpath }}
+      verify_windows_authenticode: ${{ steps.meta.outputs.verify_windows_authenticode }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -73,6 +83,7 @@ jobs:
         env:
           INPUT_TAG: ${{ github.event.inputs.tag }}
           INPUT_TEST: ${{ github.event.inputs.test }}
+          INPUT_PRODUCTION_SIGNING: ${{ github.event.inputs.production_signing }}
         run: |
           set -euo pipefail
 
@@ -83,19 +94,23 @@ jobs:
 
           if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
             TEST="${INPUT_TEST:-true}"
+            PRODUCTION_SIGNING="${INPUT_PRODUCTION_SIGNING:-false}"
             if [ "$GITHUB_REF_NAME" != "$MAIN_BRANCH" ]; then
               echo "::error::Manual release workflows must be started from ${MAIN_BRANCH}, got ${GITHUB_REF_NAME}."
               exit 1
             fi
             if [ "$TEST" = "true" ]; then
               TAG="test-run-${GITHUB_RUN_NUMBER}"
+              USE_PRODUCTION_SIGNPATH="$PRODUCTION_SIGNING"
             else
               TAG="${INPUT_TAG:-v${VERSION}}"
+              USE_PRODUCTION_SIGNPATH="true"
             fi
             TARGET_SHA="$(git rev-parse HEAD)"
           else
             TAG="$GITHUB_REF_NAME"
             TEST="false"
+            USE_PRODUCTION_SIGNPATH="true"
             if ! git merge-base --is-ancestor "${GITHUB_REF}^{commit}" "origin/${MAIN_BRANCH}"; then
               echo "::error::Release tag ${TAG} is not reachable from ${MAIN_BRANCH}."
               exit 1
@@ -121,6 +136,8 @@ jobs:
             echo "tag=$TAG"
             echo "test=$TEST"
             echo "target_sha=$TARGET_SHA"
+            echo "use_production_signpath=$USE_PRODUCTION_SIGNPATH"
+            echo "verify_windows_authenticode=$USE_PRODUCTION_SIGNPATH"
           } >> "$GITHUB_OUTPUT"
 
   build-macos:
@@ -298,7 +315,7 @@ jobs:
       contents: read
       actions: write
     env:
-      SIGNPATH_SIGNING_POLICY_SLUG: ${{ needs.prepare.outputs.test == 'true' && vars.SIGNPATH_TEST_SIGNING_POLICY_SLUG || vars.SIGNPATH_RELEASE_SIGNING_POLICY_SLUG }}
+      SIGNPATH_SIGNING_POLICY_SLUG: ${{ needs.prepare.outputs.use_production_signpath == 'true' && vars.SIGNPATH_RELEASE_SIGNING_POLICY_SLUG || vars.SIGNPATH_TEST_SIGNING_POLICY_SLUG }}
     steps:
       - name: Preserve LF line endings
         shell: bash
@@ -470,7 +487,7 @@ jobs:
       - name: Replace unsigned Windows payload
         shell: pwsh
         env:
-          RELEASE_TEST: ${{ needs.prepare.outputs.test }}
+          VERIFY_AUTHENTICODE: ${{ needs.prepare.outputs.verify_windows_authenticode }}
         run: |
           $releaseWin = Join-Path $env:RELEASE_ROOT 'win'
           $signedRoot = 'signed-windows-apps'
@@ -478,7 +495,7 @@ jobs:
           $bundles = @('win-unpacked', 'win-arm64-unpacked')
           $signedUninstallers = 'nsis-uninstallers/signed'
           $signedArchives = @(Get-ChildItem -Path $signedRoot -Recurse -Filter *.zip -File)
-          $verifyAuthenticode = $env:RELEASE_TEST -ne 'true'
+          $verifyAuthenticode = $env:VERIFY_AUTHENTICODE -eq 'true'
 
           if ($signedArchives.Count -ne 1) {
             Write-Error "SignPath returned $($signedArchives.Count) signed Windows payload archive(s), expected 1."
@@ -628,11 +645,11 @@ jobs:
       - name: Replace unsigned Windows installers
         shell: pwsh
         env:
-          RELEASE_TEST: ${{ needs.prepare.outputs.test }}
+          VERIFY_AUTHENTICODE: ${{ needs.prepare.outputs.verify_windows_authenticode }}
         run: |
           $unsigned = @(Get-ChildItem -Path "$env:RELEASE_ROOT/win" -Filter *.exe -File)
           $signed = @(Get-ChildItem -Path signed-windows-installers -Recurse -Filter *.exe -File)
-          $verifyAuthenticode = $env:RELEASE_TEST -ne 'true'
+          $verifyAuthenticode = $env:VERIFY_AUTHENTICODE -eq 'true'
 
           if ($unsigned.Count -eq 0) {
             Write-Error "No unsigned Windows installer found before SignPath replacement."

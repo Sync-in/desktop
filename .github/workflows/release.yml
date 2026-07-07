@@ -17,10 +17,13 @@
 # 1. Build unsigned x64/arm64 app bundles, then run temporary NSIS builds to capture both uninstallers.
 # 2. Submit one ZIP containing the app bundles and uninstallers; SignPath signs every .exe recursively.
 # 3. Replace the app bundles with their signed versions and rebuild NSIS while the custom signing hook
-#    injects the signed uninstallers into the final installers.
-# 4. Submit both final NSIS installers together for their outer Authenticode signatures.
+#    injects the signed uninstallers into the final installers. The final NSIS build disables
+#    packElevateHelper so electron-builder does not overwrite the SignPath-signed elevate.exe.
+# 4. Validate the final app bundles still contain only Valid Authenticode-signed executables.
+# 5. Submit both final NSIS installers together for their outer Authenticode signatures.
 # Test runs use the SignPath test signing policy; real releases use the release signing policy.
-# Real releases require every returned executable to have a Valid Authenticode signature.
+# Real releases require every returned executable and final bundled executable to have a Valid
+# Authenticode signature.
 # Test runs still execute both SignPath requests and all structural checks. They skip Authenticode
 # trust validation when using the test signing policy because the test certificate can be self-signed
 # and untrusted by GitHub runners; production_signing=true keeps that validation enabled.
@@ -599,6 +602,7 @@ jobs:
             --prepackaged "$RELEASE_ROOT/win/win-unpacked" \
             --publish never \
             -c.directories.output="$RELEASE_ROOT/win-installer-x64" \
+            -c.nsis.packElevateHelper=false \
             -c.win.signtoolOptions.sign=build/nsis-uninstaller-signing.cjs
 
           export SYNC_IN_NSIS_UNINSTALLER_FILE="$PWD/nsis-uninstallers/signed/arm64__uninstaller.exe"
@@ -608,6 +612,7 @@ jobs:
             --prepackaged "$RELEASE_ROOT/win/win-arm64-unpacked" \
             --publish never \
             -c.directories.output="$RELEASE_ROOT/win-installer-arm64" \
+            -c.nsis.packElevateHelper=false \
             -c.win.signtoolOptions.sign=build/nsis-uninstaller-signing.cjs
 
           test -s nsis-uninstallers/receipts/x64.json
@@ -617,6 +622,28 @@ jobs:
           cp "$RELEASE_ROOT"/win-installer-arm64/*-arm64.exe "$RELEASE_ROOT"/win/
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+      - name: Verify Windows app bundle signatures after final NSIS build
+        shell: pwsh
+        env:
+          VERIFY_AUTHENTICODE: ${{ needs.prepare.outputs.verify_windows_authenticode }}
+        run: |
+          if ($env:VERIFY_AUTHENTICODE -ne 'true') {
+            Write-Host 'Skipping Authenticode validation for non-production SignPath policy.'
+            exit 0
+          }
+
+          $releaseWin = Join-Path $env:RELEASE_ROOT 'win'
+          foreach ($bundle in @('win-unpacked', 'win-arm64-unpacked')) {
+            $bundlePath = Join-Path $releaseWin $bundle
+            foreach ($file in Get-ChildItem -Path $bundlePath -Recurse -Filter *.exe -File) {
+              $signature = Get-AuthenticodeSignature -FilePath $file.FullName
+              if ($signature.Status -ne 'Valid') {
+                Write-Error "Unsigned or invalid Windows app executable after final NSIS build: $($file.FullName) ($($signature.Status))"
+                exit 1
+              }
+            }
+          }
 
       - name: Upload unsigned Windows installers for SignPath
         id: upload-unsigned-windows

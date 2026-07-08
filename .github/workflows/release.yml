@@ -864,6 +864,8 @@ jobs:
           require_match "macOS arm64 DMG" "$RELEASE_ROOT"/mac/*-"$RELEASE_VERSION"-arm64.dmg
           require_match "Linux x86_64 AppImage" "$RELEASE_ROOT"/linux/*-"$RELEASE_VERSION"-x86_64.AppImage
           require_match "Linux arm64 AppImage" "$RELEASE_ROOT"/linux/*-"$RELEASE_VERSION"-arm64.AppImage
+          require_match "Linux amd64 DEB" "$RELEASE_ROOT"/linux/*-"$RELEASE_VERSION"-amd64.deb
+          require_match "Linux arm64 DEB" "$RELEASE_ROOT"/linux/*-"$RELEASE_VERSION"-arm64.deb
           require_match "Windows x64 installer" "$RELEASE_ROOT"/win/*-"$RELEASE_VERSION"-x64.exe
           require_match "Windows arm64 installer" "$RELEASE_ROOT"/win/*-"$RELEASE_VERSION"-arm64.exe
           require_match "macOS update metadata" "$RELEASE_ROOT"/mac/latest-mac.yml

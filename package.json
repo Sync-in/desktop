@@ -160,6 +160,13 @@
             "x64",
             "arm64"
           ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ],
       "category": "Office",
@@ -187,5 +194,16 @@
       "license": "build/license.html",
       "artifactName": "${productName}-Desktop-${version}-${arch}.${ext}"
     }
+  },
+  "allowScripts": {
+    "@parcel/watcher@2.5.6": true,
+    "@swc/core@1.15.33": true,
+    "electron@41.7.0": true,
+    "electron-winstaller@5.4.0": true,
+    "esbuild@0.28.0": true,
+    "esbuild@0.27.7": true,
+    "fsevents@2.3.3": true,
+    "lmdb@3.4.2": true,
+    "msgpackr-extract@3.0.3": true
   }
 }

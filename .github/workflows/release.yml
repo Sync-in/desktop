@@ -14,12 +14,14 @@
 # - workflow_dispatch + test=false: main only; require v<package.json version>, update the draft
 #   GitHub release, upload its assets, then sync the HTTP update feed after success.
 # Windows signing flow (two SignPath requests):
-# 1. Build unsigned x64/arm64 app bundles, then run temporary NSIS builds to capture both uninstallers.
+# 1. Build unsigned x64/arm64 app bundles, write app-update.yml for electron-updater, then run
+#    temporary NSIS builds to capture both uninstallers.
 # 2. Submit one ZIP containing the app bundles and uninstallers; SignPath signs every .exe recursively.
 # 3. Replace the app bundles with their signed versions and rebuild NSIS while the custom signing hook
 #    injects the signed uninstallers into the final installers. The final NSIS build disables
 #    packElevateHelper so electron-builder does not overwrite the SignPath-signed elevate.exe.
-# 4. Validate the final app bundles still contain only Valid Authenticode-signed executables.
+# 4. Validate the final app bundles still contain app-update.yml and only Valid Authenticode-signed
+#    executables.
 # 5. Submit both final NSIS installers together for their outer Authenticode signatures.
 # Test runs use the SignPath test signing policy; real releases use the release signing policy.
 # Real releases require every returned executable and final bundled executable to have a Valid
@@ -386,6 +388,30 @@ jobs:
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
 
+      - name: Create Windows app update config
+        shell: pwsh
+        run: |
+          $package = Get-Content package.json | ConvertFrom-Json
+          $publishUrl = $package.build.publish[0].url
+          $publishUrl = $publishUrl.Replace('${name}', $package.name).Replace('${os}', 'win')
+          $updateConfig = @(
+            'provider: generic'
+            "url: $publishUrl"
+            "updaterCacheDirName: $($package.name)-updater"
+            ''
+          ) -join "`n"
+
+          $releaseWin = Join-Path $env:RELEASE_ROOT 'win'
+          foreach ($bundle in @('win-unpacked', 'win-arm64-unpacked')) {
+            $resources = Join-Path $releaseWin "$bundle/resources"
+            if (-not (Test-Path $resources)) {
+              Write-Error "Missing Windows bundle resources directory: $resources"
+              exit 1
+            }
+
+            Set-Content -Path (Join-Path $resources 'app-update.yml') -Value $updateConfig -Encoding utf8
+          }
+
       - name: Capture unsigned NSIS uninstallers
         shell: bash
         run: |
@@ -445,6 +471,12 @@ jobs:
             $source = Join-Path $releaseWin $bundle
             if (-not (Test-Path $source)) {
               Write-Error "Missing unsigned Windows app bundle: $source"
+              exit 1
+            }
+
+            $updateConfig = Join-Path $source 'resources/app-update.yml'
+            if (-not (Test-Path $updateConfig)) {
+              Write-Error "Missing Windows app update config before SignPath upload: $updateConfig"
               exit 1
             }
 
@@ -623,17 +655,26 @@ jobs:
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
 
-      - name: Verify Windows app bundle signatures after final NSIS build
+      - name: Verify Windows app bundles after final NSIS build
         shell: pwsh
         env:
           VERIFY_AUTHENTICODE: ${{ needs.prepare.outputs.verify_windows_authenticode }}
         run: |
+          $releaseWin = Join-Path $env:RELEASE_ROOT 'win'
+          foreach ($bundle in @('win-unpacked', 'win-arm64-unpacked')) {
+            $bundlePath = Join-Path $releaseWin $bundle
+            $updateConfig = Join-Path $bundlePath 'resources/app-update.yml'
+            if (-not (Test-Path $updateConfig)) {
+              Write-Error "Missing Windows app update config after final NSIS build: $updateConfig"
+              exit 1
+            }
+          }
+
           if ($env:VERIFY_AUTHENTICODE -ne 'true') {
             Write-Host 'Skipping Authenticode validation for non-production SignPath policy.'
             exit 0
           }
 
-          $releaseWin = Join-Path $env:RELEASE_ROOT 'win'
           foreach ($bundle in @('win-unpacked', 'win-arm64-unpacked')) {
             $bundlePath = Join-Path $releaseWin $bundle
             foreach ($file in Get-ChildItem -Path $bundlePath -Recurse -Filter *.exe -File) {

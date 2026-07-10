@@ -6,20 +6,20 @@
 # GitHub cannot branch-filter tag pushes; the prepare job is the preflight gate
 # and every build job depends on it.
 # Test rules:
-# - tag push: test=false; require a tag reachable from main and matching v<package.json version>.
+# - tag push: test=false; require a tag on the latest main commit and matching v<package.json version>.
 # - workflow_dispatch + test=true: main only; build, sign, generate/validate manifests, and upload
-#   workflow artifacts only; do not create a GitHub release or sync the HTTP update feed. By default
-#   Windows uses the SignPath test signing policy, but production_signing=true uses the release
-#   signing policy and enables Authenticode validation while still skipping publish/feed sync.
+#   workflow artifacts only; use the SignPath test signing policy; do not create a GitHub release or
+#   sync the HTTP update feed.
 # - workflow_dispatch + test=false: main only; require v<package.json version>, update the draft
 #   GitHub release, upload its assets, then sync the HTTP update feed after success.
 # Windows signing flow (two SignPath requests):
 # 1. Build unsigned x64/arm64 app bundles, write app-update.yml for electron-updater, then run
 #    temporary NSIS builds to capture both uninstallers.
-# 2. Submit one ZIP containing the app bundles and uninstallers; SignPath signs every .exe recursively.
-# 3. Replace the app bundles with their signed versions and rebuild NSIS while the custom signing hook
-#    injects the signed uninstallers into the final installers. The final NSIS build disables
-#    packElevateHelper so electron-builder does not overwrite the SignPath-signed elevate.exe.
+# 2. Submit one ZIP containing only app bundle executables and uninstallers; SignPath signs every .exe.
+# 3. Replace only the original app bundle executables with their signed versions and rebuild NSIS while
+#    the custom signing hook injects the signed uninstallers into the final installers.
+#    The final NSIS build disables packElevateHelper so electron-builder does not overwrite
+#    the SignPath-signed elevate.exe.
 # 4. Validate the final app bundles still contain app-update.yml and only Valid Authenticode-signed
 #    executables.
 # 5. Submit both final NSIS installers together for their outer Authenticode signatures.
@@ -28,7 +28,7 @@
 # Authenticode signature.
 # Test runs still execute both SignPath requests and all structural checks. They skip Authenticode
 # trust validation when using the test signing policy because the test certificate can be self-signed
-# and untrusted by GitHub runners; production_signing=true keeps that validation enabled.
+# and untrusted by GitHub runners.
 name: Release binaries
 
 on:
@@ -45,11 +45,6 @@ on:
         description: 'Test run: use relaxed release notes/tag rules and do not sync the HTTP update feed.'
         required: true
         default: true
-        type: boolean
-      production_signing:
-        description: 'Test run only: use the production SignPath signing policy and validate Authenticode.'
-        required: true
-        default: false
         type: boolean
 
 permissions:
@@ -88,7 +83,6 @@ jobs:
         env:
           INPUT_TAG: ${{ github.event.inputs.tag }}
           INPUT_TEST: ${{ github.event.inputs.test }}
-          INPUT_PRODUCTION_SIGNING: ${{ github.event.inputs.production_signing }}
         run: |
           set -euo pipefail
 
@@ -96,22 +90,26 @@ jobs:
           git fetch --force origin \
             "+refs/heads/${MAIN_BRANCH}:refs/remotes/origin/${MAIN_BRANCH}" \
             "+refs/tags/*:refs/tags/*"
+          MAIN_SHA="$(git rev-parse "origin/${MAIN_BRANCH}")"
 
           if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
             TEST="${INPUT_TEST:-true}"
-            PRODUCTION_SIGNING="${INPUT_PRODUCTION_SIGNING:-false}"
             if [ "$GITHUB_REF_NAME" != "$MAIN_BRANCH" ]; then
               echo "::error::Manual release workflows must be started from ${MAIN_BRANCH}, got ${GITHUB_REF_NAME}."
               exit 1
             fi
+            TARGET_SHA="$(git rev-parse HEAD)"
+            if [ "$TARGET_SHA" != "$MAIN_SHA" ]; then
+              echo "::error::Manual release workflows must run from latest ${MAIN_BRANCH} commit ${MAIN_SHA}, got ${TARGET_SHA}."
+              exit 1
+            fi
             if [ "$TEST" = "true" ]; then
               TAG="test-run-${GITHUB_RUN_NUMBER}"
-              USE_PRODUCTION_SIGNPATH="$PRODUCTION_SIGNING"
+              USE_PRODUCTION_SIGNPATH="false"
             else
               TAG="${INPUT_TAG:-v${VERSION}}"
               USE_PRODUCTION_SIGNPATH="true"
             fi
-            TARGET_SHA="$(git rev-parse HEAD)"
           else
             TAG="$GITHUB_REF_NAME"
             TEST="false"
@@ -121,6 +119,10 @@ jobs:
               exit 1
             fi
             TARGET_SHA="$(git rev-parse "${GITHUB_REF}^{commit}")"
+            if [ "$TARGET_SHA" != "$MAIN_SHA" ]; then
+              echo "::error::Release tag ${TAG} points to ${TARGET_SHA}, expected latest ${MAIN_BRANCH} commit ${MAIN_SHA}."
+              exit 1
+            fi
           fi
 
           if [ "$TEST" != "true" ] && [ "$TAG" != "v${VERSION}" ]; then
@@ -448,54 +450,11 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
 
       # SignPath is configured to sign every .exe contained in submitted zip files.
-      # Keep both app bundles and uninstallers in one archive so they are signed in one request.
-      - name: Stage unsigned Windows payload for SignPath
-        shell: pwsh
-        run: |
-          $releaseWin = Join-Path $env:RELEASE_ROOT 'win'
-          $staging = 'signpath-windows-apps'
-          $archive = 'signpath-windows-apps.zip'
-          $bundles = @('win-unpacked', 'win-arm64-unpacked')
-          $uninstallers = Join-Path $staging 'uninstallers'
+      # Submit only executable files, preserving bundle-relative paths for safe replacement.
+      - name: Stage unsigned Windows executables for SignPath
+        run: node build/signpath-windows-executables.mjs stage
 
-          if (Test-Path $staging) {
-            Remove-Item -Path $staging -Recurse -Force
-          }
-          if (Test-Path $archive) {
-            Remove-Item -Path $archive -Force
-          }
-          New-Item -ItemType Directory -Path $staging | Out-Null
-          New-Item -ItemType Directory -Path $uninstallers | Out-Null
-
-          foreach ($bundle in $bundles) {
-            $source = Join-Path $releaseWin $bundle
-            if (-not (Test-Path $source)) {
-              Write-Error "Missing unsigned Windows app bundle: $source"
-              exit 1
-            }
-
-            $updateConfig = Join-Path $source 'resources/app-update.yml'
-            if (-not (Test-Path $updateConfig)) {
-              Write-Error "Missing Windows app update config before SignPath upload: $updateConfig"
-              exit 1
-            }
-
-            Copy-Item -Path $source -Destination $staging -Recurse
-          }
-
-          foreach ($arch in @('x64', 'arm64')) {
-            $source = "nsis-uninstallers/unsigned/$($arch)__uninstaller.exe"
-            if (-not (Test-Path $source)) {
-              Write-Error "Missing captured NSIS uninstaller: $source"
-              exit 1
-            }
-
-            Copy-Item -Path $source -Destination $uninstallers
-          }
-
-          Compress-Archive -Path "$staging\*" -DestinationPath $archive -Force
-
-      - name: Upload unsigned Windows payload for SignPath
+      - name: Upload unsigned Windows executables for SignPath
         id: upload-unsigned-windows-apps
         uses: actions/upload-artifact@v7
         with:
@@ -505,7 +464,7 @@ jobs:
           retention-days: 1
           overwrite: true
 
-      - name: Submit Windows payload to SignPath
+      - name: Submit Windows executables to SignPath
         uses: signpath/github-action-submit-signing-request@v2
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
@@ -519,66 +478,18 @@ jobs:
           wait-for-completion-timeout-in-seconds: 3600
           output-artifact-directory: signed-windows-apps
 
-      - name: Replace unsigned Windows payload
+      - name: Replace unsigned Windows executables
+        run: node build/signpath-windows-executables.mjs replace
+
+      - name: Verify signed Windows executables after SignPath replacement
         shell: pwsh
         env:
           VERIFY_AUTHENTICODE: ${{ needs.prepare.outputs.verify_windows_authenticode }}
         run: |
           $releaseWin = Join-Path $env:RELEASE_ROOT 'win'
-          $signedRoot = 'signed-windows-apps'
-          $expanded = 'signed-windows-apps-expanded'
           $bundles = @('win-unpacked', 'win-arm64-unpacked')
           $signedUninstallers = 'nsis-uninstallers/signed'
-          $signedArchives = @(Get-ChildItem -Path $signedRoot -Recurse -Filter *.zip -File)
           $verifyAuthenticode = $env:VERIFY_AUTHENTICODE -eq 'true'
-
-          if ($signedArchives.Count -ne 1) {
-            Write-Error "SignPath returned $($signedArchives.Count) signed Windows payload archive(s), expected 1."
-            exit 1
-          }
-
-          if (Test-Path $expanded) {
-            Remove-Item -Path $expanded -Recurse -Force
-          }
-          New-Item -ItemType Directory -Path $expanded | Out-Null
-          Expand-Archive -Path $signedArchives[0].FullName -DestinationPath $expanded -Force
-
-          if ($verifyAuthenticode) {
-            foreach ($file in Get-ChildItem -Path $expanded -Recurse -Filter *.exe -File) {
-              $signature = Get-AuthenticodeSignature -FilePath $file.FullName
-              if ($signature.Status -ne 'Valid') {
-                Write-Error "Unsigned or invalid Windows executable returned by SignPath: $($file.FullName) ($($signature.Status))"
-                exit 1
-              }
-            }
-          }
-
-          foreach ($bundle in $bundles) {
-            $destination = Join-Path $releaseWin $bundle
-            $signedBundle = Join-Path $expanded $bundle
-
-            if (-not (Test-Path $signedBundle)) {
-              Write-Error "Could not find signed Windows app bundle returned by SignPath: $bundle"
-              exit 1
-            }
-
-            Copy-Item -Path (Join-Path $signedBundle '*') -Destination $destination -Recurse -Force
-          }
-
-          if (Test-Path $signedUninstallers) {
-            Remove-Item -Path $signedUninstallers -Recurse -Force
-          }
-          New-Item -ItemType Directory -Path $signedUninstallers | Out-Null
-
-          foreach ($arch in @('x64', 'arm64')) {
-            $signedUninstaller = Join-Path $expanded "uninstallers/$($arch)__uninstaller.exe"
-            if (-not (Test-Path $signedUninstaller)) {
-              Write-Error "Missing signed NSIS uninstaller returned by SignPath: $signedUninstaller"
-              exit 1
-            }
-
-            Copy-Item -Path $signedUninstaller -Destination $signedUninstallers
-          }
 
           foreach ($bundle in $bundles) {
             $bundlePath = Join-Path $releaseWin $bundle
@@ -610,7 +521,7 @@ jobs:
             }
           }
 
-      - name: Delete unsigned Windows payload artifact
+      - name: Delete unsigned Windows executables artifact
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}

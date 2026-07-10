@@ -76,6 +76,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Read package metadata
         id: meta
@@ -156,6 +157,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: ${{ needs.prepare.outputs.target_sha }}
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -175,6 +177,7 @@ jobs:
             macos-electron-
 
       - name: Validate macOS signing secrets
+        if: needs.prepare.outputs.test == 'false'
         shell: bash
         env:
           MAC_CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
@@ -208,6 +211,7 @@ jobs:
         run: npm run webpack:all:prod
 
       - name: Build signed and notarized macOS binaries
+        if: needs.prepare.outputs.test == 'false'
         run: npx electron-builder -m --publish never
         env:
           CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
@@ -215,6 +219,12 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      - name: Build unsigned macOS binaries
+        if: needs.prepare.outputs.test == 'true'
+        run: npx electron-builder -m --publish never -c.mac.identity=null -c.mac.notarize=false
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
 
       - name: Clean macOS workflow artifact
         shell: bash
@@ -236,6 +246,7 @@ jobs:
           name: macos-release
           path: ${{ env.RELEASE_ROOT }}/mac/*
           if-no-files-found: error
+          retention-days: ${{ needs.prepare.outputs.test == 'true' && 1 || 30 }}
           overwrite: true
 
   build-linux:
@@ -249,6 +260,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: ${{ needs.prepare.outputs.target_sha }}
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -303,6 +315,7 @@ jobs:
           name: linux-release
           path: ${{ env.RELEASE_ROOT }}/linux/*
           if-no-files-found: error
+          retention-days: ${{ needs.prepare.outputs.test == 'true' && 1 || 30 }}
           overwrite: true
 
       - name: Upload CLI source workflow artifact
@@ -312,6 +325,7 @@ jobs:
           name: cli-source
           path: releases/sync-in-cli/sync-in-cli-${{ needs.prepare.outputs.version }}.js
           if-no-files-found: error
+          retention-days: 1
           overwrite: true
 
   build-windows:
@@ -334,6 +348,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: ${{ needs.prepare.outputs.target_sha }}
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -693,6 +708,7 @@ jobs:
           name: windows-release
           path: ${{ env.RELEASE_ROOT }}/win/*
           if-no-files-found: error
+          retention-days: ${{ needs.prepare.outputs.test == 'true' && 1 || 30 }}
           overwrite: true
 
   manifest:
@@ -708,6 +724,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           ref: ${{ needs.prepare.outputs.target_sha }}
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -798,6 +815,7 @@ jobs:
             releases/sync-in-cli/*.zip
             releases/sync-in-cli/*.tar.gz
           if-no-files-found: error
+          retention-days: ${{ needs.prepare.outputs.test == 'true' && 1 || 30 }}
           overwrite: true
 
       - name: Upload manifest workflow artifact
@@ -806,6 +824,7 @@ jobs:
           name: release-manifest
           path: releases/latest.json
           if-no-files-found: error
+          retention-days: ${{ needs.prepare.outputs.test == 'true' && 1 || 30 }}
           overwrite: true
 
   publish:

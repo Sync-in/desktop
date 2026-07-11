@@ -5,6 +5,35 @@ import crypto from 'node:crypto'
 import yaml from 'js-yaml'
 import { fileURLToPath } from 'node:url'
 
+/**
+ * Release manifest generator.
+ *
+ * This script runs after the platform build artifacts have been downloaded into
+ * releases/. It creates the CLI archives, removes builder-only outputs, reads
+ * the electron-updater latest*.yml files, and writes releases/latest.json.
+ *
+ * latest.json keeps the existing client-facing platform index and now also
+ * includes a deployment manifest for the server-side sync script:
+ *
+ * {
+ *   "version": "2.1.1",
+ *   "date": "2026-07-11T13:39:42.696Z",
+ *   "platform": {
+ *     "linux": [{ "package": "...", "arch": "...", "ext": "...", "sha512": "...", "size": 0, "url": "..." }],
+ *     "mac": [],
+ *     "win": [],
+ *     "node": []
+ *   },
+ *   "files": [
+ *     { "asset": "Sync-in-Desktop-2.1.1-x64.exe", "path": "sync-in-desktop/win/Sync-in-Desktop-2.1.1-x64.exe", "size": 0, "sha512": "...", "url": "..." }
+ *   ]
+ * }
+ *
+ * The files[] entries map flat GitHub Release asset names to their relative
+ * destination paths under releases.sync-in.org, with size and sha512 used for
+ * deployment verification.
+ */
+
 // constants
 const __filename = fileURLToPath(import.meta.url)
 const appPath = path.dirname(path.dirname(__filename))
@@ -22,7 +51,24 @@ const releaseCliFileName = `${cliName}-${packageVersion}.js`
 const releaseCliFilePath = path.join(releaseCliPath, releaseCliFileName)
 const regExpCleanUp = new RegExp('builder.*.ya?ml$|unpacked$|mac/mac.*|.icon-.*')
 const regExpMatchLatestYML = new RegExp('^latest.*.yml$')
-const latestApp = { platform: { linux: [], mac: [], win: [], node: [] }, version: packageVersion, date: '' }
+const latestApp = { platform: { linux: [], mac: [], win: [], node: [] }, version: packageVersion, date: '', files: [] }
+
+function sha512Base64(filePath) {
+  return crypto.createHash('sha512').update(fs.readFileSync(filePath)).digest('base64')
+}
+
+function toPosixPath(filePath) {
+  return filePath.split(path.sep).join('/')
+}
+
+function releaseRelativePath(filePath) {
+  const relativePath = path.relative(releasePath, filePath)
+  const segments = relativePath.split(path.sep)
+  if (!relativePath || path.isAbsolute(relativePath) || segments.includes('..')) {
+    throw new Error(`Release file is outside release root: ${filePath}`)
+  }
+  return toPosixPath(relativePath)
+}
 
 async function genCliLatest() {
   console.log(`Creating manifests for ${cliName} ...`)
@@ -40,7 +86,7 @@ async function genCliLatest() {
       ext: extension,
       date: stats.ctime,
       size: stats.size,
-      sha512: crypto.createHash('sha512').update(fs.readFileSync(archive)).digest('base64'),
+      sha512: sha512Base64(archive),
       url: `${updatesURL}/${cliName}/${path.basename(archive)}`
     })
   }
@@ -91,6 +137,37 @@ async function genDesktopLatest() {
   parseDirs(releaseAppPath)
 }
 
+function collectDeployFiles(dir = releasePath, assetNames = new Set()) {
+  const files = []
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+    const realPath = path.join(dir, entry.name)
+    if (entry.isDirectory()) {
+      files.push(...collectDeployFiles(realPath, assetNames))
+      continue
+    }
+    if (!entry.isFile() || entry.name === latestJSON) {
+      continue
+    }
+
+    const asset = path.basename(realPath)
+    if (assetNames.has(asset)) {
+      throw new Error(`Duplicate GitHub release asset name: ${asset}`)
+    }
+    assetNames.add(asset)
+
+    const deployPath = releaseRelativePath(realPath)
+    const stats = fs.lstatSync(realPath)
+    files.push({
+      asset,
+      path: deployPath,
+      size: stats.size,
+      sha512: sha512Base64(realPath),
+      url: `${updatesURL}/${deployPath}`
+    })
+  }
+  return files
+}
+
 async function start() {
   for (const p of [releasePath, releaseCliPath, releaseAppPath]) {
     if (!fs.existsSync(p)) {
@@ -98,6 +175,7 @@ async function start() {
     }
   }
   await Promise.all([genCliLatest(), genDesktopLatest()])
+  latestApp.files = collectDeployFiles()
   fs.writeFileSync(path.join(releasePath, latestJSON), JSON.stringify(latestApp))
 }
 

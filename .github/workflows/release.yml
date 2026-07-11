@@ -1,17 +1,19 @@
 # Release source of truth: GitHub Actions builds every artifact from scratch and
 # generates the release manifest. Real releases then update a draft GitHub release
-# and sync the update feed to releases.sync-in.org for existing clients.
+# and upload its assets. Server deployment is done manually from the published
+# GitHub release.
 # Build, signing, manifest, or payload validation failures happen before the draft
-# release is created or updated, so the GitHub release and HTTP feed stay untouched.
+# release is created or updated, so the GitHub release stays untouched.
 # GitHub cannot branch-filter tag pushes; the prepare job is the preflight gate
 # and every build job depends on it.
 # Test rules:
 # - tag push: test=false; require a tag on the latest main commit and matching v<package.json version>.
 # - workflow_dispatch + test=true: main only; build, sign, generate/validate manifests, and upload
 #   workflow artifacts only; use the SignPath test signing policy; do not create a GitHub release or
-#   sync the HTTP update feed.
+#   publish assets.
 # - workflow_dispatch + test=false: main only; require v<package.json version>, update the draft
-#   GitHub release, upload its assets, then sync the HTTP update feed after success.
+#   GitHub release, and upload its assets. Publish the draft release and run server
+#   deployment manually.
 # Windows signing flow (two SignPath requests):
 # 1. Build unsigned x64/arm64 app bundles, write app-update.yml for electron-updater, then run
 #    temporary NSIS builds to capture both uninstallers.
@@ -42,7 +44,7 @@ on:
         required: false
         type: string
       test:
-        description: 'Test run: use relaxed release notes/tag rules and do not sync the HTTP update feed.'
+        description: 'Test run: use relaxed release notes/tag rules and do not create a GitHub release.'
         required: true
         default: true
         type: boolean
@@ -958,26 +960,6 @@ jobs:
             releases/latest.json \
             "${cli_archives[@]}" \
             --clobber
-
-      - name: Sync update feed
-        shell: bash
-        env:
-          RSYNC_PASSWORD: ${{ secrets.RSYNC_PASSWORD }}
-        run: |
-          set -euo pipefail
-
-          if [ -z "${RSYNC_PASSWORD}" ]; then
-            echo "::error::Missing secret RSYNC_PASSWORD."
-            exit 1
-          fi
-
-          rsync -rptoDvzc --progress \
-            --exclude '.DS_Store' \
-            --exclude '._*' \
-            --exclude 'builder-*' \
-            --exclude 'mac/mac*' \
-            --exclude '*unpacked' \
-            releases/ admin@releases.sync-in.org::sync-in-releases-admin
 
   cleanup:
     name: Clean workflow artifacts

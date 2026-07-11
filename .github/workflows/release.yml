@@ -690,6 +690,10 @@ jobs:
           ARTIFACT_ID: ${{ steps.upload-unsigned-windows.outputs.artifact-id }}
         run: gh api --method DELETE "repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}"
 
+      # Windows installers are Authenticode-signed after electron-builder creates
+      # the original blockmaps. Signing changes the EXE bytes, so stale
+      # .exe.blockmap files are removed, fresh blockmaps are generated from the
+      # final signed EXEs, and latest.yml is regenerated from the same files.
       - name: Refresh Windows update metadata
         run: node build/refresh-win-latest.mjs
 

@@ -127,7 +127,18 @@ export class SyncPath {
   }
 
   localRealPathFrom(filePath: string): string {
-    return path.join(this.localPath, filePath)
+    if (!filePath) {
+      throw new Error('Invalid empty sync path')
+    }
+
+    const root = path.resolve(this.localPath)
+    const realPath = path.resolve(root, filePath)
+
+    if (realPath === root || !realPath.startsWith(root + path.sep)) {
+      throw new Error(`Sync path escapes local root: ${filePath}`)
+    }
+
+    return realPath
   }
 
   apiFromPath(api: string, filePath: string): string {

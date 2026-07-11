@@ -844,7 +844,7 @@ jobs:
       contents: write
       actions: read
     env:
-      GH_TOKEN: ${{ github.token }}
+      GH_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
       RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
     steps:
       - name: Checkout
@@ -852,6 +852,16 @@ jobs:
         with:
           ref: ${{ needs.prepare.outputs.target_sha }}
           persist-credentials: false
+
+      - name: Validate release GitHub token
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -z "${GH_TOKEN-}" ]; then
+            echo "::error::Missing RELEASE_GITHUB_TOKEN secret. Use a personal access token from the account that should appear as the GitHub release author."
+            exit 1
+          fi
 
       - name: Create release directories
         shell: bash

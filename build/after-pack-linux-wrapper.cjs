@@ -1,11 +1,14 @@
+/**
+ * electron-builder afterPack hook for Linux packages.
+ *
+ * Wraps the packaged Electron executable with no-sandbox flags while keeping
+ * the original binary next to it, which makes AppImage/AppDir startup work in
+ * environments where the Chromium sandbox cannot be enabled.
+ */
 const fs = require('node:fs/promises')
 const path = require('node:path')
 
-const IGNORED_EXECUTABLES = new Set([
-  'chrome-sandbox',
-  'chrome_crashpad_handler',
-  'crashpad_handler'
-])
+const IGNORED_EXECUTABLES = new Set(['chrome-sandbox', 'chrome_crashpad_handler', 'crashpad_handler'])
 const WRAPPER_FLAGS = '--no-sandbox --disable-setuid-sandbox'
 const WRAPPER_HEAD_MAX_BYTES = 512
 

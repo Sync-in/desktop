@@ -1,4 +1,12 @@
+/**
+ * electron-builder signing hook for the generated NSIS uninstaller.
+ *
+ * In capture mode it saves the unsigned uninstaller for external SignPath
+ * signing; in inject mode it replaces the regenerated uninstaller with the
+ * signed one and writes a receipt for the release workflow.
+ */
 const { createHash } = require('node:crypto')
+const { createReadStream } = require('node:fs')
 const { copyFile, mkdir, readFile, writeFile } = require('node:fs/promises')
 const path = require('node:path')
 
@@ -8,7 +16,15 @@ const METADATA_ENV = 'SYNC_IN_NSIS_UNINSTALLER_METADATA'
 const RECEIPT_ENV = 'SYNC_IN_NSIS_UNINSTALLER_RECEIPT'
 
 async function sha256(filePath) {
-  return createHash('sha256').update(await readFile(filePath)).digest('hex')
+  return new Promise((resolve, reject) => {
+    const hash = createHash('sha256')
+    const stream = createReadStream(filePath)
+
+    stream.on('error', reject)
+    hash.on('error', reject)
+    hash.on('finish', () => resolve(hash.digest('hex')))
+    stream.pipe(hash)
+  })
 }
 
 async function sign(configuration) {
@@ -44,7 +60,7 @@ async function sign(configuration) {
       throw new Error(`Missing ${RECEIPT_ENV}`)
     }
 
-    const metadata = JSON.parse(await readFile(metadataFile, 'utf8'))
+    const metadata = JSON.parse(String(await readFile(metadataFile, 'utf8')))
     const generatedSha256 = await sha256(generatedFile)
     const matchesCaptured = generatedSha256 === metadata.unsignedSha256
 
@@ -62,17 +78,14 @@ async function sign(configuration) {
           capturedUnsignedSha256: metadata.unsignedSha256,
           generatedSha256,
           matchesCaptured,
-          signedSha256,
+          signedSha256
         },
         null,
-        2,
-      ),
+        2
+      )
     )
     if (!matchesCaptured) {
-      console.log(
-        `[nsis-uninstaller] Regenerated uninstaller differs after app signing: ` +
-          `${generatedSha256} != ${metadata.unsignedSha256}`,
-      )
+      console.log(`[nsis-uninstaller] Regenerated uninstaller differs after app signing: ` + `${generatedSha256} != ${metadata.unsignedSha256}`)
     }
     console.log(`[nsis-uninstaller] Injected signed uninstaller ${uninstallerFile}`)
     return

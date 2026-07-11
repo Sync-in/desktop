@@ -1,3 +1,9 @@
+/**
+ * Refresh Windows updater metadata after installers have been signed.
+ *
+ * Recreates installer blockmaps, validates their size and sha512 metadata
+ * against the signed .exe files, and rewrites latest.yml for electron-updater.
+ */
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import { createRequire } from 'node:module'
@@ -99,11 +105,7 @@ async function start() {
     `version: ${packageJson.version}`,
     'files:',
     ...installers.flatMap((installer) => {
-      const lines = [
-        `  - url: ${installer.fileName}`,
-        `    sha512: ${installer.sha512}`,
-        `    size: ${installer.size}`
-      ]
+      const lines = [`  - url: ${installer.fileName}`, `    sha512: ${installer.sha512}`, `    size: ${installer.size}`]
       if (installer.blockMapSize) {
         lines.push(`    blockMapSize: ${installer.blockMapSize}`)
       }

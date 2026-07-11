@@ -1,7 +1,14 @@
+/**
+ * Prepare and consume SignPath archives for Windows executable signing.
+ *
+ * The stage mode zips Windows app executables and captured NSIS uninstallers
+ * for upload; replace mode validates the signed archive and copies signed
+ * executables back into the release tree.
+ */
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { BlobReader, BlobWriter, ZipReader, ZipWriter, configure } from '@zip.js/zip.js'
+import { BlobReader, BlobWriter, configure, ZipReader, ZipWriter } from '@zip.js/zip.js'
 
 configure({ useWebWorkers: false })
 

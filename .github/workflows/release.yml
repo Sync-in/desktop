@@ -807,6 +807,7 @@ jobs:
           require_match "Windows arm64 installer" "$RELEASE_ROOT"/win/*-"$RELEASE_VERSION"-arm64.exe
           require_match "macOS update metadata" "$RELEASE_ROOT"/mac/latest-mac.yml
           require_match "Linux update metadata" "$RELEASE_ROOT"/linux/latest-linux.yml
+          require_match "Linux arm64 update metadata" "$RELEASE_ROOT"/linux/latest-linux-arm64.yml
           require_match "Windows update metadata" "$RELEASE_ROOT"/win/latest.yml
           require_match "CLI zip archive" releases/sync-in-cli/*"$RELEASE_VERSION"*.zip
           require_match "CLI tar.gz archive" releases/sync-in-cli/*"$RELEASE_VERSION"*.tar.gz
@@ -836,6 +837,123 @@ jobs:
           retention-days: ${{ needs.prepare.outputs.test == 'true' && 1 || 30 }}
           overwrite: true
 
+  publish-docker-repository:
+    name: Publish Docker release repository
+    if: needs.prepare.outputs.test == 'false'
+    runs-on: ubuntu-latest
+    needs:
+      - prepare
+      - manifest
+    permissions:
+      contents: read
+      actions: read
+    env:
+      RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prepare.outputs.target_sha }}
+          persist-credentials: false
+
+      - name: Validate Docker Hub secrets
+        shell: bash
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          missing=0
+          for name in DOCKERHUB_USERNAME DOCKERHUB_TOKEN; do
+            if [ -z "${!name-}" ]; then
+              echo "::error::Missing secret ${name}."
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Create release directories
+        shell: bash
+        run: mkdir -p releases/sync-in-desktop/mac releases/sync-in-desktop/linux releases/sync-in-desktop/win releases/sync-in-cli
+
+      - name: Download macOS workflow artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: macos-release
+          path: releases/sync-in-desktop/mac
+
+      - name: Download Linux workflow artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: linux-release
+          path: releases/sync-in-desktop/linux
+
+      - name: Download Windows workflow artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: windows-release
+          path: releases/sync-in-desktop/win
+
+      - name: Download CLI release workflow artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: cli-release
+          path: releases/sync-in-cli
+
+      - name: Download manifest workflow artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: release-manifest
+          path: releases
+
+      - name: Validate Docker release repository payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          require_match() {
+            local description="$1"
+            shift
+            if [ "$#" -eq 0 ]; then
+              echo "::error::Missing ${description}."
+              exit 1
+            fi
+          }
+
+          require_match "macOS x64 DMG" "$RELEASE_ROOT"/mac/*-"$RELEASE_VERSION"-x64.dmg
+          require_match "macOS arm64 DMG" "$RELEASE_ROOT"/mac/*-"$RELEASE_VERSION"-arm64.dmg
+          require_match "Linux x86_64 AppImage" "$RELEASE_ROOT"/linux/*-"$RELEASE_VERSION"-x86_64.AppImage
+          require_match "Linux arm64 AppImage" "$RELEASE_ROOT"/linux/*-"$RELEASE_VERSION"-arm64.AppImage
+          require_match "Linux amd64 DEB" "$RELEASE_ROOT"/linux/*-"$RELEASE_VERSION"-amd64.deb
+          require_match "Linux arm64 DEB" "$RELEASE_ROOT"/linux/*-"$RELEASE_VERSION"-arm64.deb
+          require_match "Windows x64 installer" "$RELEASE_ROOT"/win/*-"$RELEASE_VERSION"-x64.exe
+          require_match "Windows arm64 installer" "$RELEASE_ROOT"/win/*-"$RELEASE_VERSION"-arm64.exe
+          require_match "macOS update metadata" "$RELEASE_ROOT"/mac/latest-mac.yml
+          require_match "Linux update metadata" "$RELEASE_ROOT"/linux/latest-linux.yml
+          require_match "Linux arm64 update metadata" "$RELEASE_ROOT"/linux/latest-linux-arm64.yml
+          require_match "Windows update metadata" "$RELEASE_ROOT"/win/latest.yml
+          require_match "CLI zip archive" releases/sync-in-cli/*"$RELEASE_VERSION"*.zip
+          require_match "CLI tar.gz archive" releases/sync-in-cli/*"$RELEASE_VERSION"*.tar.gz
+
+          if [ ! -f releases/latest.json ]; then
+            echo "::error::Missing releases/latest.json."
+            exit 1
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker release repository
+        run: npm run docker:buildx
+
   publish:
     name: Publish release
     if: needs.prepare.outputs.test == 'false'
@@ -843,6 +961,7 @@ jobs:
     needs:
       - prepare
       - manifest
+      - publish-docker-repository
     permissions:
       contents: write
       actions: read

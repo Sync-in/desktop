@@ -1,5 +1,7 @@
 # Ignore everything
 **
 
-# Except the releases directory
+# Except the release repository image inputs
+!Dockerfile
 !releases/
+!releases/**

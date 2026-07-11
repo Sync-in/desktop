@@ -136,6 +136,9 @@
       "gatekeeperAssess": false
     },
     "win": {
+      "publisherName": [
+        "CN=SignPath Foundation, O=SignPath Foundation, L=Lewes, S=Delaware, C=US"
+      ],
       "signtoolOptions": {
         "signingHashAlgorithms": [
           "sha256"

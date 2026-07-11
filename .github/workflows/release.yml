@@ -413,10 +413,13 @@ jobs:
           $package = Get-Content package.json | ConvertFrom-Json
           $publishUrl = $package.build.publish[0].url
           $publishUrl = $publishUrl.Replace('${name}', $package.name).Replace('${os}', 'win')
+          $publisherName = $package.build.win.publisherName[0]
           $updateConfig = @(
             'provider: generic'
             "url: $publishUrl"
             "updaterCacheDirName: $($package.name)-updater"
+            'publisherName:'
+            "  - `"$publisherName`""
             ''
           ) -join "`n"
 

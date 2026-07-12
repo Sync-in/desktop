@@ -28,6 +28,7 @@ export class ModalServerComponent implements OnInit {
   protected icons = faIcons
   protected isAddModal = false
   protected isRemoveModal = false
+  protected showAdvancedOptions = false
   private readonly appService = inject(AppService)
   private readonly fb = inject(UntypedFormBuilder)
 
@@ -56,8 +57,13 @@ export class ModalServerComponent implements OnInit {
     }
     this.loginForm = this.fb.group({
       name: this.fb.control({ value: this.isAddModal ? '' : this.config.server.name, disabled: this.isRemoveModal }, [Validators.required]),
-      url: this.fb.control({ value: this.isAddModal ? '' : this.config.server.url, disabled: !this.isAddModal }, [Validators.required])
+      url: this.fb.control({ value: this.isAddModal ? '' : this.config.server.url, disabled: !this.isAddModal }, [Validators.required]),
+      allowInvalidCertificate: this.fb.control({
+        value: this.isAddModal ? false : this.config.server.allowInvalidCertificate === true,
+        disabled: this.isRemoveModal
+      })
     })
+    this.showAdvancedOptions = this.allowInvalidCertificate()
   }
 
   closeModal() {
@@ -76,7 +82,8 @@ export class ModalServerComponent implements OnInit {
         id: this.config.server ? this.config.server.id : null,
         name: this.serverName(),
         url: this.serverURL(),
-        available: this.config.server ? this.config.server.available : false
+        available: this.config.server ? this.config.server.available : false,
+        allowInvalidCertificate: this.allowInvalidCertificate()
       })
       .then((info: SyncServerEvent) => this.onServerCheck(info))
   }
@@ -97,5 +104,13 @@ export class ModalServerComponent implements OnInit {
 
   private serverURL() {
     return this.loginForm.value?.url?.trim().replace(/\/+$/, '').toLowerCase()
+  }
+
+  private allowInvalidCertificate() {
+    return this.loginForm.get('allowInvalidCertificate')?.value === true
+  }
+
+  protected toggleAdvancedOptions() {
+    this.showAdvancedOptions = !this.showAdvancedOptions
   }
 }

@@ -46,6 +46,7 @@ export class AppService {
     name: this.translation.translate('No server configured'),
     url: null,
     available: true,
+    allowInvalidCertificate: false,
     authTokenExpired: false
   })
   private readonly bsModal = inject(BsModalService)

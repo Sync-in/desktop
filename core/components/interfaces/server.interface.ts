@@ -3,6 +3,7 @@ export interface SyncServer {
   name: string
   url: string
   available: boolean
+  allowInvalidCertificate: boolean
   authTokenExpired: boolean
 }
 

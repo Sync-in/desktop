@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url'
 
 const __filename = fileURLToPath(import.meta.url)
 const require = createRequire(import.meta.url)
-const { executeAppBuilderAsJson } = require('app-builder-lib/out/util/appBuilder')
+const { buildBlockMap } = require('app-builder-lib/out/targets/blockmap/blockmap')
 const appPath = path.dirname(path.dirname(__filename))
 const packageJson = JSON.parse(fs.readFileSync(path.join(appPath, 'package.json'), 'utf8'))
 const releaseDir = path.resolve(appPath, process.argv[2] ?? 'releases/sync-in-desktop/win')
@@ -44,7 +44,7 @@ function removeStaleBlockmaps() {
 
 async function createInstallerBlockmap(filePath) {
   const blockMapFile = `${filePath}.blockmap`
-  const updateInfo = await executeAppBuilderAsJson(['blockmap', '--input', filePath, '--output', blockMapFile])
+  const updateInfo = await buildBlockMap(filePath, 'gzip', blockMapFile)
 
   if (!fs.existsSync(blockMapFile) || !fs.statSync(blockMapFile).isFile() || fs.statSync(blockMapFile).size === 0) {
     throw new Error(`Windows installer blockmap was not generated: ${blockMapFile}`)

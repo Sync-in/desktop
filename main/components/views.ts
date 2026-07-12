@@ -103,6 +103,12 @@ export class ViewsManager {
         openExternal(ev.url).catch(console.error)
       }
     })
+    webView.webContents.setWindowOpenHandler(({ url }) => {
+      if (!this.isUrlWithinServerScope(url, server)) {
+        openExternal(url).catch(console.error)
+      }
+      return { action: 'deny' }
+    })
     webView.webContents.on('will-redirect', (ev: Event<WebContentsWillRedirectEventParams>) => {
       // OIDC can redirect to an external identity provider before returning to the server.
       // Keep server-scoped redirects in the view and open external redirects outside the app.

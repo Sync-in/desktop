@@ -98,14 +98,15 @@ export class ViewsManager {
     webView.webContents.serverName = server.name
     webView.webContents.serverId = server.id
     webView.webContents.on('will-navigate', (ev: Event<WebContentsWillNavigateEventParams>) => {
-      if (!ev.url.startsWith(server.url)) {
+      if (!this.isUrlWithinServerScope(ev.url, server)) {
         ev.preventDefault()
         shell.openExternal(ev.url).catch(console.error)
       }
     })
     webView.webContents.on('will-redirect', (ev: Event<WebContentsWillRedirectEventParams>) => {
-      // Important for OIDC provider redirection
-      if (!ev.url.startsWith(server.url)) {
+      // OIDC can redirect to an external identity provider before returning to the server.
+      // Keep server-scoped redirects in the view and open external redirects outside the app.
+      if (!this.isUrlWithinServerScope(ev.url, server)) {
         ev.preventDefault()
         shell.openExternal(ev.url).catch(console.error)
       }
@@ -304,6 +305,18 @@ export class ViewsManager {
 
   private navigationForward() {
     this.currentView.webContents.navigationHistory.goForward()
+  }
+
+  private isUrlWithinServerScope(url: string, server: Server): boolean {
+    try {
+      const target = new URL(url)
+      const expected = new URL(server.url)
+      const expectedPath = expected.pathname.endsWith('/') ? expected.pathname : `${expected.pathname}/`
+      const targetPath = target.pathname.endsWith('/') ? target.pathname : `${target.pathname}/`
+      return target.origin === expected.origin && targetPath.startsWith(expectedPath)
+    } catch {
+      return false
+    }
   }
 
   private addLoadURLListener(webView: AppWebContentsView, server: Server) {

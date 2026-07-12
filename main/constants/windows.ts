@@ -39,6 +39,8 @@ export function viewProps(id: number | string): WebContentsViewConstructorOption
       partition: partitionFor(id),
       // Disabled Node integration
       nodeIntegration: false,
+      // keep remote content isolated from Node.js primitives
+      sandbox: true,
       // protect against prototype pollution
       contextIsolation: true,
       preload: PRELOAD_FILE,

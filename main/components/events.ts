@@ -24,7 +24,8 @@ import { SyncStatus } from '@sync-in-desktop/core/components/interfaces/sync-sta
 import { appSettings } from './settings'
 import { IS_MACOS } from '@sync-in-desktop/core/constants'
 import type { SyncServerEvent } from '@sync-in-desktop/core/components/interfaces/server.interface'
-import { LoopbackServer, OIDCCallbackParams } from './loopback-server'
+import { LoopbackServer } from './loopback-server'
+import type { OIDCCallbackParams } from '../interfaces/oidc.interface'
 
 export const appEvents: any = new EventEmitter()
 // hook to delete to trash bin during sync
@@ -85,7 +86,7 @@ export class EventsManager {
     ipcMain.handle(
       REMOTE_RENDERER.SERVER.REGISTRATION,
       (
-        ev: IpcMainEventServer,
+        ev: IpcMainInvokeEventServer,
         auth?: {
           login: string
           password: string
@@ -94,12 +95,16 @@ export class EventsManager {
         externalAuth?: SyncClientAuthRegistration
       ): Promise<SyncServerEvent> => this.serverRegistration(ev, auth, externalAuth)
     )
-    ipcMain.handle(REMOTE_RENDERER.SERVER.AUTHENTICATION, (ev) => this.serverAuthentication(ev))
-    ipcMain.on(REMOTE_RENDERER.SERVER.AUTHENTICATION_FAILED, (ev) => this.serverAuthFailed(ev))
-    ipcMain.on(REMOTE_RENDERER.SERVER.AUTHENTICATION_TOKEN_UPDATE, (ev, token: string) => this.serverAuthTokenUpdate(ev, token))
-    ipcMain.on(REMOTE_RENDERER.SERVER.AUTHENTICATION_TOKEN_EXPIRED, (ev) => this.serverAuthTokenExpired(ev))
-    ipcMain.on(REMOTE_RENDERER.SERVER.SET_ACTIVE_AND_SHOW, (ev: IpcMainEventServer) => this.serverOnActiveView(ev.sender.serverId, true))
-    ipcMain.handle(REMOTE_RENDERER.SYNC.PATH_OPERATION, async (ev: IpcMainEventServer, action: PATH_ACTION, params) =>
+    ipcMain.handle(REMOTE_RENDERER.SERVER.AUTHENTICATION, (ev: IpcMainInvokeEventServer) => this.serverAuthentication(ev))
+    ipcMain.on(REMOTE_RENDERER.SERVER.AUTHENTICATION_FAILED, (ev: IpcMainEventServer) => this.serverAuthFailed(ev))
+    ipcMain.on(REMOTE_RENDERER.SERVER.AUTHENTICATION_TOKEN_UPDATE, (ev: IpcMainEventServer, token: string) => this.serverAuthTokenUpdate(ev, token))
+    ipcMain.on(REMOTE_RENDERER.SERVER.AUTHENTICATION_TOKEN_EXPIRED, (ev: IpcMainEventServer) => this.serverAuthTokenExpired(ev))
+    ipcMain.on(REMOTE_RENDERER.SERVER.SET_ACTIVE_AND_SHOW, (ev: IpcMainEventServer) => {
+      const server = this.viewsManager.getServerFromVerifiedSender(ev, { throwOnError: false })
+      if (!server) return
+      this.serverOnActiveView(server.id, true)
+    })
+    ipcMain.handle(REMOTE_RENDERER.SYNC.PATH_OPERATION, async (ev: IpcMainInvokeEventServer, action: PATH_ACTION, params) =>
       this.syncPathAction(ev, action, params)
     )
     ipcMain.on(REMOTE_RENDERER.MISC.NETWORK_IS_ONLINE, async (_ev, state: boolean) => await this.networkIsOnline(state))
@@ -109,16 +114,18 @@ export class EventsManager {
       (ev: IpcMainEventServer, action: string, state: SERVER_SCHEDULER_STATE = SERVER_SCHEDULER_STATE.SEQ) =>
         this.syncSchedulerOnAction(ev, action, state)
     )
-    ipcMain.handle(REMOTE_RENDERER.SYNC.ERRORS, (ev: IpcMainEventServer) => this.listSyncsWithErrors(ev))
+    ipcMain.handle(REMOTE_RENDERER.SYNC.ERRORS, (ev: IpcMainInvokeEventServer) => this.listSyncsWithErrors(ev))
     ipcMain.handle(REMOTE_RENDERER.SYNC.TRANSFER_LOGS, async (ev: IpcMainInvokeEventServer, action: string, syncPathId: number, query: string) =>
       this.onSyncTransferLogs(ev, action, syncPathId, query)
     )
-    ipcMain.handle(REMOTE_RENDERER.OIDC.START_LOOPBACK, async (ev: IpcMainEventServer): Promise<{ redirectPort: number }> => {
-      const loopbackServer = LoopbackServer.getOrCreateLoopbackSession(ev.sender.serverId)
+    ipcMain.handle(REMOTE_RENDERER.OIDC.START_LOOPBACK, async (ev: IpcMainInvokeEventServer): Promise<{ redirectPort: number }> => {
+      const server = this.viewsManager.getServerFromVerifiedSender(ev)
+      const loopbackServer = LoopbackServer.getOrCreateLoopbackSession(server.id)
       return await loopbackServer.start()
     })
-    ipcMain.handle(REMOTE_RENDERER.OIDC.WAIT_CALLBACK, async (ev: IpcMainEventServer): Promise<OIDCCallbackParams> => {
-      const loopbackServer = LoopbackServer.sessions.get(ev.sender.serverId)
+    ipcMain.handle(REMOTE_RENDERER.OIDC.WAIT_CALLBACK, async (ev: IpcMainInvokeEventServer): Promise<OIDCCallbackParams> => {
+      const server = this.viewsManager.getServerFromVerifiedSender(ev)
+      const loopbackServer = LoopbackServer.sessions.get(server.id)
       if (!loopbackServer) throw new Error('Unknown session')
       return await loopbackServer.waitForCallback()
     })
@@ -142,21 +149,23 @@ export class EventsManager {
     }
   }
 
-  private serverAuthentication(ev: any): SyncClientAuth {
+  private serverAuthentication(ev: IpcMainInvokeEventServer): SyncClientAuth {
     // Get information about client authentication
-    const server = ServersManager.find(ev.sender.serverId)
+    const server = this.viewsManager.getServerFromVerifiedSender(ev)
     return { clientId: server.authID, token: server.authToken, tokenHasExpired: server.authTokenExpired, info: genClientInfos() }
   }
 
-  private serverAuthTokenUpdate(ev: any, token: string) {
-    const server = ServersManager.find(ev.sender.serverId)
+  private serverAuthTokenUpdate(ev: IpcMainEventServer, token: string) {
+    const server = this.viewsManager.getServerFromVerifiedSender(ev, { throwOnError: false })
+    if (!server) return
     server.authToken = token
     this.logger.info(`Client token was renewed for server *${server.name}* (${server.id})`)
     coreEvents.emit(CORE.SAVE_SETTINGS)
   }
 
-  private serverAuthTokenExpired(ev: any) {
-    const server = ServersManager.find(ev.sender.serverId)
+  private serverAuthTokenExpired(ev: IpcMainEventServer) {
+    const server = this.viewsManager.getServerFromVerifiedSender(ev, { throwOnError: false })
+    if (!server) return
     server.available = true
     if (server.authTokenExpired) {
       return
@@ -165,8 +174,9 @@ export class EventsManager {
     this.viewsManager.sendServersUpdate()
   }
 
-  private serverAuthFailed(ev: any) {
-    const server = ServersManager.find(ev.sender.serverId)
+  private serverAuthFailed(ev: IpcMainEventServer) {
+    const server = this.viewsManager.getServerFromVerifiedSender(ev, { throwOnError: false })
+    if (!server) return
     server.available = false
     this.viewsManager.switchViewFocus(true)
     this.viewsManager.sendServersUpdate()
@@ -187,8 +197,12 @@ export class EventsManager {
     }
   }
 
-  private async serverRegistration(ev: any, auth?: SyncClientRegistration, externalAuth?: SyncClientAuthRegistration): Promise<SyncServerEvent> {
-    const server = ServersManager.find(ev.sender.serverId)
+  private async serverRegistration(
+    ev: IpcMainInvokeEventServer,
+    auth?: SyncClientRegistration,
+    externalAuth?: SyncClientAuthRegistration
+  ): Promise<SyncServerEvent> {
+    const server = this.viewsManager.getServerFromVerifiedSender(ev)
     // If `auth` is provided, the client handles the registration.
     // If `externalAuth` is provided, the registration has already been completed on the server, and the client must be updated accordingly.
     try {
@@ -205,7 +219,7 @@ export class EventsManager {
       coreEvents.emit(CORE.SAVE_SETTINGS)
       return { ok: true }
     } catch (e) {
-      return { ok: false, msg: e }
+      return { ok: false, msg: this.errorMessage(e) }
     }
   }
 
@@ -226,7 +240,7 @@ export class EventsManager {
           coreEvents.emit(CORE.SAVE_SETTINGS)
           return { ok: true }
         } catch (e) {
-          return { ok: false, msg: e }
+          return { ok: false, msg: this.errorMessage(e) }
         }
       case SERVER_ACTION.EDIT:
         try {
@@ -241,7 +255,7 @@ export class EventsManager {
           this.viewsManager.sendServersUpdate()
           return { ok: true }
         } catch (e) {
-          return { ok: false, msg: e }
+          return { ok: false, msg: this.errorMessage(e) }
         }
       case SERVER_ACTION.REMOVE:
         try {
@@ -264,11 +278,15 @@ export class EventsManager {
           this.viewsManager.sendServersUpdate()
           return { ok: true }
         } catch (e) {
-          return { ok: false, msg: e }
+          return { ok: false, msg: this.errorMessage(e) }
         }
       default:
         return { ok: false, msg: 'Unknown server action' }
     }
+  }
+
+  private errorMessage(e: unknown): string {
+    return e instanceof Error ? e.message : String(e)
   }
 
   private serverOnActiveView(id: number, show = false) {
@@ -277,19 +295,20 @@ export class EventsManager {
     this.viewsManager.enableView(server, webView, !server.available, show)
   }
 
-  private async syncPathAction(ev: IpcMainEventServer, action: PATH_ACTION, params: any) {
+  private async syncPathAction(ev: IpcMainInvokeEventServer, action: PATH_ACTION, params: any) {
+    const server = this.viewsManager.getServerFromVerifiedSender(ev)
     if (action === PATH_ACTION.LIST) {
-      return ServersManager.find(ev.sender.serverId).syncPaths
+      return server.syncPaths
     }
     if (action === PATH_ACTION.SYNC) {
       if (params.state) {
-        coreEvents.emit(CORE.SYNC_START, { server: ev.sender.serverId, paths: params.paths }, params.reportOnly, params.async)
+        coreEvents.emit(CORE.SYNC_START, { server: server.id, paths: params.paths }, params.reportOnly, params.async)
       } else {
-        coreEvents.emit(CORE.SYNC_STOP, { server: ev.sender.serverId, paths: params.paths }, params.reportOnly)
+        coreEvents.emit(CORE.SYNC_STOP, { server: server.id, paths: params.paths }, params.reportOnly)
       }
       return
     }
-    const manager = new PathsManager(ev.sender.serverId)
+    const manager = new PathsManager(server.id)
     if (action === PATH_ACTION.ADD) {
       try {
         return await manager.add(params)
@@ -306,7 +325,8 @@ export class EventsManager {
   }
 
   private async syncSchedulerOnAction(ev: IpcMainEventServer, action: string, state: SERVER_SCHEDULER_STATE = SERVER_SCHEDULER_STATE.SEQ) {
-    const server = ServersManager.find(ev.sender.serverId)
+    const server = this.viewsManager.getServerFromVerifiedSender(ev, { throwOnError: false })
+    if (!server) return
     if (action === 'update') {
       const reloadConf = [state, server.syncScheduler].indexOf(SERVER_SCHEDULER_STATE.DISABLED) > -1
       server.syncScheduler = state
@@ -315,14 +335,16 @@ export class EventsManager {
     this.viewsManager.sendToWebRenderer(server.id, REMOTE_RENDERER.SYNC.SCHEDULER_STATE, server.syncScheduler)
   }
 
-  private listSyncsWithErrors(ev: IpcMainEventServer): SyncStatus[] {
-    return ServersManager.find(ev.sender.serverId)
+  private listSyncsWithErrors(ev: IpcMainInvokeEventServer): SyncStatus[] {
+    return this.viewsManager
+      .getServerFromVerifiedSender(ev)
       .syncPaths.filter((s: SyncPath) => s.lastErrors.length || s.mainError)
       .map((s: SyncPath) => ({ syncPathId: s.id, lastErrors: s.lastErrors, mainError: s.mainError }))
   }
 
   private async onSyncTransferLogs(ev: IpcMainInvokeEventServer, action: string, syncPathId: number, query: string): Promise<SyncTransfer[] | void> {
-    const transfersLogs: TransfersLogs = new TransfersLogs(ev.sender.serverId, syncPathId, query)
+    const server = this.viewsManager.getServerFromVerifiedSender(ev)
+    const transfersLogs: TransfersLogs = new TransfersLogs(server.id, syncPathId, query)
     if (action === 'get') {
       return await transfersLogs.get()
     } else if (action === 'delete') {

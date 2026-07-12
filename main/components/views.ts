@@ -5,7 +5,6 @@ import {
   Event,
   ipcMain,
   IpcMainEvent,
-  IpcMainInvokeEvent,
   Menu,
   screen,
   session,
@@ -20,6 +19,7 @@ import { Server } from '../../core/components/models/server'
 import { CORE, coreEvents } from '../../core/components/handlers/events'
 import { appEvents } from './events'
 import { AppWebContentsView } from '../interfaces/app-web-contents-view'
+import { IpcMainEventServer, IpcMainInvokeEventServer, VerifiedSenderOptions } from '../interfaces/ipc-main-event.interface'
 
 export class ViewsManager {
   mainWindow: BrowserWindow
@@ -66,6 +66,29 @@ export class ViewsManager {
       webView.webContents.send(channel, ...args)
     } else {
       console.error(`unable to find webView with id: ${id}`)
+    }
+  }
+
+  getServerFromVerifiedSender(ev: IpcMainEventServer | IpcMainInvokeEventServer): Server
+  getServerFromVerifiedSender(ev: IpcMainEventServer | IpcMainInvokeEventServer, options: { throwOnError: false }): Server | null
+  getServerFromVerifiedSender(ev: IpcMainEventServer | IpcMainInvokeEventServer, options: VerifiedSenderOptions = {}): Server | null {
+    const throwOnError = options.throwOnError !== false
+    const serverId = ev.sender.serverId
+    const webView = this.allViews[serverId]
+    // serverId is app metadata; also match Electron's WebContents id to authenticate the sender.
+    if (!webView || webView.webContents.id !== ev.sender.id) {
+      if (throwOnError) {
+        throw new Error('Unauthorized server WebContents')
+      }
+      return null
+    }
+    try {
+      return ServersManager.find(serverId)
+    } catch (e) {
+      if (throwOnError) {
+        throw e
+      }
+      return null
     }
   }
 
@@ -190,12 +213,20 @@ export class ViewsManager {
   private initIPC() {
     ipcMain.on(LOCAL_RENDERER.UI.MODAL_TOGGLE, (_ev: IpcMainEvent, topToView: boolean) => this.onModalToggle(topToView))
     ipcMain.on(LOCAL_RENDERER.UI.TOP_VIEW_FOCUS, (_ev: IpcMainEvent, topToView: boolean) => this.switchViewFocus(topToView))
-    ipcMain.handle(
-      REMOTE_RENDERER.MISC.DIALOG_OPEN,
-      async (_ev: IpcMainInvokeEvent, properties) => await dialog.showOpenDialog(this.mainWindow, properties)
-    )
-    ipcMain.on(REMOTE_RENDERER.MISC.FILE_OPEN, async (_ev: IpcMainEvent, fullPath: string) => shell.showItemInFolder(fullPath))
-    ipcMain.on(REMOTE_RENDERER.MISC.URL_OPEN, async (_ev: IpcMainEvent, url: string) => shell.openExternal(url))
+    ipcMain.handle(REMOTE_RENDERER.MISC.DIALOG_OPEN, async (ev: IpcMainInvokeEventServer, properties) => {
+      this.getServerFromVerifiedSender(ev)
+      return await dialog.showOpenDialog(this.mainWindow, properties)
+    })
+    ipcMain.on(REMOTE_RENDERER.MISC.FILE_OPEN, async (ev: IpcMainEventServer, fullPath: string) => {
+      const server = this.getServerFromVerifiedSender(ev, { throwOnError: false })
+      if (!server) return
+      shell.showItemInFolder(fullPath)
+    })
+    ipcMain.on(REMOTE_RENDERER.MISC.URL_OPEN, async (ev: IpcMainEventServer, url: string) => {
+      const server = this.getServerFromVerifiedSender(ev, { throwOnError: false })
+      if (!server) return
+      await shell.openExternal(url)
+    })
     ipcMain.on(LOCAL_RENDERER.UI.APP_MENU_OPEN, () => this.openAppMenu())
     appEvents.on(LOCAL_RENDERER.SERVER.RELOAD, (clear: boolean) => this.reloadView(null, clear))
     appEvents.on(LOCAL_RENDERER.UI.MODAL_TOGGLE, () => this.openModalToggle())

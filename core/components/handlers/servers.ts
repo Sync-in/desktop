@@ -25,7 +25,7 @@ export class ServersManager {
   static find(serverNameOrID: string | number): Server {
     const server: Server = findByNameOrID(serverNameOrID, ServersManager.list)
     if (!server) {
-      throw `Server ${serverNameOrID} not found`
+      throw new Error(`Server ${serverNameOrID} not found`)
     }
     return server
   }

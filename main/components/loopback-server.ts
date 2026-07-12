@@ -4,8 +4,7 @@ import { Logger } from 'winston'
 import { getLogger } from '@sync-in-desktop/core/components/handlers/loggers'
 import { SYNC_SERVER } from '@sync-in-desktop/core/components/constants/auth'
 import { capitalize } from '@sync-in-desktop/core/components/utils/functions'
-
-export type OIDCCallbackParams = Record<string, string>
+import type { OIDCCallbackParams } from '../interfaces/oidc.interface'
 
 export class LoopbackServer {
   static sessions = new Map<number, LoopbackServer>()

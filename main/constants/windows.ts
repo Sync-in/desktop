@@ -13,7 +13,8 @@ export const THEMES = { [THEME.LIGHT]: '#0b2640', [THEME.DARK]: '#222d32' }
 export const TAB_BAR_HEIGHT = 40
 export const WRAPPER_VIEW_OFFSET_HEIGHT = 80
 export const RENDERER_FILE = './dist/renderer/index.html'
-const PRELOAD_FILE = path.join(__dirname, 'preload.js')
+const WRAPPER_PRELOAD_FILE = path.join(__dirname, 'preload-wrapper.js')
+const WEBVIEW_PRELOAD_FILE = path.join(__dirname, 'preload-webview.js')
 
 export const defaultWindowProps: BrowserWindowConstructorOptions = {
   width: DEFAULT_WINDOW_WIDTH,
@@ -43,7 +44,7 @@ export function viewProps(id: number | string): WebContentsViewConstructorOption
       sandbox: true,
       // protect against prototype pollution
       contextIsolation: true,
-      preload: PRELOAD_FILE,
+      preload: id === 'wrapper' ? WRAPPER_PRELOAD_FILE : WEBVIEW_PRELOAD_FILE,
       transparent: true
     }
   }

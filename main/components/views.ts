@@ -8,7 +8,6 @@ import {
   Menu,
   screen,
   session,
-  shell,
   WebContentsView,
   WebContentsWillNavigateEventParams,
   WebContentsWillRedirectEventParams
@@ -20,6 +19,7 @@ import { CORE, coreEvents } from '../../core/components/handlers/events'
 import { appEvents } from './events'
 import { AppWebContentsView } from '../interfaces/app-web-contents-view'
 import { IpcMainEventServer, IpcMainInvokeEventServer, VerifiedSenderOptions } from '../interfaces/ipc-main-event.interface'
+import { openExternal, showItemInFolder } from './utils'
 
 export class ViewsManager {
   mainWindow: BrowserWindow
@@ -100,7 +100,7 @@ export class ViewsManager {
     webView.webContents.on('will-navigate', (ev: Event<WebContentsWillNavigateEventParams>) => {
       if (!this.isUrlWithinServerScope(ev.url, server)) {
         ev.preventDefault()
-        shell.openExternal(ev.url).catch(console.error)
+        openExternal(ev.url).catch(console.error)
       }
     })
     webView.webContents.on('will-redirect', (ev: Event<WebContentsWillRedirectEventParams>) => {
@@ -108,7 +108,7 @@ export class ViewsManager {
       // Keep server-scoped redirects in the view and open external redirects outside the app.
       if (!this.isUrlWithinServerScope(ev.url, server)) {
         ev.preventDefault()
-        shell.openExternal(ev.url).catch(console.error)
+        openExternal(ev.url).catch(console.error)
       }
     })
     this.mainWindow.contentView.addChildView(webView)
@@ -221,12 +221,12 @@ export class ViewsManager {
     ipcMain.on(REMOTE_RENDERER.MISC.FILE_OPEN, async (ev: IpcMainEventServer, fullPath: string) => {
       const server = this.getServerFromVerifiedSender(ev, { throwOnError: false })
       if (!server) return
-      shell.showItemInFolder(fullPath)
+      showItemInFolder(fullPath, server)
     })
     ipcMain.on(REMOTE_RENDERER.MISC.URL_OPEN, async (ev: IpcMainEventServer, url: string) => {
       const server = this.getServerFromVerifiedSender(ev, { throwOnError: false })
       if (!server) return
-      await shell.openExternal(url)
+      openExternal(url).catch(console.error)
     })
     ipcMain.on(LOCAL_RENDERER.UI.APP_MENU_OPEN, () => this.openAppMenu())
     appEvents.on(LOCAL_RENDERER.SERVER.RELOAD, (clear: boolean) => this.reloadView(null, clear))

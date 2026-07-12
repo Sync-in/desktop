@@ -7,12 +7,8 @@
     "email": "johan.legrand@sync-in.com"
   },
   "private": true,
-  "dependencies": {
-    "mime-types": "^3.0.1"
-  },
   "devDependencies": {
     "@electron/notarize": "^3.0.1",
-    "@types/mime-types": "^3.0.1",
     "electron": "^41.0.1",
     "electron-builder": "^26.0.12",
     "electron-updater": "^6.3.9"

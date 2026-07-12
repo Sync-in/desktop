@@ -1,12 +1,11 @@
 import { CORE, coreEvents } from './events'
 import { F_ACTION, SIDE, SYMBOLS, TRANSFER_MIN_SIZE } from '../constants/handlers'
-import { currentTimeStamp, fileBaseName, streamStdout, toHumanSize, toHumanTime } from '../utils/functions'
+import { currentTimeStamp, fileBaseName, setMimeType, streamStdout, throttleFunc, toHumanSize, toHumanTime } from '../utils/functions'
 import { setTimeout } from 'timers/promises'
 import { EventEmitter } from 'events'
 import { LOCAL_RENDERER, REMOTE_RENDERER } from '../../../main/constants/events'
 import { Logger } from 'winston'
 import { getLogger, LOG_LEVEL_REPORT, LOG_LEVEL_SYNC, LOG_MODULE_REPORT, LOG_MODULE_SYNC } from './loggers'
-import { setMimeType, throttleFunc } from '../../../main/components/utils'
 import type { SyncTransfer, SyncTransferContext } from '../interfaces/sync-transfer.interface'
 
 export class TransferProgress {

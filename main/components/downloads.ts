@@ -1,7 +1,7 @@
 import { app, DownloadItem, ipcMain, IpcMainInvokeEvent, Session, session, shell } from 'electron'
 import path from 'node:path'
 import { i18n } from './translate'
-import { bytesToHuman, bytesToUnit, throttleFunc } from './utils'
+import { bytesToHuman, bytesToUnit } from './utils'
 import { LOCAL_RENDERER } from '../constants/events'
 import fs from 'node:fs/promises'
 import { NotifyManager } from './notifications'
@@ -11,6 +11,7 @@ import { DOWNLOAD_ACTION, DOWNLOAD_STATE } from '../constants/downloads'
 import { IDownload } from '../interfaces/download.interface'
 import { partitionFor } from '../constants/windows'
 import { ServersManager } from '../../core/components/handlers/servers'
+import { throttleFunc } from '@sync-in-desktop/core/components/utils/functions'
 
 export class DownloadManager {
   throttledGlobalProgress: (...args: any) => void

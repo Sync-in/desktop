@@ -1,4 +1,4 @@
-import { checkReservedUrlChars, currentTimeStamp, fileBaseName, isPathExists } from '../utils/functions'
+import { checkReservedUrlChars, currentTimeStamp, fileBaseName, isPathExists, isPathInsideRoot } from '../utils/functions'
 import { SIDE, SYMBOLS } from '../constants/handlers'
 import path from 'node:path'
 import { SNAPSHOTS_PATH, SYNC_LOGS_PATH } from '../../constants'
@@ -134,7 +134,7 @@ export class SyncPath {
     const root = path.resolve(this.localPath)
     const realPath = path.resolve(root, filePath)
 
-    if (realPath === root || !realPath.startsWith(root + path.sep)) {
+    if (!isPathInsideRoot(root, realPath, false)) {
       throw new Error(`Sync path escapes local root: ${filePath}`)
     }
 

@@ -76,9 +76,8 @@ export class EventsManager {
     // LOCAL RENDERER
     ipcMain.handle(LOCAL_RENDERER.SERVER.RETRY, (_ev, id: number) => this.serverOnRetry(id))
     ipcMain.on(LOCAL_RENDERER.SERVER.RELOAD, (_ev, id: number) => this.serverReload(id))
-    ipcMain.handle(
-      LOCAL_RENDERER.SERVER.ACTION,
-      (_ev, action: SERVER_ACTION, server: Server): Promise<SyncServerEvent> => this.serverOnAction(action, server)
+    ipcMain.handle(LOCAL_RENDERER.SERVER.ACTION, (_ev, action: SERVER_ACTION, server: Server): Promise<SyncServerEvent> =>
+      this.serverOnAction(action, server)
     )
     ipcMain.on(LOCAL_RENDERER.SERVER.SET_ACTIVE, (_ev, id: number) => this.serverOnActiveView(id))
     ipcMain.on(LOCAL_RENDERER.SERVER.LIST, () => this.viewsManager.sendServersUpdate())

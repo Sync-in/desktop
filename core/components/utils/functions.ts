@@ -2,17 +2,19 @@ import os from 'node:os'
 import path from 'node:path'
 import fs from 'node:fs/promises'
 import { createReadStream, createWriteStream, existsSync, readFileSync, writeFileSync } from 'node:fs'
+import mime from 'mime-types'
 import { ENVIRONMENT, HAS_TTY, IS_WINDOWS } from '../../constants'
 import { DEFAULT_HIGH_WATER_MARK, INCOMPLETE_PREFIX, SYNC_CHECKSUM_ALG } from '../constants/handlers'
-import { TransferProgress } from '../handlers/transfers'
-import { SyncClientInfo } from '../interfaces/sync-client-info.interface'
+import type { TransferProgress } from '../handlers/transfers'
+import type { SyncClientInfo } from '../interfaces/sync-client-info.interface'
 import crypto from 'node:crypto'
-import { SyncFileStats } from '../interfaces/sync-diff.interface'
+import type { SyncFileStats } from '../interfaces/sync-diff.interface'
+import type { SyncTransfer } from '../interfaces/sync-transfer.interface'
 import { NormalizedMap } from './normalizedMap'
 import { pipeline } from 'node:stream/promises'
 import { Readable } from 'node:stream'
 
-const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+export const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
 export const stdoutColors = {
   reset: '\x1b[0m',
   red: '\x1b[31m',
@@ -33,6 +35,47 @@ export const reservedUrlChars = new Map([
   [' ', '%20']
 ])
 
+export const throttleFunc = (context: any, func: (args?: any) => void, delay: number) => {
+  let lastFunc: ReturnType<typeof setTimeout> | undefined
+  let lastRan = 0
+  const safeDelay = Number.isFinite(delay) && delay > 0 ? Math.trunc(delay) : 0
+
+  return (...args: any) => {
+    const now = Date.now()
+    if (!lastRan || now - lastRan >= safeDelay) {
+      if (lastFunc) {
+        clearTimeout(lastFunc)
+        lastFunc = undefined
+      }
+      func.apply(context, args)
+      lastRan = now
+      return
+    } else {
+      clearTimeout(lastFunc)
+      const elapsed = Math.max(0, now - lastRan)
+      const remaining = Math.max(0, safeDelay - Math.min(elapsed, safeDelay))
+      lastFunc = setTimeout(function () {
+        if (Date.now() - lastRan >= safeDelay) {
+          func.apply(context, args)
+          lastRan = Date.now()
+        }
+      }, remaining)
+    }
+  }
+}
+
+export function setMimeType(tr: SyncTransfer): SyncTransfer {
+  if (tr.isDir) {
+    tr.mime = 'directory'
+  } else {
+    tr.mime = mime.lookup(tr.file) || 'file'
+    if (tr.mime !== 'file') {
+      tr.mime = tr.mime.replace('/', '-')
+    }
+  }
+  return tr
+}
+
 function encodeReservedUrlChars(url: string): string {
   const buffer: string[] = []
   for (const char of url) {
@@ -52,6 +95,15 @@ export function checkReservedUrlChars(url: string): string {
 
 function regExpEscape(content: string): string {
   return content.replace(regexpEscape, '\\$&')
+}
+
+export function isPathInsideRoot(rootPath: string, targetPath: string, allowRoot = true): boolean {
+  const root = path.resolve(rootPath)
+  const target = path.resolve(targetPath)
+  const relative = path.relative(root, target)
+  return allowRoot
+    ? !relative || (!relative.startsWith('..') && !path.isAbsolute(relative))
+    : !!relative && !relative.startsWith('..') && !path.isAbsolute(relative)
 }
 
 export function toHumanSize(bytes: number, precision = 2): string {

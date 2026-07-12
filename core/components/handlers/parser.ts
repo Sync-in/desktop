@@ -12,7 +12,8 @@ import {
   currentTimeStamp,
   fileBaseName,
   isPathExistsBool,
-  regExpPathPattern
+  regExpPathPattern,
+  setMimeType
 } from '../utils/functions'
 import { RequestsManager } from './requests'
 import {
@@ -28,7 +29,6 @@ import {
 import { Logger } from 'winston'
 import { EventEmitter } from 'events'
 import { REMOTE_RENDERER } from '../../../main/constants/events'
-import { setMimeType } from '../../../main/components/utils'
 import { API } from '../constants/requests'
 import type { SyncTransfer } from '../interfaces/sync-transfer.interface'
 import type { SyncDiff, SyncFileSpecialStats, SyncFileStats, SyncSnapShot } from '../interfaces/sync-diff.interface'

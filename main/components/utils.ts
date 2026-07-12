@@ -1,37 +1,10 @@
-import mime from 'mime-types'
+import { shell } from 'electron'
+import path from 'node:path'
+import { realpathSync } from 'node:fs'
+import { isPathInsideRoot, units } from '@sync-in-desktop/core/components/utils/functions'
+import type { Server } from '@sync-in-desktop/core/components/models/server'
 
-import type { SyncTransfer } from '@sync-in-desktop/core/components/interfaces/sync-transfer.interface'
-
-const units = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
-
-export const throttleFunc = (context: any, func: (args?: any) => void, delay: number) => {
-  let lastFunc: ReturnType<typeof setTimeout> | undefined
-  let lastRan = 0
-  const safeDelay = Number.isFinite(delay) && delay > 0 ? Math.trunc(delay) : 0
-
-  return (...args: any) => {
-    const now = Date.now()
-    if (!lastRan || now - lastRan >= safeDelay) {
-      if (lastFunc) {
-        clearTimeout(lastFunc)
-        lastFunc = undefined
-      }
-      func.apply(context, args)
-      lastRan = now
-      return
-    } else {
-      clearTimeout(lastFunc)
-      const elapsed = Math.max(0, now - lastRan)
-      const remaining = Math.max(0, safeDelay - Math.min(elapsed, safeDelay))
-      lastFunc = setTimeout(function () {
-        if (Date.now() - lastRan >= safeDelay) {
-          func.apply(context, args)
-          lastRan = Date.now()
-        }
-      }, remaining)
-    }
-  }
-}
+const EXTERNAL_URL_PROTOCOLS = new Set(['http:', 'https:'])
 
 export function bytesToHuman(bytes: number, asDict: true, precision?: number, perSecond?: boolean): { value: number; unit: string }
 export function bytesToHuman(bytes: number, asDict: false, precision?: number, perSecond?: boolean): string
@@ -71,16 +44,36 @@ export function bytesToUnit(bytes: number, unit: string, precision = 2): number 
   return parseFloat((bytes / Math.pow(1024, Math.floor(exponent))).toFixed(precision))
 }
 
-export function setMimeType(tr: SyncTransfer): SyncTransfer {
-  if (tr.isDir) {
-    tr.mime = 'directory'
-  } else {
-    tr.mime = mime.lookup(tr.file) || 'file'
-    if (tr.mime !== 'file') {
-      tr.mime = tr.mime.replace('/', '-')
-    }
+export async function openExternal(url: string): Promise<void> {
+  const parsed = new URL(url)
+  if (!EXTERNAL_URL_PROTOCOLS.has(parsed.protocol)) {
+    throw new Error(`Unsupported external URL protocol: ${parsed.protocol}`)
   }
-  return tr
+  await shell.openExternal(parsed.toString())
+}
+
+export function showItemInFolder(fullPath: string, server: Server): void {
+  if (typeof fullPath !== 'string' || !path.isAbsolute(fullPath)) {
+    return
+  }
+
+  try {
+    const realPath = realpathSync(fullPath)
+    if (
+      server.syncPaths.some(({ localPath }) => {
+        if (!localPath) return false
+        try {
+          return isPathInsideRoot(realpathSync(localPath), realPath)
+        } catch {
+          return false
+        }
+      })
+    ) {
+      shell.showItemInFolder(realPath)
+    }
+  } catch {
+    return
+  }
 }
 
 export function sortObjsByDate(objs: any[], property: string, asc = false) {

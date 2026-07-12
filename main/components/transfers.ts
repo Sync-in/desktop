@@ -1,10 +1,11 @@
 import { ServersManager } from '../../core/components/handlers/servers'
 import fs from 'node:fs/promises'
 import readline from 'node:readline'
-import { setMimeType, sortObjsByDate } from './utils'
+import { sortObjsByDate } from './utils'
 import { createReadStream, existsSync } from 'node:fs'
 import type { SyncTransfer } from '@sync-in-desktop/core/components/interfaces/sync-transfer.interface'
 import { DEFAULT_HIGH_WATER_MARK } from '@sync-in-desktop/core/components/constants/handlers'
+import { setMimeType } from '@sync-in-desktop/core/components/utils/functions'
 
 export class TransfersLogs {
   private maxLines = 1000

@@ -4,6 +4,7 @@ import { ENVIRONMENT, IS_MACOS, MAIN_LOGS_FILE } from '@sync-in-desktop/core/con
 import { appEvents } from '../components/events'
 import { LOCAL_RENDERER } from './events'
 import { appSettings } from '../components/settings'
+import { openExternal } from '../components/utils'
 
 export const separatorItem: MenuItemConstructorOptions = {
   type: 'separator'
@@ -11,7 +12,7 @@ export const separatorItem: MenuItemConstructorOptions = {
 
 const supportMenu: (withAppName?: boolean) => MenuItemConstructorOptions = (withAppName = true) => ({
   label: `${i18n.tr('Support')}${withAppName ? ` ${ENVIRONMENT.appID} ` : ' '}💛`,
-  click: () => shell.openExternal(`${ENVIRONMENT.appHomePage}${i18n.language === 'fr' ? '/fr' : ''}/support/`)
+  click: () => openExternal(`${ENVIRONMENT.appHomePage}${i18n.language === 'fr' ? '/fr' : ''}/support/`).catch(console.error)
 })
 
 export const checkUpdateMenu: () => MenuItemConstructorOptions = () => ({
@@ -49,11 +50,11 @@ export const helpMenu: (name?: string, withCheckUpdate?: boolean) => MenuItemCon
     supportMenu(),
     {
       label: i18n.tr('Documentation'),
-      click: () => shell.openExternal(`${ENVIRONMENT.appHomePage}${i18n.language === 'fr' ? '/fr' : ''}/docs/`)
+      click: () => openExternal(`${ENVIRONMENT.appHomePage}${i18n.language === 'fr' ? '/fr' : ''}/docs/`).catch(console.error)
     },
     {
       label: i18n.tr('Version History'),
-      click: () => shell.openExternal(ENVIRONMENT.appReleasesPage)
+      click: () => openExternal(ENVIRONMENT.appReleasesPage).catch(console.error)
     },
     ...(withCheckUpdate ? [separatorItem] : []),
     {

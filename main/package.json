@@ -9,7 +9,7 @@
   "private": true,
   "devDependencies": {
     "@electron/notarize": "^3.0.1",
-    "electron": "^41.0.1",
+    "electron": "^43.1.0",
     "electron-builder": "^26.0.12",
     "electron-updater": "^6.3.9"
   }

@@ -23,7 +23,12 @@ $button-dark-tones: (
 
 @function button-dark-tone($name, $field) {
   $triplet: map-get($button-dark-tones, $name);
-  @return if($triplet == null, null, map-get($triplet, $field));
+
+  @if $triplet == null {
+    @return null;
+  }
+
+  @return map-get($triplet, $field);
 }
 
 @function button-ink($tone, $mix-amount: 90%) {
@@ -38,7 +43,12 @@ $button-dark-tones: (
 ) {
   $bg: rgba(mix(rgba($white, 0.92), mix($white, $tone, $light-bg-mix), 68%), 0.95);
   $border: mix($white, $tone, $light-border-mix - 4%);
-  $fg: if($light-text != null, $light-text, mix($tone, $black, 90%));
+  $fg: mix($tone, $black, 90%);
+
+  @if $light-text != null {
+    $fg: $light-text;
+  }
+
   $hover-bg: rgba(mix(rgba($white, 0.96), mix($white, $tone, $light-bg-mix - 8%), 62%), 0.98);
   $hover-border: mix($white, $tone, $light-border-mix - 16%);
   $hover-fg: mix($fg, $black, 88%);
@@ -169,12 +179,20 @@ $button-dark-variants: (
   $bg-mix: map-get($config, bg-mix);
   $border-mix: map-get($config, border-mix);
 
+  @if $bg-mix == null {
+    $bg-mix: 84%;
+  }
+
+  @if $border-mix == null {
+    $border-mix: 66%;
+  }
+
   @include btn-variant(
                   $selector,
                   button-tone(map-get($config, tone)),
                   map-get($config, text),
-                  if($bg-mix == null, 84%, $bg-mix),
-                  if($border-mix == null, 66%, $border-mix)
+                  $bg-mix,
+                  $border-mix
   );
 }
 

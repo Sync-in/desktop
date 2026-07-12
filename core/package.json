@@ -11,7 +11,7 @@
     "axios": "^1.8.1",
     "mime-types": "^3.0.1",
     "winston": "^3.8.2",
-    "js-yaml": "^4.1.0"
+    "js-yaml": "^5.2.1"
   },
   "devDependencies": {
     "@types/mime-types": "^3.0.1"

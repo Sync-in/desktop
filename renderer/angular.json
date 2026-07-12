@@ -33,12 +33,7 @@
             "inlineStyleLanguage": "scss",
             "stylePreprocessorOptions": {
               "sass": {
-                "silenceDeprecations": [
-                  "mixed-decls",
-                  "color-functions",
-                  "global-builtin",
-                  "import"
-                ]
+                "silenceDeprecations": ["color-functions", "global-builtin", "import"]
               }
             },
             "assets": [
@@ -46,7 +41,7 @@
               "src/assets"
             ],
             "styles": [
-              "src/scss/styles.scss"
+              "src/scss/index.scss"
             ],
             "scripts": []
           },

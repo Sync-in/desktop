@@ -41,6 +41,65 @@
     font-size: $font-size-base;
     padding: 10px;
   }
+
+  .advanced-options-toggle {
+    align-items: center;
+    background: transparent;
+    border: 1px solid $border-color;
+    border-radius: 4px;
+    color: inherit;
+    display: flex;
+    font-size: $font-size-base;
+    justify-content: space-between;
+    line-height: 1.2;
+    min-height: 2.25rem;
+    padding: .45rem .65rem;
+    text-align: left;
+    width: 100%;
+
+    &.is-open {
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+
+    &:focus-visible {
+      border-color: $primary;
+      box-shadow: 0 0 0 .15rem rgba($primary, .25);
+      outline: none;
+    }
+  }
+
+  .advanced-options-chevron {
+    flex: 0 0 auto;
+    margin-left: .75rem;
+    transition: transform .15s ease-in-out;
+  }
+
+  .advanced-options-toggle.is-open .advanced-options-chevron {
+    transform: rotate(180deg);
+  }
+
+  .advanced-options-panel {
+    border: 1px solid $border-color;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+    border-top: 0;
+    padding: .75rem;
+  }
+
+  .advanced-options-control {
+    margin-bottom: .35rem;
+
+    .form-check-input,
+    .form-check-label {
+      cursor: pointer;
+    }
+  }
+
+  .advanced-options-help {
+    font-size: $font-size-sm;
+    line-height: 1.45;
+  }
 }
 
 //Modal variants
@@ -88,6 +147,16 @@ body.theme-light .modal,
   .modal-footer {
     background-color: $light-modal-footer-bg;
   }
+
+  .advanced-options-toggle,
+  .advanced-options-panel {
+    background-color: $light-modal-footer-bg;
+    border-color: darken($light-modal-footer-bg, 8%);
+  }
+
+  .advanced-options-help {
+    color: $muted;
+  }
 }
 
 body.theme-dark .modal,
@@ -128,6 +197,28 @@ body.theme-dark .modal,
   .form-control::-webkit-input-placeholder {
     color: $dark-modal-placeholder-color;
     opacity: 1;
+  }
+
+  .form-text {
+    color: $dark-modal-placeholder-color;
+  }
+
+  .advanced-options-toggle,
+  .advanced-options-panel {
+    background-color: $dark-modal-footer-bg;
+    border-color: $dark-modal-header-border-color;
+  }
+
+  .advanced-options-toggle {
+    color: $dark-modal-text-color;
+
+    &:hover {
+      background-color: lighten($dark-modal-footer-bg, 4%);
+    }
+  }
+
+  .advanced-options-help {
+    color: $dark-modal-placeholder-color;
   }
 
   .form-control:focus,

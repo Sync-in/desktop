@@ -29,7 +29,6 @@ function applyElectronSwitches() {
   // app.commandLine.appendSwitch('log-file', MAIN_LOGS_FILE)
   // app.commandLine.appendSwitch('enable-logging')
   // app.commandLine.appendSwitch('lang', 'zh-CN')
-  app.commandLine.appendSwitch('ignore-certificate-errors')
 }
 
 async function bootstrap() {

@@ -30,21 +30,26 @@ export class RequestsManager {
   // config
   public server: Server
   private httpController = new AbortController()
-  private httpAgent = new http.Agent({ keepAlive: true, maxSockets: 25 })
-  private httpsAgent = new https.Agent({ keepAlive: true, maxSockets: 25, rejectUnauthorized: false })
+  private readonly httpAgent = new http.Agent({ keepAlive: true, maxSockets: 25 })
+  private readonly httpsAgent: https.Agent
   private httpConfig: AxiosRequestConfig = {
     baseURL: '',
-    headers: { 'User-Agent': USER_AGENT, Connection: 'Keep-Alive' },
     // keepAlive pools and reuses TCP connections, so it's faster
+    headers: { 'User-Agent': USER_AGENT, Connection: 'Keep-Alive' },
     httpAgent: this.httpAgent,
-    httpsAgent: this.httpsAgent,
     signal: this.httpController.signal,
     maxRedirects: 0
   }
 
   constructor(server: Server, checkToken = true) {
     this.server = server
+    this.httpsAgent = new https.Agent({
+      keepAlive: true,
+      maxSockets: 25,
+      rejectUnauthorized: !this.server.allowInvalidCertificate
+    })
     this.httpConfig.baseURL = this.server.url
+    this.httpConfig.httpsAgent = this.httpsAgent
     this.http = axios.create(this.httpConfig)
     if (checkToken && !this.server.authToken) {
       throw `Authentication Token is missing for server: ${this.server.name} ${this.server.url}`
@@ -147,7 +152,7 @@ export class RequestsManager {
         method: 'get',
         url: server.url,
         headers: { 'User-Agent': USER_AGENT },
-        httpsAgent: new https.Agent({ rejectUnauthorized: false }),
+        httpsAgent: new https.Agent({ rejectUnauthorized: !server.allowInvalidCertificate }),
         timeout: 3000
       })
       if (r.status !== 200) {

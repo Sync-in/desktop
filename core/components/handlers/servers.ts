@@ -66,6 +66,7 @@ export class ServersManager {
     // update server name
     if (existingServer) {
       existingServer.name = serverProps.name
+      existingServer.allowInvalidCertificate = serverProps.allowInvalidCertificate === true
     }
   }
 

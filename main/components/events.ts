@@ -231,7 +231,12 @@ export class EventsManager {
       case SERVER_ACTION.EDIT:
         try {
           const s = ServersManager.find(server.id)
+          const certificateValidationChanged = s.allowInvalidCertificate !== (server.allowInvalidCertificate === true)
           ServersManager.checkUpdatedProperties(server, s)
+          if (certificateValidationChanged) {
+            await this.viewsManager.configureServerCertificateVerification(s)
+            this.viewsManager.reloadView(s.id, true)
+          }
           coreEvents.emit(CORE.SAVE_SETTINGS)
           this.viewsManager.sendServersUpdate()
           return { ok: true }

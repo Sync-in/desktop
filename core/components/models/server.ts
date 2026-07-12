@@ -7,6 +7,7 @@ export class Server implements SyncServer {
   public name: string
   public url: string
   public available: boolean
+  public allowInvalidCertificate: boolean
   public authID: string
   public authToken: string
   public authTokenExpired: boolean
@@ -22,6 +23,7 @@ export class Server implements SyncServer {
     this.name = data.name
     this.url = data.url?.trim().replace(/\/+$/, '').toLowerCase()
     this.available = data.available || false
+    this.allowInvalidCertificate = data.allowInvalidCertificate === true
     this.authID = data.authID || undefined
     this.authToken = data.authToken || undefined
     this.authTokenExpired = data.authTokenExpired || false
@@ -45,6 +47,7 @@ export class Server implements SyncServer {
       name: this.name,
       url: this.url,
       available: this.available,
+      allowInvalidCertificate: this.allowInvalidCertificate,
       authID: this.authID,
       authToken: this.authToken,
       authTokenExpired: this.authTokenExpired,

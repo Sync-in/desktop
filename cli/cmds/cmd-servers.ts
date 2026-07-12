@@ -47,10 +47,16 @@ const serverADD: CommandModule = {
       describe: '2FA authentication code (or recovery code)',
       demandOption: false,
       type: 'string'
+    },
+    'allow-invalid-certificate': {
+      describe: 'Allow unrecognized TLS certificate',
+      demandOption: false,
+      type: 'boolean',
+      default: false
     }
   },
   handler: async (argv: any) => {
-    const server = new Server({ name: argv.name, url: argv.url })
+    const server = new Server({ name: argv.name, url: argv.url, allowInvalidCertificate: argv.allowInvalidCertificate === true })
     console.log('Adding the server')
     ServersManager.checkUpdatedProperties(server)
     const manager = new ServersManager(server, false)

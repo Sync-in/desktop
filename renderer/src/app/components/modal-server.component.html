@@ -49,6 +49,28 @@
                  type="text"/>
         </div>
       </div>
+      <button (click)="toggleAdvancedOptions()"
+              [class.is-open]="showAdvancedOptions"
+              [attr.aria-expanded]="showAdvancedOptions"
+              aria-controls="advancedServerOptions"
+              class="advanced-options-toggle"
+              type="button">
+        <span l10nTranslate>Advanced options</span>
+        <fa-icon [icon]="icons.faChevronDown" class="advanced-options-chevron"/>
+      </button>
+      @if (showAdvancedOptions) {
+        <div class="advanced-options-panel" id="advancedServerOptions">
+          <div class="form-check form-switch advanced-options-control">
+            <input formControlName="allowInvalidCertificate"
+                   class="form-check-input"
+                   id="allowInvalidCertificate"
+                   role="switch"
+                   type="checkbox"/>
+            <label class="form-check-label" for="allowInvalidCertificate" l10nTranslate>Allow unrecognized TLS certificate</label>
+          </div>
+          <div class="advanced-options-help" l10nTranslate>Only use this for a local or self-hosted server you control. This disables TLS certificate verification for this server.</div>
+        </div>
+      }
     </form>
   }
 </div>

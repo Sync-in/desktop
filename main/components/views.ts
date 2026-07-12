@@ -71,6 +71,7 @@ export class ViewsManager {
 
   async createWebView(server: Server): Promise<AppWebContentsView> {
     const webView = new WebContentsView(viewProps(server.id)) as AppWebContentsView
+    await this.configureServerCertificateVerification(server)
     webView.webContents.serverName = server.name
     webView.webContents.serverId = server.id
     webView.webContents.on('will-navigate', (ev: Event<WebContentsWillNavigateEventParams>) => {
@@ -141,10 +142,31 @@ export class ViewsManager {
   reloadView(serverId?: number, clear = false) {
     const view = serverId ? this.allViews[serverId] : this.currentView
     if (clear) {
-      session.defaultSession.clearCache().then(() => view.webContents.reloadIgnoringCache())
+      view.webContents.session.clearCache().then(() => view.webContents.reloadIgnoringCache())
     } else {
       view.webContents.reload()
     }
+  }
+
+  async configureServerCertificateVerification(server: Server): Promise<void> {
+    const serverSession = session.fromPartition(partitionFor(server.id))
+    if (!server.allowInvalidCertificate) {
+      // Restore Electron's default certificate validation for this server session.
+      serverSession.setCertificateVerifyProc(null)
+    } else {
+      const expectedHost = new URL(server.url).hostname.toLowerCase()
+      serverSession.setCertificateVerifyProc((request, callback) => {
+        // Keep normal validation for valid certificates and only bypass failures for this server's host.
+        if (request.verificationResult === 'OK' || request.hostname.toLowerCase() === expectedHost) {
+          callback(0)
+        } else {
+          // Reject invalid certificates for every other host (-2).
+          callback(-2)
+        }
+      })
+    }
+    // Certificate verification results can be cached by Electron's network service.
+    await serverSession.closeAllConnections()
   }
 
   async destroyView(server: Server) {

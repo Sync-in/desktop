@@ -21,7 +21,8 @@ export default [
     target: 'electron-main',
     entry: {
       main: path.join(__dirname, 'main', 'main.ts'),
-      preload: path.join(__dirname, 'main', 'preload.ts')
+      'preload-wrapper': path.join(__dirname, 'main', 'preload-wrapper.ts'),
+      'preload-webview': path.join(__dirname, 'main', 'preload-webview.ts')
     },
     module: {
       rules: [

@@ -19,7 +19,7 @@ import { CORE, coreEvents } from '../../core/components/handlers/events'
 import { appEvents } from './events'
 import { AppWebContentsView } from '../interfaces/app-web-contents-view'
 import { IpcMainEventServer, IpcMainInvokeEventServer, VerifiedSenderOptions } from '../interfaces/ipc-main-event.interface'
-import { openExternal, showItemInFolder } from './utils'
+import { isUrlWithinServerScope, openExternal, showItemInFolder } from './utils'
 
 export class ViewsManager {
   mainWindow: BrowserWindow
@@ -314,15 +314,7 @@ export class ViewsManager {
   }
 
   private isUrlWithinServerScope(url: string, server: Server): boolean {
-    try {
-      const target = new URL(url)
-      const expected = new URL(server.url)
-      const expectedPath = expected.pathname.endsWith('/') ? expected.pathname : `${expected.pathname}/`
-      const targetPath = target.pathname.endsWith('/') ? target.pathname : `${target.pathname}/`
-      return target.origin === expected.origin && targetPath.startsWith(expectedPath)
-    } catch {
-      return false
-    }
+    return isUrlWithinServerScope(url, server.url)
   }
 
   private addLoadURLListener(webView: AppWebContentsView, server: Server) {

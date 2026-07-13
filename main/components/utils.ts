@@ -52,6 +52,30 @@ export async function openExternal(url: string): Promise<void> {
   await shell.openExternal(parsed.toString())
 }
 
+export function isUrlWithinServerScope(url: string, serverUrl: string): boolean {
+  try {
+    const target = new URL(url)
+    const expected = new URL(serverUrl)
+    const expectedPath = expected.pathname.endsWith('/') ? expected.pathname : `${expected.pathname}/`
+    const targetPath = target.pathname.endsWith('/') ? target.pathname : `${target.pathname}/`
+    return target.origin === expected.origin && targetPath.startsWith(expectedPath)
+  } catch {
+    return false
+  }
+}
+
+export function decodeCookieValue(value: string): string {
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return value
+  }
+}
+
+export function nonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0
+}
+
 export function showItemInFolder(fullPath: string, server: Server): void {
   if (typeof fullPath !== 'string' || !path.isAbsolute(fullPath)) {
     return

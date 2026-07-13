@@ -12,4 +12,3 @@ npm-debug.log
 .idea
 *.DS_Store
 Thumbs.db
-electron-builder.env

@@ -137,6 +137,28 @@
       "hardenedRuntime": true,
       "gatekeeperAssess": false
     },
+    "dmg": {
+      "iconSize": 120,
+      "iconTextSize": 16,
+      "window": {
+        "width": 801,
+        "height": 491
+      },
+      "contents": [
+        {
+          "x": 255,
+          "y": 252,
+          "type": "file",
+          "name": "Sync-in.app"
+        },
+        {
+          "x": 565,
+          "y": 252,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
     "win": {
       "signtoolOptions": {
         "publisherName": [

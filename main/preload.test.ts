@@ -73,8 +73,12 @@ describe('preload ipcRenderer bridge', () => {
     const ipcRenderer = exposeWebview()
 
     await expect(ipcRenderer.invoke(REMOTE_RENDERER.SERVER.AUTHENTICATION)).resolves.toBe('invoke-result')
+    await expect(ipcRenderer.invoke(REMOTE_RENDERER.SERVER.AUTHENTICATION_COOKIE)).resolves.toBe('invoke-result')
+    await expect(ipcRenderer.invoke(REMOTE_RENDERER.SERVER.REGISTRATION_AUTH)).resolves.toBe('invoke-result')
 
     expect(electronMock.ipcRenderer.invoke).toHaveBeenCalledWith(REMOTE_RENDERER.SERVER.AUTHENTICATION)
+    expect(electronMock.ipcRenderer.invoke).toHaveBeenCalledWith(REMOTE_RENDERER.SERVER.AUTHENTICATION_COOKIE)
+    expect(electronMock.ipcRenderer.invoke).toHaveBeenCalledWith(REMOTE_RENDERER.SERVER.REGISTRATION_AUTH)
   })
 
   it('blocks disallowed webview invoke channels', () => {

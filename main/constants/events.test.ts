@@ -33,6 +33,12 @@ describe('renderer event allowlists', () => {
     expect(WEBVIEW_RENDERER_EVENTS.ON.has(REMOTE_RENDERER.SYNC.STATUS)).toBe(true)
   })
 
+  it('allows webviews to call transitional and desktop-handled auth channels', () => {
+    expect(WEBVIEW_RENDERER_EVENTS.INVOKE.has(REMOTE_RENDERER.SERVER.AUTHENTICATION)).toBe(true)
+    expect(WEBVIEW_RENDERER_EVENTS.INVOKE.has(REMOTE_RENDERER.SERVER.AUTHENTICATION_COOKIE)).toBe(true)
+    expect(WEBVIEW_RENDERER_EVENTS.INVOKE.has(REMOTE_RENDERER.SERVER.REGISTRATION_AUTH)).toBe(true)
+  })
+
   it('limits listener cleanup to report transfer on webviews', () => {
     expect([...WRAPPER_RENDERER_EVENTS.REMOVE_ALL_LISTENERS]).toEqual([])
     expect([...WEBVIEW_RENDERER_EVENTS.REMOVE_ALL_LISTENERS]).toEqual([REMOTE_RENDERER.SYNC.REPORT_TRANSFER])

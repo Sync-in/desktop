@@ -64,6 +64,18 @@ export function isUrlWithinServerScope(url: string, serverUrl: string): boolean 
   }
 }
 
+export function decodeCookieValue(value: string): string {
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return value
+  }
+}
+
+export function nonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0
+}
+
 export function showItemInFolder(fullPath: string, server: Server): void {
   if (typeof fullPath !== 'string' || !path.isAbsolute(fullPath)) {
     return

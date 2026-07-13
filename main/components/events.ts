@@ -14,7 +14,7 @@ import { Logger } from 'winston'
 import { getLogger } from '../../core/components/handlers/loggers'
 import { genClientInfos } from '../../core/components/utils/functions'
 import { THEMES } from '../constants/windows'
-import { SyncClientAuth, SyncClientAuthRegistration, SyncClientRegistration } from '../../core/components/interfaces/sync-client-auth.interface'
+import type { SyncClientAuth, SyncClientAuthRegistration, SyncClientRegistration } from '../../core/components/interfaces/sync-client-auth.interface'
 import { SyncTransfer } from '@sync-in-desktop/core/components/interfaces/sync-transfer.interface'
 import { IpcMainEventServer, IpcMainInvokeEventServer } from '../interfaces/ipc-main-event.interface'
 import { THEME } from '../constants/themes'
@@ -25,7 +25,11 @@ import { appSettings } from './settings'
 import { IS_MACOS } from '@sync-in-desktop/core/constants'
 import type { SyncServerEvent } from '@sync-in-desktop/core/components/interfaces/server.interface'
 import { LoopbackServer } from './loopback-server'
-import type { OIDCCallbackParams } from '../interfaces/oidc.interface'
+import type { OIDCCallbackParams, ServerAuthenticationCookieResponse } from '../interfaces/auth.interface'
+import { CLIENT_TOKEN_EXPIRED_ERROR } from '../../core/components/constants/auth'
+import { CLIENT_MISSING_ERROR } from '../../core/components/constants/requests'
+import type { SyncClientAuthenticatedRegistration } from './requests'
+import { MainRequestsManager } from './requests'
 
 export const appEvents: any = new EventEmitter()
 // hook to delete to trash bin during sync
@@ -95,6 +99,8 @@ export class EventsManager {
       ): Promise<SyncServerEvent> => this.serverRegistration(ev, auth, externalAuth)
     )
     ipcMain.handle(REMOTE_RENDERER.SERVER.AUTHENTICATION, (ev: IpcMainInvokeEventServer) => this.serverAuthentication(ev))
+    ipcMain.handle(REMOTE_RENDERER.SERVER.AUTHENTICATION_COOKIE, (ev: IpcMainInvokeEventServer) => this.serverAuthenticationCookie(ev))
+    ipcMain.handle(REMOTE_RENDERER.SERVER.REGISTRATION_AUTH, (ev: IpcMainInvokeEventServer) => this.serverAuthenticatedRegistration(ev))
     ipcMain.on(REMOTE_RENDERER.SERVER.AUTHENTICATION_FAILED, (ev: IpcMainEventServer) => this.serverAuthFailed(ev))
     ipcMain.on(REMOTE_RENDERER.SERVER.AUTHENTICATION_TOKEN_UPDATE, (ev: IpcMainEventServer, token: string) => this.serverAuthTokenUpdate(ev, token))
     ipcMain.on(REMOTE_RENDERER.SERVER.AUTHENTICATION_TOKEN_EXPIRED, (ev: IpcMainEventServer) => this.serverAuthTokenExpired(ev))
@@ -149,9 +155,39 @@ export class EventsManager {
   }
 
   private serverAuthentication(ev: IpcMainInvokeEventServer): SyncClientAuth {
-    // Get information about client authentication
+    // Transition only: legacy frontends still need the raw desktop credential.
+    // Todo: remove this method when all frontends are updated to use the new auth flow
     const server = this.viewsManager.getServerFromVerifiedSender(ev)
     return { clientId: server.authID, token: server.authToken, tokenHasExpired: server.authTokenExpired, info: genClientInfos() }
+  }
+
+  private async serverAuthenticationCookie(ev: IpcMainInvokeEventServer): Promise<ServerAuthenticationCookieResponse> {
+    const server = this.viewsManager.getServerFromVerifiedSender(ev)
+    try {
+      // New auth flow: the main process sends the stored client credential to the server
+      // and returns only the resulting session payload to the renderer.
+      return await new MainRequestsManager(server).authenticateWithCookie()
+    } catch (e) {
+      const message = this.errorMessage(e)
+      if (message === CLIENT_TOKEN_EXPIRED_ERROR) {
+        this.markServerAuthTokenExpired(server)
+        this.logger.debug(`${this.serverAuthenticationCookie.name} - ${message}`)
+        return { error: message }
+      }
+      if (message === CLIENT_MISSING_ERROR) {
+        this.logger.debug(`${this.serverAuthenticationCookie.name} - ${message}`)
+        return { error: message }
+      }
+      this.markServerAuthFailed(server)
+      throw e
+    }
+  }
+
+  private async serverAuthenticatedRegistration(ev: IpcMainInvokeEventServer): Promise<SyncClientAuthenticatedRegistration> {
+    const server = this.viewsManager.getServerFromVerifiedSender(ev)
+    // Used after an OIDC/browser login: the main process completes /register/auth
+    // The renderer only receives the non-sensitive client id.
+    return await new MainRequestsManager(server).registerWithAuthenticatedSession()
   }
 
   private serverAuthTokenUpdate(ev: IpcMainEventServer, token: string) {
@@ -165,6 +201,11 @@ export class EventsManager {
   private serverAuthTokenExpired(ev: IpcMainEventServer) {
     const server = this.viewsManager.getServerFromVerifiedSender(ev, { throwOnError: false })
     if (!server) return
+    this.markServerAuthTokenExpired(server)
+  }
+
+  private markServerAuthTokenExpired(server: Server) {
+    // Keep the server visible but force a registration/renewal path on the next auth attempt.
     server.available = true
     if (server.authTokenExpired) {
       return
@@ -176,6 +217,11 @@ export class EventsManager {
   private serverAuthFailed(ev: IpcMainEventServer) {
     const server = this.viewsManager.getServerFromVerifiedSender(ev, { throwOnError: false })
     if (!server) return
+    this.markServerAuthFailed(server)
+  }
+
+  private markServerAuthFailed(server: Server) {
+    // Non-recoverable auth errors make the server unavailable and return focus to the wrapper UI.
     server.available = false
     this.viewsManager.switchViewFocus(true)
     this.viewsManager.sendServersUpdate()

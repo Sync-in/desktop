@@ -7,6 +7,17 @@ export class SyncClientAuth {
   info: SyncClientInfo
 }
 
+export interface SyncClientAuthCookie {
+  server: any
+  user: any
+  token: {
+    access_expiration: number
+    refresh_expiration: number
+    [key: string]: any
+  }
+  client_token_update?: string
+}
+
 export interface SyncClientRegistration {
   login: string
   password: string

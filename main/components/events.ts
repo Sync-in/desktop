@@ -187,15 +187,18 @@ export class EventsManager {
     const server = this.viewsManager.getServerFromVerifiedSender(ev)
     // Used after an OIDC/browser login: the main process completes /register/auth
     // The renderer only receives the non-sensitive client id.
-    return await new MainRequestsManager(server).registerWithAuthenticatedSession()
+    const registration = await new MainRequestsManager(server).registerWithAuthenticatedSession()
+    this.viewsManager.sendServersUpdate()
+    return registration
   }
 
   private serverAuthTokenUpdate(ev: IpcMainEventServer, token: string) {
     const server = this.viewsManager.getServerFromVerifiedSender(ev, { throwOnError: false })
     if (!server) return
     server.authToken = token
+    server.authTokenExpired = false
     this.logger.info(`Client token was renewed for server *${server.name}* (${server.id})`)
-    coreEvents.emit(CORE.SAVE_SETTINGS)
+    this.saveAndSendServersUpdate()
   }
 
   private serverAuthTokenExpired(ev: IpcMainEventServer) {
@@ -206,11 +209,12 @@ export class EventsManager {
 
   private markServerAuthTokenExpired(server: Server) {
     // Keep the server visible but force a registration/renewal path on the next auth attempt.
+    const stateChanged = !server.available || !server.authTokenExpired
     server.available = true
-    if (server.authTokenExpired) {
-      return
-    }
     server.authTokenExpired = true
+    if (stateChanged) {
+      coreEvents.emit(CORE.SAVE_SETTINGS)
+    }
     this.viewsManager.sendServersUpdate()
   }
 
@@ -222,13 +226,22 @@ export class EventsManager {
 
   private markServerAuthFailed(server: Server) {
     // Non-recoverable auth errors make the server unavailable and return focus to the wrapper UI.
+    const stateChanged = server.available
     server.available = false
+    if (stateChanged) {
+      coreEvents.emit(CORE.SAVE_SETTINGS)
+    }
     this.viewsManager.switchViewFocus(true)
     this.viewsManager.sendServersUpdate()
   }
 
   private serverReload(id: number) {
     this.viewsManager.reloadView(id, true)
+  }
+
+  private saveAndSendServersUpdate() {
+    coreEvents.emit(CORE.SAVE_SETTINGS)
+    this.viewsManager.sendServersUpdate()
   }
 
   private async serverOnRetry(id: number): Promise<boolean> {
@@ -261,7 +274,7 @@ export class EventsManager {
         server.authToken = externalAuth.clientToken
         server.authTokenExpired = false
       }
-      coreEvents.emit(CORE.SAVE_SETTINGS)
+      this.saveAndSendServersUpdate()
       return { ok: true }
     } catch (e) {
       return { ok: false, msg: this.errorMessage(e) }
@@ -296,8 +309,7 @@ export class EventsManager {
             await this.viewsManager.configureServerCertificateVerification(s)
             this.viewsManager.reloadView(s.id, true)
           }
-          coreEvents.emit(CORE.SAVE_SETTINGS)
-          this.viewsManager.sendServersUpdate()
+          this.saveAndSendServersUpdate()
           return { ok: true }
         } catch (e) {
           return { ok: false, msg: this.errorMessage(e) }

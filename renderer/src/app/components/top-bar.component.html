@@ -29,9 +29,9 @@
             <li role="menuitem" (mouseenter)="enterMenuItem(server.id)" (mouseleave)="leaveMenuItem()" (click)="onActiveServer($event, server.id)">
               <a class="d-flex align-items-center dropdown-item no-text-select">
                   @if (activeServer.id === server.id) {
-                      <fa-icon [icon]="icons.fasCircle" class="{{server.available ? 'text-primary' : 'text-danger'}}"/>
+                      <fa-icon [icon]="icons.fasCircle" class="{{ serverStatusClass(server) }}"/>
                   } @else {
-                      <fa-icon [icon]="icons.farCircle" class="{{server.available ? 'text-primary' : 'text-danger'}}"/>
+                      <fa-icon [icon]="icons.farCircle" class="{{ serverStatusClass(server) }}"/>
                   }
                 <span class="text-truncate ms-1 me-auto">{{ server.name }}</span>
                 <div class="ms-auto">

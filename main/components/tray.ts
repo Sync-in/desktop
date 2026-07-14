@@ -15,6 +15,7 @@ const inSyncTrayIcon = nativeImage.createFromPath(path.join(__dirname, './assets
 
 const enabledServerIcon = nativeImage.createFromPath(path.join(__dirname, './assets/tray/states/ok.png')).resize({ width: 14 })
 const failedServerIcon = nativeImage.createFromPath(path.join(__dirname, './assets/tray/states/failed.png')).resize({ width: 14 })
+const warningServerIcon = nativeImage.createFromPath(path.join(__dirname, './assets/tray/states/warning.png')).resize({ width: 14 })
 
 const enabledDockIcon = IS_MACOS ? nativeImage.createFromPath(path.join(__dirname, './assets/tray/dock/enabled.png')) : null
 const disabledDockIcon = IS_MACOS ? nativeImage.createFromPath(path.join(__dirname, './assets/tray/dock/disabled.png')) : null
@@ -37,11 +38,7 @@ export class TrayManager {
       this.tray.on('right-click', () => this.tray.popUpContextMenu())
       this.tray.on('click', () => appEvents.emit(LOCAL_RENDERER.WINDOW.SHOW))
     }
-    coreEvents.on(CORE.SAVE_SETTINGS, (reloadConf?: boolean) => {
-      if (reloadConf) {
-        this.setTrayMenu()
-      }
-    })
+    coreEvents.on(CORE.SAVE_SETTINGS, () => this.setTrayMenu())
     coreEvents.on(CORE.SYNC_STATUS, (params: SyncStatus) => this.onSyncStatus(params))
     appEvents.on(REMOTE_RENDERER.MISC.NETWORK_IS_ONLINE, (state: boolean) => this.networkState(state))
   }
@@ -85,7 +82,7 @@ export class TrayManager {
     for (const server of ServersManager.list) {
       const serverMenu = {
         label: server.name,
-        icon: server.available ? enabledServerIcon : failedServerIcon,
+        icon: this.getServerIcon(server),
         submenu: [
           {
             label: `${i18n.tr('Open')}`,
@@ -129,6 +126,16 @@ export class TrayManager {
     }
     serversMenu.push(separatorItem)
     return serversMenu
+  }
+
+  private getServerIcon(server: { available: boolean; authToken?: string; authTokenExpired: boolean }) {
+    if (!server.available) {
+      return failedServerIcon
+    }
+    if (server.authTokenExpired || !server.authToken) {
+      return warningServerIcon
+    }
+    return enabledServerIcon
   }
 
   private buildInfoMenu(): Partial<Electron.MenuItemConstructorOptions>[] {

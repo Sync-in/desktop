@@ -92,6 +92,16 @@ export class TopBarComponent {
     this.appService.updateApp()
   }
 
+  protected serverStatusClass(server: SyncServer & { authToken?: string }) {
+    if (!server.available) {
+      return 'text-danger'
+    }
+    if (server.authTokenExpired || !server.authToken) {
+      return 'text-warning'
+    }
+    return 'text-primary'
+  }
+
   private setActiveServer(server: SyncServer) {
     this.activeServer = server
     this.setServersAppsCounter(this.appService.serversAppsCounter.getValue())

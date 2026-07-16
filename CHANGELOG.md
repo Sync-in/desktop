@@ -1,4 +1,27 @@
 
+## [2.2.0](https://github.com/Sync-in/desktop/compare/v2.1.1...v2.2.0) (2026-07-16)
+
+
+### Features
+
+* **auth:** show server warning status for expired or missing tokens ([1bdba9f](https://github.com/Sync-in/desktop/commit/1bdba9f9671ce5114586500beaec04e28cc43f97))
+* **core:** improve unicode path matching in NormalizedMap ([dc6a162](https://github.com/Sync-in/desktop/commit/dc6a1620f00cd518a820e0fed97f18f920e251ad))
+
+
+### Bug Fixes
+
+* **build:** upgrade electron-builder for ARM64 NSIS installer ([a6599b0](https://github.com/Sync-in/desktop/commit/a6599b04a98b61c99d8bcdaea5d9848ac36d2dfc))
+* **ci:** use current app-builder blockmap API ([9411344](https://github.com/Sync-in/desktop/commit/94113443dbf89e4e98a676551ab0dea1c0509021))
+* **core:** prevent local path traversal from remote file paths ([9c2f6a8](https://github.com/Sync-in/desktop/commit/9c2f6a8a7e5597705e544c049afb5b98f50f0f03))
+* **main:** add preload scripts for wrapper and webview with scoped IPC channels ([7ce2311](https://github.com/Sync-in/desktop/commit/7ce2311064c5e2f86eae76c0a0a285ab45f92f2f))
+* **main:** block renderer-created windows in server view ([d195049](https://github.com/Sync-in/desktop/commit/d195049547f9f2f284c75bbf080084d57285ac47))
+* **main:** move server auth to desktop request manager ([874f141](https://github.com/Sync-in/desktop/commit/874f141efb1751587fcdb4fe8991307130e8c82f))
+* **main:** restrict external URL and file opening ([8d68b15](https://github.com/Sync-in/desktop/commit/8d68b1560d36a1a7616c97ac7c6158152fc71d9c))
+* **main:** scope server navigation by origin and path ([b3893fd](https://github.com/Sync-in/desktop/commit/b3893fd0d0c3e245a4862e04c2135e63007e96da))
+* **renderer:** adjust min-zwidth of top bar ([4dc7eb7](https://github.com/Sync-in/desktop/commit/4dc7eb764fbb95d75747801f74fe1f1941aaf987))
+* **security:** restore TLS validation and add per-server opt-in ([db16d07](https://github.com/Sync-in/desktop/commit/db16d0769b5ceee0501b82581480cff5a2d91a3b))
+* **security:** verify server WebContents on remote IPC ([02e489a](https://github.com/Sync-in/desktop/commit/02e489a38049f28c8188af54e461cae04dd917e2))
+
 ## [2.1.1](https://github.com/Sync-in/desktop/compare/v2.1.0...v2.1.1) (2026-05-22)
 
 

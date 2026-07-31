@@ -13,6 +13,18 @@ const __dirname = dirname(__filename)
 const version = pkg.version
 const isProduction = process.env.NODE_ENV !== 'development'
 
+class WarningsAsErrorsPlugin {
+  apply(compiler) {
+    compiler.hooks.shouldEmit.tap('WarningsAsErrorsPlugin', (compilation) => {
+      const warnings = compilation.getWarnings()
+      if (!warnings.length) return
+      compilation.errors.push(...warnings)
+      compilation.warnings.length = 0
+      return false
+    })
+  }
+}
+
 export default [
   {
     mode: isProduction ? 'production' : 'development',
@@ -71,7 +83,8 @@ export default [
         extensions: ['ts'],
         files: ['main/**', 'core/**'],
         exclude: ['node_modules', path.resolve(__dirname, 'renderer'), path.resolve(__dirname, 'cli')]
-      })
+      }),
+      ...(!isProduction ? [new WarningsAsErrorsPlugin()] : [])
     ],
     resolve: { extensions: ['.ts', '.js'] },
     output: {
@@ -119,13 +132,13 @@ export default [
         extensions: ['ts'],
         exclude: ['node_modules', path.resolve(__dirname, 'renderer'), path.resolve(__dirname, 'main')]
       }),
-      new ShebangPlugin()
+      new ShebangPlugin(),
+      ...(!isProduction ? [new WarningsAsErrorsPlugin()] : [])
     ],
     resolve: { extensions: ['.ts', '.js'] },
     output: {
       path: path.resolve(__dirname, 'releases', 'sync-in-cli'),
       filename: `sync-in-cli-${version}.js`
-    },
-    ignoreWarnings: [{ module: /yargs/ }]
+    }
   }
 ]

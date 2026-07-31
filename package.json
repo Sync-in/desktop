@@ -63,7 +63,7 @@
     "electron:dist": "electron-builder -m -l -w",
     "app": "electron . --trace-warnings",
     "app:dist": "rm -Rf ./releases; npm run angular:prod && npm run webpack:all:prod && npm run electron:dist && node build/manifest.mjs",
-    "webpack:all:prod": "webpack --config-node-env production --config webpack.config.mjs --progress",
+    "webpack:all:prod": "webpack --config-node-env production --config webpack.config.mjs --progress --fail-on-warnings",
     "webpack:all:dev": "webpack --config-node-env development --config webpack.config.mjs --progress --watch",
     "webpack:cli:dev": "webpack --config-node-env development --config webpack.config.mjs --config-name cli --progress --watch",
     "webpack:app:dev": "webpack --config-node-env development --config webpack.config.mjs --config-name app --progress --watch",

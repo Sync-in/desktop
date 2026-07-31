@@ -8,6 +8,6 @@
     "email": "johan.legrand@sync-in.com"
   },
   "dependencies": {
-    "yargs": "^18.0.0"
+    "yargs": "^17.7.3"
   }
 }

@@ -1,4 +1,12 @@
 
+## [2.2.1](https://github.com/Sync-in/desktop/compare/v2.2.0...v2.2.1) (2026-07-31)
+
+
+### Bug Fixes
+
+* **build:** treat webpack warnings as errors ([82ee23f](https://github.com/Sync-in/desktop/commit/82ee23f4ee62802948c83f5c9ac3a67f6ea62ac2))
+* **cli:** downgrade yargs to fix broken production bundle ([18d9792](https://github.com/Sync-in/desktop/commit/18d9792a3e488bd013ebbcbfbf721baa662123d3))
+
 ## [2.2.0](https://github.com/Sync-in/desktop/compare/v2.1.1...v2.2.0) (2026-07-16)
 
 

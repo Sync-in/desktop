@@ -24,8 +24,7 @@ Keep files synchronized across workstations, servers, and automated environments
 Sync-in Desktop is designed for daily workstation use, while the CLI fits automation, scripts, scheduled tasks, CI/CD pipelines, and headless deployments.
 
 <picture>
-  <source srcset="https://raw.githubusercontent.com/Sync-in/assets/main/desktop-dark.png" media="(prefers-color-scheme: dark)" />
-  <img src="https://raw.githubusercontent.com/Sync-in/assets/main/desktop.png" alt="Sync-in Desktop" width="600"/>
+  <img src="https://raw.githubusercontent.com/Sync-in/assets/main/desktop-dark.png" alt="Sync-in Desktop" width="600"/>
 </picture>
 
 ## Features
@@ -48,8 +47,6 @@ Sync-in Desktop is designed for daily workstation use, while the CLI fits automa
 ---
 
 ## Sponsors
-
-Sync-in receives support from organizations that provide infrastructure, distribution, and security services to open source projects.
 
 <table>
   <tr>
@@ -79,7 +76,7 @@ You can help by:
 ## Community Guidelines
 
 - Use [GitHub Issues](https://github.com/Sync-in/desktop/issues) for bug reports and feature requests.
-- Use [GitHub Discussions](https://github.com/Sync-in/desktop/discussions), [Discord](https://discord.gg/qhJyzwaymT), or [Reddit](https://www.reddit.com/r/SyncInPlatform/) for questions and community support.
+- Use [GitHub Discussions](https://github.com/Sync-in/desktop/discussions) or [Discord](https://discord.gg/qhJyzwaymT) for questions and community support.
 - Report security vulnerabilities privately through GitHub Security Advisories.
 - Please read the [Code of Conduct](CODE_OF_CONDUCT.md) and [Contributing Guide](CONTRIBUTING.md) before contributing.
 

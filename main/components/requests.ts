@@ -1,6 +1,7 @@
 import { session } from 'electron'
 import { API, CLIENT_MISSING_ERROR, CSRF_COOKIE_NAME } from '../../core/components/constants/requests'
 import { CLIENT_TOKEN_EXPIRED_ERROR } from '../../core/components/constants/auth'
+import { RATE_LIMIT_ERROR } from '../../core/components/constants/errors'
 import { CORE, coreEvents } from '../../core/components/handlers/events'
 import { getLogger } from '../../core/components/handlers/loggers'
 import type { SyncClientAuthCookie, SyncClientAuthRegistration } from '../../core/components/interfaces/sync-client-auth.interface'
@@ -110,7 +111,7 @@ export class MainRequestsManager {
     if (!response.ok) {
       this.debug(`server responded with ${response.status}`)
       const message = Array.isArray(data?.message) ? data.message.join(', ') : data?.message || data?.error || response.statusText
-      const error = new Error(message || `HTTP ${response.status}`)
+      const error = new Error(response.status === 429 ? RATE_LIMIT_ERROR : message || `HTTP ${response.status}`)
       Object.assign(error, { status: response.status, data })
       throw error
     }

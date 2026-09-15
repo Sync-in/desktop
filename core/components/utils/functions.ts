@@ -1,7 +1,7 @@
 import os from 'node:os'
 import path from 'node:path'
 import fs from 'node:fs/promises'
-import { createReadStream, createWriteStream, existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { constants, createReadStream, createWriteStream, existsSync, readFileSync, writeFileSync } from 'node:fs'
 import mime from 'mime-types'
 import { ENVIRONMENT, HAS_TTY, IS_WINDOWS } from '../../constants'
 import { DEFAULT_HIGH_WATER_MARK, INCOMPLETE_PREFIX, SYNC_CHECKSUM_ALG } from '../constants/handlers'
@@ -188,6 +188,10 @@ export async function checkParentDir(realPath: string) {
   } else {
     await fs.mkdir(parentDir, { recursive: true })
   }
+}
+
+export async function copyFile(src: string, dst: string): Promise<void> {
+  await fs.copyFile(src, dst, constants.COPYFILE_FICLONE)
 }
 
 export function getTmpPath(aPath: string) {

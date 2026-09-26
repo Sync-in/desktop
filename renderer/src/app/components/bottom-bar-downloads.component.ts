@@ -4,29 +4,38 @@ import { AppService } from '../app.service'
 import { LOCAL_RENDERER } from '../../../../main/constants/events'
 import { ProgressbarComponent } from 'ngx-bootstrap/progressbar'
 import { BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective } from 'ngx-bootstrap/dropdown'
+import { L10nTranslateDirective } from 'angular-l10n'
 import { TimeDurationPipe } from '../common/pipes/time-duration.pipe'
-import { LucideDownload, LucideDynamicIcon, LucideFolderOpen, LucidePause, LucidePlay, LucideSquare, LucideTrash } from '@lucide/angular'
+import { LucideDownload, LucideDynamicIcon, LucideFolderOpen, LucidePause, LucidePlay, LucideSquare, LucideX } from '@lucide/angular'
 import { IDownload } from '../../../../main/interfaces/download.interface'
 import { DOWNLOAD_ACTION, DOWNLOAD_STATE } from '../../../../main/constants/downloads'
 
 @Component({
   selector: 'app-bottom-bar-downloads',
   templateUrl: 'bottom-bar-downloads.component.html',
-  imports: [ProgressbarComponent, BsDropdownDirective, BsDropdownToggleDirective, TimeDurationPipe, BsDropdownMenuDirective, LucideDynamicIcon],
+  imports: [
+    ProgressbarComponent,
+    BsDropdownDirective,
+    BsDropdownToggleDirective,
+    TimeDurationPipe,
+    BsDropdownMenuDirective,
+    LucideDynamicIcon,
+    L10nTranslateDirective
+  ],
   standalone: true
 })
 export class BottomBarDownloadsComponent {
   protected readonly appService = inject(AppService)
   protected readonly DOWNLOAD_STATE = DOWNLOAD_STATE
-  protected readonly icons = { LucideDownload, LucideFolderOpen, LucidePause, LucidePlay, LucideSquare, LucideTrash }
+  protected readonly icons = { LucideDownload, LucideFolderOpen, LucidePause, LucidePlay, LucideSquare, LucideX }
   protected downloads: IDownload[] = []
-  protected dropdownView: any = {}
+  protected dropdownView: Partial<IDownload> = {}
   protected activeDownloads: IDownload[] = []
   private readonly topViewFocusSource = Symbol('downloads-dropdown')
-  private globalProgress: IDownload
+  private globalProgress: Partial<IDownload> = {}
 
   constructor() {
-    this.appService.ipcRenderer.invoke(LOCAL_RENDERER.DOWNLOAD.LIST).then((items: any[]) => this.setDownloads(items))
+    this.appService.ipcRenderer.invoke(LOCAL_RENDERER.DOWNLOAD.LIST).then((items: IDownload[]) => this.setDownloads(items))
     this.appService.downloadGlobalProgress.subscribe((item: IDownload) => (this.globalProgress = item))
     this.appService.downloadProgress.subscribe((item: IDownload) => this.setDownloadProgress(item))
   }
@@ -78,6 +87,10 @@ export class BottomBarDownloadsComponent {
   }
 
   private setDownloadProgress(item: IDownload) {
+    if (item?.id === undefined) {
+      return
+    }
+
     // manage update
     let dl = this.downloads.find((dl) => dl.id === item.id)
     if (dl) {

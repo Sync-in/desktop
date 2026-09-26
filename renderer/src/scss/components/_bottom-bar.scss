@@ -5,14 +5,18 @@
   bottom: 0;
   width: 100%;
 
-  .bottomBar-syncs {
-    display: flex;
-
-  }
-
   .bottomBar-content {
+    --downloads-width: min(22rem, calc(50vw - 9rem));
+
+    position: relative;
     display: flex;
     padding-left: 0;
+
+    &:has(.btn-group.has-active-download) {
+      .bottomBar-syncs {
+        padding-inline: var(--downloads-width);
+      }
+    }
 
     .bottomBar-syncs {
       @extend .truncate;
@@ -22,7 +26,7 @@
       flex-wrap: nowrap;
       font-size: $font-size-base;
       width: 100%;
-      padding: 0 0 0 10px;
+      padding: 0;
 
       .bottomBar-syncProgress {
         position: relative;
@@ -48,6 +52,10 @@
     }
 
     .bottomBar-downloads {
+      position: absolute;
+      z-index: 1;
+      bottom: 0;
+      left: 0;
       display: flex;
       align-items: center;
       justify-content: flex-start;
@@ -56,50 +64,233 @@
 
       .btn-group {
         height: 100%;
+        max-width: var(--downloads-width);
 
-        .dropdown-menu {
-          // dropup fix
-          transform: translateY(-100%) !important;
+        &.has-active-download {
+          width: var(--downloads-width);
 
-          .dropdown-item {
-            max-width: 400px
+          .download-toggle {
+            width: 100%;
           }
         }
 
-        .progress {
-          position: absolute;
-          background-color: transparent;
-          border-radius: 0;
-          height: $bottom-bar-height;
+        .downloads-menu {
+          // dropup fix
+          transform: translate(0.5rem, calc(-100% - 0.5rem)) !important;
+          width: var(--downloads-width);
+          min-width: var(--downloads-width) !important;
+          max-height: 24rem;
+          max-width: var(--downloads-width);
+          padding: 0.375rem;
+          border-radius: 0.5rem;
+          box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.28);
+          overflow-y: auto;
+
+          .download-item {
+            position: relative;
+            max-width: none;
+            border-radius: 0.375rem;
+            overflow: hidden;
+
+            + .download-item {
+              margin-top: 0.25rem;
+            }
+          }
         }
       }
 
-      > div > button {
+      .download-toggle-progress,
+      .download-item-progress {
+        position: absolute;
+        right: 0.5rem;
+        bottom: 0;
+        left: 0.5rem;
+        height: 3px;
+        background-color: transparent;
+        border-radius: 999px;
+        overflow: hidden;
+        pointer-events: none;
+      }
+
+      .download-toggle-progress {
+        z-index: 2;
+      }
+
+      .download-toggle {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        height: 100%;
         cursor: default !important;
         box-shadow: none !important;
         -webkit-app-region: no-drag;
-        border-width: 0 .5px;
+        border-width: 0 0.5px;
         border-style: solid;
-        padding: 0.65rem 0.5rem;
+        padding: 0.125rem 0.5rem;
         border-radius: 0;
-        font-size: $font-size-md;
+        font-size: $font-size-base;
         min-width: 50px;
-        max-width: 400px;
+        max-width: 100%;
         overflow: hidden;
       }
 
-      li {
-        max-width: 400px;
+      .download-toggle-content {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        min-width: 0;
+      }
 
-        a {
-          height: $bottom-bar-height;
-        }
+      .download-count {
+        position: relative;
+        display: flex;
+        margin: 0 auto;
 
-        button {
-          padding: .2rem;
-          border: none;
+        .badge {
+          position: absolute;
+          top: -0.45rem;
+          right: -0.7rem;
         }
       }
+
+      .download-toggle-icon,
+      .download-item-icon {
+        flex: 0 0 auto;
+        object-fit: contain;
+      }
+
+      .download-toggle-details,
+      .download-details {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-width: 0;
+      }
+
+      .download-toggle-details {
+        margin-left: 0.5rem;
+      }
+
+      .download-name {
+        overflow: hidden;
+        font-size: $font-size-base;
+        line-height: 1.2;
+        text-align: left;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .download-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+        min-width: 0;
+        margin-top: 0.2rem;
+        font-size: $font-size-2xs;
+        line-height: 1.2;
+        white-space: nowrap;
+
+        > span:not(:last-child)::after {
+          margin-left: 0.625rem;
+          content: '•';
+          opacity: 0.55;
+        }
+      }
+
+      .download-item-content {
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+        min-width: 0;
+        height: 3rem;
+        padding: 0.5rem 0.625rem;
+        cursor: default;
+      }
+
+      .download-actions {
+        display: flex;
+        flex: 0 0 auto;
+        gap: 0.25rem;
+        margin-left: auto;
+
+        button {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 1.75rem;
+          height: 1.75rem;
+          padding: 0;
+          border: none;
+          border-radius: 0.375rem;
+        }
+      }
+
+      .download-item-progress {
+        z-index: 1;
+      }
     }
+  }
+}
+
+.bottomBar .bottomBar-syncs {
+  .circle-primary-icon,
+  .circle-purple-icon,
+  .circle-gray-icon,
+  .circle-error-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    flex-shrink: 0;
+    width: 26px;
+    min-width: 26px;
+    height: 26px;
+    min-height: 26px;
+    border: 1px solid var(--transfer-icon-border);
+    border-radius: 50%;
+    background: var(--transfer-icon-bg);
+    color: var(--transfer-icon-color);
+    line-height: 1;
+
+    svg {
+      font-size: $font-size-lg;
+    }
+  }
+
+  .circle-gray-icon {
+    --transfer-icon-bg: #33415559;
+    --transfer-icon-border: #94a3b866;
+    --transfer-icon-color: #e2e8f0;
+  }
+
+  .circle-primary-icon {
+    --transfer-icon-bg: #1d4ed833;
+    --transfer-icon-border: #60a5fa66;
+    --transfer-icon-color: #bfdbfe;
+  }
+
+  .circle-purple-icon {
+    --transfer-icon-bg: #7e22ce33;
+    --transfer-icon-border: #c084fc80;
+    --transfer-icon-color: #e9d5ff;
+  }
+
+  .circle-error-icon {
+    --transfer-icon-bg: #dc262633;
+    --transfer-icon-border: #f8717180;
+    --transfer-icon-color: #fecaca;
+  }
+}
+
+@media (max-width: 60rem) {
+  .bottomBar .download-time {
+    display: none;
+  }
+}
+
+@media (max-width: 48rem) {
+  .bottomBar .download-size {
+    display: none;
   }
 }

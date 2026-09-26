@@ -1,54 +1,51 @@
 @if (downloads.length) {
-  <div class="btn-group" dropdown (isOpenChange)="onDropDownState($event)" [dropup]="true">
+  <div class="btn-group" dropdown (isOpenChange)="onDropDownState($event)" [dropup]="true" [class.has-active-download]="dropdownView.id !== '0'">
     @if (dropdownView.state === DOWNLOAD_STATE.PROGRESSING) {
-      <progressbar [value]="dropdownView?.progress" [max]="1"></progressbar>
+      <progressbar class="download-toggle-progress" [value]="dropdownView?.progress" [max]="1"></progressbar>
     }
-    <button id="button-basic" dropdownToggle type="button" class="btn d-flex align-items-center p-1" aria-controls="dropdown-basic">
-      <div class="d-flex align-items-center no-text-select" style="min-width: 2rem">
+    <button id="downloads-toggle" dropdownToggle type="button" class="btn download-toggle" aria-controls="downloads-menu">
+      <div class="download-toggle-content no-text-select">
         @if (dropdownView.id !== '0') {
-          <img class="align-self-center" height="30px" [src]="dropdownView?.icon" alt="" />
+          <img class="download-toggle-icon" width="30" height="30" [src]="dropdownView?.icon" alt="" />
         } @else {
-          <div class="mx-auto">
+          <div class="download-count">
             <svg [lucideIcon]="icons.LucideDownload" class="fs-lg"></svg>
-            <span class="badge rounded-pill bg-info position-absolute" style="top: 3px; left: 25px">{{ dropdownView?.name }}</span>
+            <span class="badge rounded-pill bg-primary">{{ dropdownView?.name }}</span>
           </div>
         }
         @if (dropdownView.id !== '0') {
-          <div class="d-flex flex-column text-truncate">
-            <div class="fs-base text-start text-truncate">{{ dropdownView?.name }}</div>
+          <div class="download-toggle-details">
+            <div class="download-name">{{ dropdownView?.name }}</div>
             @if (dropdownView.state === DOWNLOAD_STATE.PROGRESSING) {
-              <div class="d-flex justify-content-between text-gray fs-sm">
-                <div>{{ dropdownView.humanSize?.done }}/{{ dropdownView.humanSize?.total }}{{ dropdownView.humanSize?.unit }}</div>
-                <div class="text-truncate px-3">{{ dropdownView.timeLeft | amDuration: 's' }}</div>
-                <div>{{ dropdownView.humanSpeed?.value }}&nbsp;{{ dropdownView.humanSpeed?.unit }}</div>
+              <div class="download-meta text-gray">
+                <span class="download-size">{{ dropdownView.humanSize?.done }}/{{ dropdownView.humanSize?.total }}{{ dropdownView.humanSize?.unit }}</span>
+                <span class="download-time text-truncate">{{ dropdownView.timeLeft | amDuration: 's' }}</span>
+                <span class="download-speed">{{ dropdownView.humanSpeed?.value }}&nbsp;{{ dropdownView.humanSpeed?.unit }}</span>
               </div>
             }
           </div>
         }
       </div>
     </button>
-    <ul id="dropdown-basic" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-basic">
-      @for (d of downloads; track d.id; let last = $last) {
-        <li role="menuitem">
-          @if (d.progress !== 1) {
-            <progressbar [value]="d.progress" [max]="1" style="z-index: -1"></progressbar>
-          }
-          <a class="d-flex align-items-center dropdown-item no-text-select">
-            <img class="align-self-center" height="30px" [src]="d.icon" alt="" />
-            <div class="d-flex flex-column text-truncate fs-base me-2 w-100">
-              <div class="text-start text-truncate">{{ d.name }}</div>
+    <ul id="downloads-menu" *dropdownMenu class="dropdown-menu downloads-menu" role="menu" aria-labelledby="downloads-toggle">
+      @for (d of downloads; track d.id) {
+        <li class="download-item" role="menuitem">
+          <div class="dropdown-item download-item-content no-text-select" tabindex="-1">
+            <img class="download-item-icon" width="28" height="28" [src]="d.icon" alt="" />
+            <div class="download-details">
+              <div class="download-name">{{ d.name }}</div>
               @if (d.state === DOWNLOAD_STATE.PROGRESSING) {
-                <div class="d-flex justify-content-between text-gray fs-sm">
-                  <div>{{ d.humanSize.done }}/{{ d.humanSize.total }}{{ d.humanSize.unit }}</div>
-                  <div class="text-truncate px-3">{{ d.timeLeft | amDuration: 's' }}</div>
-                  <div>{{ d.humanSpeed.value }}&nbsp;{{ d.humanSpeed.unit }}</div>
+                <div class="download-meta text-gray">
+                  <span class="download-size">{{ d.humanSize.done }}/{{ d.humanSize.total }}{{ d.humanSize.unit }}</span>
+                  <span class="download-time text-truncate">{{ d.timeLeft | amDuration: 's' }}</span>
+                  <span class="download-speed">{{ d.humanSpeed.value }}&nbsp;{{ d.humanSpeed.unit }}</span>
                 </div>
               }
             </div>
-            <div class="ms-auto">
+            <div class="download-actions">
               @switch (d.state) {
                 @case (DOWNLOAD_STATE.PROGRESSING) {
-                  <button (click)="onPause($event, d.id)" type="button" class="btn btn-outline-secondary me-1">
+                  <button (click)="onPause($event, d.id)" type="button" class="btn btn-outline-secondary">
                     <svg [lucideIcon]="icons.LucidePause"></svg>
                   </button>
                   <button (click)="onCancel($event, d.id)" type="button" class="btn btn-outline-danger">
@@ -56,7 +53,7 @@
                   </button>
                 }
                 @case (DOWNLOAD_STATE.COMPLETED) {
-                  <button (click)="onOpen($event, d.id)" type="button" class="btn btn-outline-secondary me-1">
+                  <button (click)="onOpen($event, d.id)" type="button" class="btn btn-outline-secondary">
                     <svg [lucideIcon]="icons.LucideFolderOpen"></svg>
                   </button>
                 }
@@ -67,16 +64,23 @@
                 }
               }
               @if (d.state !== DOWNLOAD_STATE.PROGRESSING) {
-                <button (click)="onRemove($event, d.id)" type="button" class="btn btn-outline-danger">
-                  <svg [lucideIcon]="icons.LucideTrash"></svg>
+                <button
+                  (click)="onRemove($event, d.id)"
+                  type="button"
+                  class="btn btn-outline-danger"
+                  aria-label="Remove"
+                  l10n-aria-label
+                  l10nTranslate
+                >
+                  <svg [lucideIcon]="icons.LucideX"></svg>
                 </button>
               }
             </div>
-          </a>
+          </div>
+          @if (d.progress !== 1) {
+            <progressbar class="download-item-progress" [value]="d.progress" [max]="1"></progressbar>
+          }
         </li>
-        @if (!last) {
-          <li class="divider dropdown-divider"></li>
-        }
       }
     </ul>
   </div>

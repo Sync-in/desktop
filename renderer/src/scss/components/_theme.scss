@@ -67,12 +67,16 @@
         .btn-group {
           .progress {
             .progress-bar {
-              background-color: #034d78;
+              background-color: $light-blue;
             }
           }
         }
 
-        > div > button {
+        .downloads-menu {
+          border-color: $border-color;
+        }
+
+        .download-toggle {
           color: $font-color;
           border-color: $border-color;
 

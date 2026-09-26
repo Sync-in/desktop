@@ -14,6 +14,13 @@ body {
       @include app-theme($light-theme-bg-color, $light-theme-border-color, $light-theme-font-color, $light-theme-dropdown-bg-color,
               $light-theme-dropdown-item-color);
     }
+
+    &:has(.bottomBar-downloads .btn-group.show) {
+      .topBar,
+      .bottomBar {
+        -webkit-app-region: no-drag;
+      }
+    }
   }
 }
 

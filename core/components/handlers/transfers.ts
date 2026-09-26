@@ -1,16 +1,17 @@
 import { CORE, coreEvents } from './events'
 import { F_ACTION, SIDE, SYMBOLS, TRANSFER_MIN_SIZE } from '../constants/handlers'
 import { currentTimeStamp, fileBaseName, setMimeType, streamStdout, throttleFunc, toHumanSize, toHumanTime } from '../utils/functions'
-import { setTimeout } from 'timers/promises'
+import { setTimeout as wait } from 'timers/promises'
 import { EventEmitter } from 'events'
 import { LOCAL_RENDERER, REMOTE_RENDERER } from '../../../main/constants/events'
 import { Logger } from 'winston'
 import { getLogger, LOG_LEVEL_REPORT, LOG_LEVEL_SYNC, LOG_MODULE_REPORT, LOG_MODULE_SYNC } from './loggers'
 import type { SyncTransfer, SyncTransferContext } from '../interfaces/sync-transfer.interface'
+import type { ThrottledFunction } from '../interfaces/throttled.interface'
 
 export class TransferProgress {
   tasks: { count: number; done: number }
-  appEvent: EventEmitter
+  onProgress: (tr: SyncTransfer) => void
   ok = true
   file: string
   name: string
@@ -38,7 +39,7 @@ export class TransferProgress {
       count: number
       done: number
     },
-    appEvent: EventEmitter = null
+    onProgress: (tr: SyncTransfer) => void = null
   ) {
     this.file = file
     this.name = fileBaseName(file)
@@ -48,7 +49,7 @@ export class TransferProgress {
     this.totalSize = totalSize
     this.humanTotalSize = toHumanSize(totalSize)
     this.tasks = tasks
-    this.appEvent = appEvent
+    this.onProgress = onProgress
   }
 
   updateStatus(): boolean {
@@ -85,8 +86,8 @@ export class TransferProgress {
   }
 
   private show() {
-    if (this.appEvent) {
-      this.appEvent.emit(REMOTE_RENDERER.SYNC.TRANSFER, this.export())
+    if (this.onProgress) {
+      this.onProgress(this.export())
     }
     streamStdout(
       `[${this.tasks.done}/${this.tasks.count}]${SYMBOLS[this.side]} ${this.action} ${this.name} ` +
@@ -96,7 +97,9 @@ export class TransferProgress {
 }
 
 export class TransfersManager {
-  private throttleTimer = 500
+  private readonly progressRefreshTimer = 500
+  private readonly transferThrottleTimer = 500
+  private readonly tasksThrottleTimer = 250
   private readonly logLevel: string
   private readonly reportOnly: boolean
   private readonly appEvents: EventEmitter
@@ -105,8 +108,8 @@ export class TransfersManager {
   public tasks = { count: 0, done: 0 }
   private store: TransferProgress[] = []
   private watching = false
-  private sendSyncEventDone: (...args: any) => void
-  private sendTaskEventDone: () => void
+  private sendSyncEventDone: ThrottledFunction<[SyncTransfer]>
+  private sendTaskEventDone: ThrottledFunction
 
   constructor(sync: SyncTransferContext, appEvents: EventEmitter = null, reportOnly = false) {
     this.sync = sync
@@ -121,7 +124,11 @@ export class TransfersManager {
     this.updateTaskCount = this.updateTaskCount.bind(this)
     coreEvents.on(CORE.TASKS_COUNT, this.updateTaskCount)
     if (this.appEvents) {
-      this.sendSyncEventDone = throttleFunc(this, (tr: SyncTransfer) => this.appEvents.emit(REMOTE_RENDERER.SYNC.TRANSFER, tr), this.throttleTimer)
+      this.sendSyncEventDone = throttleFunc(
+        this,
+        (tr: SyncTransfer) => this.appEvents.emit(REMOTE_RENDERER.SYNC.TRANSFER, tr),
+        this.transferThrottleTimer
+      )
       this.sendTaskEventDone = throttleFunc(
         this,
         () =>
@@ -130,7 +137,7 @@ export class TransfersManager {
             syncPathId: this.sync.path.id,
             nbTasks: this.tasks.count - this.tasks.done
           }),
-        this.throttleTimer
+        this.tasksThrottleTimer
       )
     }
   }
@@ -148,14 +155,25 @@ export class TransfersManager {
           this.store.splice(this.store.indexOf(tp), 1)
         }
       }
-      await setTimeout(this.throttleTimer)
+      await wait(this.progressRefreshTimer)
     }
   }
 
   stop() {
     if (this.appEvents && this.tasks.count) {
-      // send empty transfer to renderer
-      this.sendSyncEventDone(null)
+      if (this.tasks.count !== this.tasks.done) {
+        this.logger.warn(`tasks count mismatch on stop: ${this.tasks.done}/${this.tasks.count}`)
+      }
+      this.sendTaskEventDone.cancel()
+      this.appEvents.emit(REMOTE_RENDERER.SYNC.TASKS_COUNT, {
+        serverId: this.sync.server.id,
+        syncPathId: this.sync.path.id,
+        nbTasks: 0
+      })
+      if (!this.reportOnly) {
+        this.sendSyncEventDone.flush()
+        this.appEvents.emit(REMOTE_RENDERER.SYNC.TRANSFER, null)
+      }
     }
     this.watching = false
     this.removeListeners()
@@ -174,12 +192,19 @@ export class TransfersManager {
   }
 
   add(filePath: string, side: SIDE.LOCAL | SIDE.REMOTE, action: F_ACTION, totalSize: number): TransferProgress {
-    if (!this.watching) {
-      this.watching = true
-      this.start().then()
-    }
     if (totalSize >= TRANSFER_MIN_SIZE) {
-      const tp = new TransferProgress(filePath, side, action, totalSize, this.tasks, this.appEvents)
+      if (!this.watching) {
+        this.watching = true
+        this.start().then()
+      }
+      const tp = new TransferProgress(
+        filePath,
+        side,
+        action,
+        totalSize,
+        this.tasks,
+        this.appEvents ? (tr: SyncTransfer) => this.sendSyncEventDone(tr) : null
+      )
       this.store.push(tp)
       return tp
     }
@@ -198,7 +223,7 @@ export class TransfersManager {
             nbTasks: this.tasks.done,
             ...setMimeType(tr)
           })
-        } else if (!this.store.length) {
+        } else {
           this.sendSyncEventDone(tr)
         }
       } else if (type === 'notification' && !this.reportOnly) {

@@ -68,7 +68,9 @@ export class EventsManager {
       this.viewsManager.sendToWebRenderer(params.serverId, REMOTE_RENDERER.SYNC.TASKS_COUNT, params)
     )
     appEvents.on(LOCAL_RENDERER.SERVER.SET_ACTIVE, (id: number) => this.serverOnActiveView(id, true))
-    appEvents.on(REMOTE_RENDERER.SYNC.TRANSFER, (tr: SyncTransfer) => this.viewsManager.sendToWrapperRenderer(REMOTE_RENDERER.SYNC.TRANSFER, tr))
+    appEvents.on(REMOTE_RENDERER.SYNC.TRANSFER, (tr: SyncTransfer | null) =>
+      this.viewsManager.sendToWrapperRenderer(REMOTE_RENDERER.SYNC.TRANSFER, tr)
+    )
     appEvents.on(LOCAL_RENDERER.WINDOW.ZOOM.IN, () => this.windowZoomIn())
     appEvents.on(LOCAL_RENDERER.WINDOW.ZOOM.OUT, () => this.windowZoomOut())
     appEvents.on(LOCAL_RENDERER.WINDOW.ZOOM.RESET, () => this.windowZoomReset())

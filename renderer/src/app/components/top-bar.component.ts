@@ -1,4 +1,4 @@
-import { Component, inject, ViewChild } from '@angular/core'
+import { Component, inject, type OnDestroy, ViewChild } from '@angular/core'
 import { AppService } from '../app.service'
 import { BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective } from 'ngx-bootstrap/dropdown'
 import { LOCAL_RENDERER } from '../../../../main/constants/events'
@@ -25,6 +25,7 @@ import { SyncServer } from '../../../../core/components/interfaces/server.interf
 import { ServerAppCounter } from '@sync-in-desktop/main/interfaces/counter.interface'
 import { SERVER_ACTION } from '../../../../core/components/constants/server'
 import { ModalServerComponent } from './modal-server.component'
+import type { Subscription } from 'rxjs'
 
 @Component({
   selector: 'app-top-bar-component',
@@ -39,7 +40,7 @@ import { ModalServerComponent } from './modal-server.component'
   ],
   standalone: true
 })
-export class TopBarComponent {
+export class TopBarComponent implements OnDestroy {
   @ViewChild(BsDropdownDirective, { static: true }) dropDownServer: BsDropdownDirective
   protected readonly appService = inject(AppService)
   protected readonly icons = {
@@ -65,12 +66,21 @@ export class TopBarComponent {
   protected updateDownloaded = null
   private readonly appMenuFocusSource = Symbol('app-menu')
   private readonly serverDropdownFocusSource = Symbol('server-dropdown')
+  private readonly subscriptions: Subscription[] = []
 
   constructor() {
-    this.appService.allServers.subscribe((servers: SyncServer[]) => (this.servers = servers))
-    this.appService.activeServer.subscribe((server: SyncServer) => this.setActiveServer(server))
-    this.appService.serversAppsCounter.subscribe((servers: ServerAppCounter[]) => this.setServersAppsCounter(servers))
-    this.appService.updateDownloaded.subscribe((msg: string) => (this.updateDownloaded = msg))
+    this.subscriptions.push(
+      this.appService.allServers.subscribe((servers: SyncServer[]) => (this.servers = servers)),
+      this.appService.activeServer.subscribe((server: SyncServer) => this.setActiveServer(server)),
+      this.appService.serversAppsCounter.subscribe((servers: ServerAppCounter[]) => this.setServersAppsCounter(servers)),
+      this.appService.updateDownloaded.subscribe((msg: string) => (this.updateDownloaded = msg))
+    )
+  }
+
+  ngOnDestroy() {
+    for (const subscription of this.subscriptions) {
+      subscription.unsubscribe()
+    }
   }
 
   onDropDownState(toTopView: boolean) {

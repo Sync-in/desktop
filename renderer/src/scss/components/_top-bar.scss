@@ -16,6 +16,17 @@
       }
     }
 
+    .topBar-content .dropdown-menu {
+      width: 240px;
+    }
+
+    .app-main.theme-dark & {
+      .topBar-content .dropdown-item .btn-outline-secondary:is(:hover, :focus, :active) {
+        color: $white;
+        background-color: $primary;
+      }
+    }
+
     .topBar-content {
       display: flex;
       margin-right: auto;
@@ -63,6 +74,7 @@
         button {
           padding: .2rem;
           border: none;
+          transition: none;
         }
       }
     }

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core'
+import { Component, inject, type OnDestroy } from '@angular/core'
 import { AppService } from '../app.service'
 import { ProgressbarComponent } from 'ngx-bootstrap/progressbar'
 import type { LucideIcon } from '@lucide/angular'
@@ -14,6 +14,7 @@ import {
   LucideX
 } from '@lucide/angular'
 import type { SyncTransfer } from '@sync-in-desktop/core/components/interfaces/sync-transfer.interface'
+import type { Subscription } from 'rxjs'
 
 const sideIcon: Record<string, LucideIcon> = {
   local: LucideArrowDown,
@@ -43,17 +44,25 @@ const iconActions: Record<string, LucideIcon> = {
   imports: [ProgressbarComponent, LucideDynamicIcon],
   standalone: true
 })
-export class BottomBarSyncsComponent {
+export class BottomBarSyncsComponent implements OnDestroy {
   public transfer: { name: string; sideIcon: LucideIcon; sideIconClass: string; actionIcon: LucideIcon; ok: boolean } = null
   public transferProgress: { currentSize: string; totalSize: string; percent: number } = null
   protected readonly appService = inject(AppService)
+  private readonly syncTransferSubscription: Subscription
+  private clearTransferTimer: ReturnType<typeof setTimeout> = null
 
   constructor() {
-    this.appService.syncTransfer.subscribe((transfer: SyncTransfer) => this.setTransfer(transfer))
+    this.syncTransferSubscription = this.appService.syncTransfer.subscribe((transfer: SyncTransfer | null) => this.setTransfer(transfer))
   }
 
-  private setTransfer(tr: SyncTransfer) {
+  ngOnDestroy() {
+    this.syncTransferSubscription.unsubscribe()
+    this.cancelClearTransfer()
+  }
+
+  private setTransfer(tr: SyncTransfer | null) {
     if (tr) {
+      this.cancelClearTransfer()
       this.transfer = {
         ok: tr.ok,
         name: (tr.fileDst ? tr.fileDst : tr.file).split('/').pop(),
@@ -68,9 +77,23 @@ export class BottomBarSyncsComponent {
           return
         }
         this.transferProgress = { currentSize: tr.progress.currentSize, totalSize: tr.progress.totalSize, percent: percent }
+      } else {
+        this.transferProgress = null
       }
     } else {
-      setTimeout(() => (this.transfer = null), 3000)
+      this.cancelClearTransfer()
+      this.clearTransferTimer = setTimeout(() => {
+        this.transfer = null
+        this.transferProgress = null
+        this.clearTransferTimer = null
+      }, 3000)
+    }
+  }
+
+  private cancelClearTransfer() {
+    if (this.clearTransferTimer) {
+      clearTimeout(this.clearTransferTimer)
+      this.clearTransferTimer = null
     }
   }
 }

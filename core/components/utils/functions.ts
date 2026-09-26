@@ -10,6 +10,7 @@ import type { SyncClientInfo } from '../interfaces/sync-client-info.interface'
 import crypto from 'node:crypto'
 import type { SyncFileStats } from '../interfaces/sync-diff.interface'
 import type { SyncTransfer } from '../interfaces/sync-transfer.interface'
+import type { ThrottledFunction } from '../interfaces/throttled.interface'
 import { NormalizedMap } from './normalizedMap'
 import { pipeline } from 'node:stream/promises'
 import { Readable } from 'node:stream'
@@ -35,33 +36,60 @@ export const reservedUrlChars = new Map([
   [' ', '%20']
 ])
 
-export const throttleFunc = (context: any, func: (args?: any) => void, delay: number) => {
+export const throttleFunc = <TArgs extends any[]>(context: any, func: (...args: TArgs) => void, delay: number): ThrottledFunction<TArgs> => {
   let lastFunc: ReturnType<typeof setTimeout> | undefined
   let lastRan = 0
+  let pendingArgs: TArgs | undefined
   const safeDelay = Number.isFinite(delay) && delay > 0 ? Math.trunc(delay) : 0
 
-  return (...args: any) => {
+  const throttled: ThrottledFunction<TArgs> = (...args: TArgs) => {
     const now = Date.now()
     if (!lastRan || now - lastRan >= safeDelay) {
       if (lastFunc) {
         clearTimeout(lastFunc)
         lastFunc = undefined
       }
+      pendingArgs = undefined
       func.apply(context, args)
       lastRan = now
       return
     } else {
       clearTimeout(lastFunc)
+      pendingArgs = args
       const elapsed = Math.max(0, now - lastRan)
       const remaining = Math.max(0, safeDelay - Math.min(elapsed, safeDelay))
       lastFunc = setTimeout(function () {
-        if (Date.now() - lastRan >= safeDelay) {
-          func.apply(context, args)
+        if (pendingArgs && Date.now() - lastRan >= safeDelay) {
+          func.apply(context, pendingArgs)
+          pendingArgs = undefined
           lastRan = Date.now()
         }
+        lastFunc = undefined
       }, remaining)
     }
   }
+
+  throttled.cancel = () => {
+    if (lastFunc) {
+      clearTimeout(lastFunc)
+      lastFunc = undefined
+    }
+    pendingArgs = undefined
+  }
+
+  throttled.flush = () => {
+    if (!pendingArgs) return
+    if (lastFunc) {
+      clearTimeout(lastFunc)
+      lastFunc = undefined
+    }
+    const args = pendingArgs
+    pendingArgs = undefined
+    func.apply(context, args)
+    lastRan = Date.now()
+  }
+
+  return throttled
 }
 
 export function setMimeType(tr: SyncTransfer): SyncTransfer {

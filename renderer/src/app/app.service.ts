@@ -33,7 +33,7 @@ export class AppService {
   public downloadProgress = new BehaviorSubject<any>({})
   public downloadGlobalProgress = new BehaviorSubject<any>({})
   // Observables Syncs
-  public syncTransfer = new Subject<SyncTransfer>()
+  public syncTransfer = new Subject<SyncTransfer | null>()
   // Observables Servers Applications Notifications/Counters
   public serversAppsCounter = new BehaviorSubject<any[]>([])
   // Observable AutoUpdate
@@ -71,7 +71,9 @@ export class AppService {
     this.ipcRenderer.on(LOCAL_RENDERER.DOWNLOAD.PROGRESS, (_e: Event, item: IDownload) => this.ngZone.run(() => this.downloadProgress.next(item)))
     this.ipcRenderer.on(LOCAL_RENDERER.DOWNLOAD.GLOBAL_PROGRESS, (_e: Event, item) => this.ngZone.run(() => this.downloadGlobalProgress.next(item)))
     this.ipcRenderer.on(REMOTE_RENDERER.APPLICATIONS.COUNTER, (_e: Event, counter) => this.ngZone.run(() => this.serversAppsCounter.next(counter)))
-    this.ipcRenderer.on(REMOTE_RENDERER.SYNC.TRANSFER, (_e: Event, transfer: SyncTransfer) => this.ngZone.run(() => this.syncTransfer.next(transfer)))
+    this.ipcRenderer.on(REMOTE_RENDERER.SYNC.TRANSFER, (_e: Event, transfer: SyncTransfer | null) =>
+      this.ngZone.run(() => this.syncTransfer.next(transfer))
+    )
     this.ipcRenderer.on(LOCAL_RENDERER.UPDATE.DOWNLOADED, (_e: Event, msg: string) => this.ngZone.run(() => this.updateDownloaded.next(msg)))
     this.ipcRenderer.on(LOCAL_RENDERER.UI.MODAL_TOGGLE, () => this.ngZone.run(() => this.openDialog()))
     this.bsModal.onHide.subscribe(() => this.onHide())

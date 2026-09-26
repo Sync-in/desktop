@@ -1,0 +1,14 @@
+.icon-spin {
+  animation: icon-spin 1s infinite linear;
+  transform-origin: center;
+}
+
+.icon-fill {
+  fill: currentColor;
+}
+
+@keyframes icon-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

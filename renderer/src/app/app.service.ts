@@ -12,7 +12,6 @@ import { THEME } from '../../../main/constants/themes'
 import { ModalServerComponent } from './components/modal-server.component'
 import { SERVER_ACTION } from '@sync-in-desktop/core/components/constants/server'
 import { setTheme } from 'ngx-bootstrap/utils'
-import { FaConfig } from '@fortawesome/angular-fontawesome'
 
 declare global {
   interface Window {
@@ -50,7 +49,6 @@ export class AppService {
     authTokenExpired: false
   })
   private readonly bsModal = inject(BsModalService)
-  private readonly faConfig = inject(FaConfig)
   private modalRef: BsModalRef = null
   private readonly modalConfig = { animated: true, keyboard: true, backdrop: true, ignoreBackdropClick: true }
   private readonly modalBaseClass = 'modal-md modal-primary modal-dialog-centered'
@@ -62,7 +60,6 @@ export class AppService {
 
   constructor() {
     setTheme('bs5')
-    this.faConfig.fixedWidth = true
     this.networkIsOnline.subscribe((state: boolean) => this.ipcRenderer.send(REMOTE_RENDERER.MISC.NETWORK_IS_ONLINE, state))
     this.ipcRenderer.on(REMOTE_RENDERER.MISC.SWITCH_THEME, (_e: Event, theme: THEME) => this.themeMode.set(theme))
     this.ipcRenderer.on(LOCAL_RENDERER.SERVER.LIST, (_e: Event, servers: SyncServer[]) => this.ngZone.run(() => this.allServers.next(servers)))

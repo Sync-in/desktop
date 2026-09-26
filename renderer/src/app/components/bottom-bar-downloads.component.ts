@@ -5,21 +5,20 @@ import { LOCAL_RENDERER } from '../../../../main/constants/events'
 import { ProgressbarComponent } from 'ngx-bootstrap/progressbar'
 import { BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective } from 'ngx-bootstrap/dropdown'
 import { TimeDurationPipe } from '../common/pipes/time-duration.pipe'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faIcons } from '../common/icons'
+import { LucideDownload, LucideDynamicIcon, LucideFolderOpen, LucidePause, LucidePlay, LucideSquare, LucideTrash } from '@lucide/angular'
 import { IDownload } from '../../../../main/interfaces/download.interface'
 import { DOWNLOAD_ACTION, DOWNLOAD_STATE } from '../../../../main/constants/downloads'
 
 @Component({
   selector: 'app-bottom-bar-downloads',
   templateUrl: 'bottom-bar-downloads.component.html',
-  imports: [ProgressbarComponent, BsDropdownDirective, BsDropdownToggleDirective, TimeDurationPipe, BsDropdownMenuDirective, FaIconComponent],
+  imports: [ProgressbarComponent, BsDropdownDirective, BsDropdownToggleDirective, TimeDurationPipe, BsDropdownMenuDirective, LucideDynamicIcon],
   standalone: true
 })
 export class BottomBarDownloadsComponent {
   protected readonly appService = inject(AppService)
   protected readonly DOWNLOAD_STATE = DOWNLOAD_STATE
-  protected readonly icons = faIcons
+  protected readonly icons = { LucideDownload, LucideFolderOpen, LucidePause, LucidePlay, LucideSquare, LucideTrash }
   protected downloads: IDownload[] = []
   protected dropdownView: any = {}
   protected activeDownloads: IDownload[] = []

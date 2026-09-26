@@ -4,20 +4,29 @@ import { ReactiveFormsModule, UntypedFormBuilder, UntypedFormGroup, Validators }
 import { LOCAL_RENDERER } from '../../../../main/constants/events'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { AutofocusDirective } from '../common/directives/auto-focus.directive'
-import { FaIconComponent, IconDefinition } from '@fortawesome/angular-fontawesome'
-import { faIcons } from '../common/icons'
+import type { LucideIcon } from '@lucide/angular'
+import {
+  LucideChevronDown,
+  LucideDynamicIcon,
+  LucideGlobe,
+  LucidePencil,
+  LucidePlus,
+  LucideRefreshCw,
+  LucideServer,
+  LucideTrash
+} from '@lucide/angular'
 import { SyncServer, SyncServerEvent } from '../../../../core/components/interfaces/server.interface'
 import { SERVER_ACTION } from '../../../../core/components/constants/server'
 
 @Component({
   selector: 'app-modal-server',
   templateUrl: './modal-server.component.html',
-  imports: [L10nTranslatePipe, ReactiveFormsModule, AutofocusDirective, L10nTranslateDirective, FaIconComponent],
+  imports: [L10nTranslatePipe, ReactiveFormsModule, AutofocusDirective, L10nTranslateDirective, LucideDynamicIcon],
   standalone: true
 })
 export class ModalServerComponent implements OnInit {
   public config: { type: SERVER_ACTION; server: SyncServer } = null
-  public titleIcon: IconDefinition = null
+  public titleIcon: LucideIcon = null
   public titleText: string = null
   public activeServer: SyncServer = null
   public loginForm: UntypedFormGroup = null
@@ -25,7 +34,7 @@ export class ModalServerComponent implements OnInit {
   public textError = ''
   public submitted = false
   protected locale = inject<L10nLocale>(L10N_LOCALE)
-  protected icons = faIcons
+  protected readonly icons = { LucideChevronDown, LucideGlobe, LucidePencil, LucidePlus, LucideRefreshCw, LucideServer, LucideTrash }
   protected isAddModal = false
   protected isRemoveModal = false
   protected showAdvancedOptions = false
@@ -40,16 +49,16 @@ export class ModalServerComponent implements OnInit {
     switch (this.config.type) {
       case SERVER_ACTION.ADD:
         this.isAddModal = true
-        this.titleIcon = this.icons.faPlus
+        this.titleIcon = this.icons.LucidePlus
         this.titleText = 'Connect to a server'
         break
       case SERVER_ACTION.REMOVE:
         this.isRemoveModal = true
-        this.titleIcon = this.icons.faTrashAlt
+        this.titleIcon = this.icons.LucideTrash
         this.titleText = 'Delete the server'
         break
       case SERVER_ACTION.EDIT:
-        this.titleIcon = this.icons.faPencil
+        this.titleIcon = this.icons.LucidePencil
         this.titleText = 'Edit the server'
         break
       default:

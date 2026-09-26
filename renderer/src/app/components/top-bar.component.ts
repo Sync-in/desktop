@@ -5,8 +5,22 @@ import { LOCAL_RENDERER } from '../../../../main/constants/events'
 import { stopEventPropagation } from '../common/functions/utils'
 import { TopBarButtonsComponent } from './top-bar-buttons.component'
 import { L10nTranslateDirective } from 'angular-l10n'
-import { faIcons } from '../common/icons'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
+import {
+  LucideBell,
+  LucideChevronDown,
+  LucideCircle,
+  LucideDynamicIcon,
+  LucideEllipsisVertical,
+  LucideFlag,
+  LucidePencil,
+  LucidePlus,
+  LucideRefreshCw,
+  LucideRotateCw,
+  LucideRss,
+  LucideServer,
+  LucideTrash,
+  LucideTriangleAlert
+} from '@lucide/angular'
 import { SyncServer } from '../../../../core/components/interfaces/server.interface'
 import { ServerAppCounter } from '@sync-in-desktop/main/interfaces/counter.interface'
 import { SERVER_ACTION } from '../../../../core/components/constants/server'
@@ -15,13 +29,34 @@ import { ModalServerComponent } from './modal-server.component'
 @Component({
   selector: 'app-top-bar-component',
   templateUrl: './top-bar.component.html',
-  imports: [TopBarButtonsComponent, BsDropdownDirective, BsDropdownToggleDirective, L10nTranslateDirective, BsDropdownMenuDirective, FaIconComponent],
+  imports: [
+    TopBarButtonsComponent,
+    BsDropdownDirective,
+    BsDropdownToggleDirective,
+    L10nTranslateDirective,
+    BsDropdownMenuDirective,
+    LucideDynamicIcon
+  ],
   standalone: true
 })
 export class TopBarComponent {
   @ViewChild(BsDropdownDirective, { static: true }) dropDownServer: BsDropdownDirective
   protected readonly appService = inject(AppService)
-  protected readonly icons = faIcons
+  protected readonly icons = {
+    LucideBell,
+    LucideChevronDown,
+    LucideCircle,
+    LucideEllipsisVertical,
+    LucideFlag,
+    LucidePencil,
+    LucidePlus,
+    LucideRefreshCw,
+    LucideRotateCw,
+    LucideRss,
+    LucideServer,
+    LucideTrash,
+    LucideTriangleAlert
+  }
   protected hoverIndex = null
   protected servers: SyncServer[] = []
   // [{'id': 1, 'name': 'test', 'applications': {'notifications': 2, 'tasks': 4, 'syncs': 1}}, ...]

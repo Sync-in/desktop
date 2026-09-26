@@ -1,7 +1,7 @@
 <div class="modal-header align-items-center">
   <h4 class="modal-title pull-left">
-    <fa-icon [icon]="titleIcon"/>
-    <fa-icon [icon]="icons.faServer"/>
+    <svg [lucideIcon]="titleIcon"></svg>
+    <svg [lucideIcon]="icons.LucideServer"></svg>
     <span class="ms-1">{{ this.loginForm.value.name || this.config?.server?.name }}</span>
   </h4>
   <h4 class="modal-title ms-auto fw-normal">
@@ -21,54 +21,56 @@
       } @else if (submitted) {
         <span class="text-dark">
           <span class="me-1" l10nTranslate>Please wait</span>
-          <fa-icon [icon]="icons.faSyncAlt" animation="spin"/>
+          <svg [lucideIcon]="icons.LucideRefreshCw" class="icon-spin"></svg>
         </span>
       }
     </p>
   </div>
   @if (isRemoveModal) {
-    <div class="mb-1" [innerHTML]="'Remove_Server_Warning' | translate:locale.language:{server: this.loginForm.value.name}"></div>
+    <div class="mb-1" [innerHTML]="'Remove_Server_Warning' | translate: locale.language : { server: this.loginForm.value.name }"></div>
   } @else {
     <form [formGroup]="loginForm">
       <div class="input-group mb-3">
-        <div class="input-group-text"><span><fa-icon [icon]="icons.faServer"/></span></div>
-        <input [placeholder]="'Server display name'|translate:locale.language"
-               formControlName="name"
-               class="form-control"
-               aria-label="server"
-               type="text"
-               appAutofocus/>
+        <div class="input-group-text">
+          <span><svg [lucideIcon]="icons.LucideServer"></svg></span>
+        </div>
+        <input
+          [placeholder]="'Server display name' | translate: locale.language"
+          formControlName="name"
+          class="form-control"
+          aria-label="server"
+          type="text"
+          appAutofocus
+        />
       </div>
       <div>
         <div class="input-group mb-3">
-          <div class="input-group-text"><span><fa-icon [icon]="icons.faGlobe"/></span></div>
-          <input formControlName="url"
-                 class="form-control"
-                 placeholder="https://my.sync-in.com"
-                 aria-label="server"
-                 type="text"/>
+          <div class="input-group-text">
+            <span><svg [lucideIcon]="icons.LucideGlobe"></svg></span>
+          </div>
+          <input formControlName="url" class="form-control" placeholder="https://my.sync-in.com" aria-label="server" type="text" />
         </div>
       </div>
-      <button (click)="toggleAdvancedOptions()"
-              [class.is-open]="showAdvancedOptions"
-              [attr.aria-expanded]="showAdvancedOptions"
-              aria-controls="advancedServerOptions"
-              class="advanced-options-toggle"
-              type="button">
+      <button
+        (click)="toggleAdvancedOptions()"
+        [class.is-open]="showAdvancedOptions"
+        [attr.aria-expanded]="showAdvancedOptions"
+        aria-controls="advancedServerOptions"
+        class="advanced-options-toggle"
+        type="button"
+      >
         <span l10nTranslate>Advanced options</span>
-        <fa-icon [icon]="icons.faChevronDown" class="advanced-options-chevron"/>
+        <svg [lucideIcon]="icons.LucideChevronDown" class="advanced-options-chevron"></svg>
       </button>
       @if (showAdvancedOptions) {
         <div class="advanced-options-panel" id="advancedServerOptions">
           <div class="form-check form-switch advanced-options-control">
-            <input formControlName="allowInvalidCertificate"
-                   class="form-check-input"
-                   id="allowInvalidCertificate"
-                   role="switch"
-                   type="checkbox"/>
+            <input formControlName="allowInvalidCertificate" class="form-check-input" id="allowInvalidCertificate" role="switch" type="checkbox" />
             <label class="form-check-label" for="allowInvalidCertificate" l10nTranslate>Allow unrecognized TLS certificate</label>
           </div>
-          <div class="advanced-options-help" l10nTranslate>Only use this for a local or self-hosted server you control. This disables TLS certificate verification for this server.</div>
+          <div class="advanced-options-help" l10nTranslate>
+            Only use this for a local or self-hosted server you control. This disables TLS certificate verification for this server.
+          </div>
         </div>
       }
     </form>
@@ -76,11 +78,13 @@
 </div>
 <div class="modal-footer">
   <button type="button" class="btn btn-secondary" (click)="closeModal()" l10nTranslate>Cancel</button>
-  <button (click)="onSubmit()"
-          [disabled]="submitted || loginForm.invalid"
-          class="btn {{isRemoveModal ? 'btn-danger' : 'btn-primary'}}"
-          type="submit"
-          role="button">
+  <button
+    (click)="onSubmit()"
+    [disabled]="submitted || loginForm.invalid"
+    class="btn {{ isRemoveModal ? 'btn-danger' : 'btn-primary' }}"
+    type="submit"
+    role="button"
+  >
     <span l10nTranslate>Confirm</span>
   </button>
 </div>

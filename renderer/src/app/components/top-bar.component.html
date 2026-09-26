@@ -4,47 +4,42 @@
       <div class="btn-group" dropdown (isOpenChange)="onDropDownState($event)">
         <!-- App Menu (only for linux & windows -->
         @if (!appService.isMacOS) {
-          <button (click)="onAppMenu()"
-                  (mouseenter)="onDropDownState(true)"
-                  (mouseleave)="onDropDownState(false)"
-                  class="btn app-btn"
-                  type="button">
-            <fa-icon [icon]="icons.faEllipsisVertical"/>
+          <button (click)="onAppMenu()" (mouseenter)="onDropDownState(true)" (mouseleave)="onDropDownState(false)" class="btn app-btn" type="button">
+            <svg [lucideIcon]="icons.LucideEllipsisVertical"></svg>
           </button>
         }
         <!-- Dropdown menu-->
         <button id="button-basic" dropdownToggle type="button" class="btn" aria-controls="dropdown-basic">
           <div class="d-flex align-items-center no-text-select">
-            <fa-icon [icon]="icons.faServer" class="me-1"/>
+            <svg [lucideIcon]="icons.LucideServer" class="me-1"></svg>
             @if (activeServer.id === 0) {
               <div class="me-1 text-truncate" l10nTranslate>{{ activeServer.name }}</div>
             } @else {
               <div class="me-1 text-truncate">{{ activeServer.name }}</div>
             }
-            <fa-icon [icon]="icons.faChevronDown" class="ms-auto"/>
+            <svg [lucideIcon]="icons.LucideChevronDown" class="ms-auto"></svg>
           </div>
         </button>
         <ul id="dropdown-basic" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-basic">
           @for (server of servers; track server.id) {
             <li role="menuitem" (mouseenter)="enterMenuItem(server.id)" (mouseleave)="leaveMenuItem()" (click)="onActiveServer($event, server.id)">
               <a class="d-flex align-items-center dropdown-item no-text-select">
-                  @if (activeServer.id === server.id) {
-                      <fa-icon [icon]="icons.fasCircle" class="{{ serverStatusClass(server) }}"/>
-                  } @else {
-                      <fa-icon [icon]="icons.farCircle" class="{{ serverStatusClass(server) }}"/>
-                  }
+                <svg
+                  [lucideIcon]="icons.LucideCircle"
+                  class="{{ serverStatusClass(server) }} {{ activeServer.id === server.id ? 'icon-fill' : '' }}"
+                ></svg>
                 <span class="text-truncate ms-1 me-auto">{{ server.name }}</span>
                 <div class="ms-auto">
                   @if (hoverIndex === server.id) {
                     <div>
                       <button (click)="onReload($event, server)" type="button" class="btn btn-sm btn-outline-secondary ms-4 me-1">
-                        <fa-icon [icon]="icons.faArrowRotateRight"/>
+                        <svg [lucideIcon]="icons.LucideRotateCw"></svg>
                       </button>
                       <button (click)="openEditServerModal($event, server)" type="button" class="btn btn-sm btn-outline-secondary me-1">
-                        <fa-icon [icon]="icons.faPencil"/>
+                        <svg [lucideIcon]="icons.LucidePencil"></svg>
                       </button>
                       <button (click)="openRemoveServerModal($event, server)" type="button" class="btn btn-sm btn-outline-danger">
-                        <fa-icon [icon]="icons.faTrashAlt"/>
+                        <svg [lucideIcon]="icons.LucideTrash"></svg>
                       </button>
                     </div>
                   } @else {
@@ -61,7 +56,7 @@
           <li class="divider dropdown-divider"></li>
           <li role="menuitem">
             <a class="d-flex align-items-center dropdown-item" href="#" (click)="openAddServerModal($event)">
-              <fa-icon [icon]="icons.faPlus"/>
+              <svg [lucideIcon]="icons.LucidePlus"></svg>
               <span class="ms-1" l10nTranslate>Connect to a server</span>
             </a>
           </li>
@@ -70,27 +65,25 @@
       <!-- Tabs menu-->
       <div class="btn-group">
         @for (server of serversAppsCounter; track server.id) {
-          <button type="button"
-                  class="btn border-start-0"
-                  (click)="onActiveServer(null, server.id)">
+          <button type="button" class="btn border-start-0" (click)="onActiveServer(null, server.id)">
             <div class="d-flex align-items-center no-text-select">
-              <fa-icon [icon]="icons.faRss" class="text-primary me-1"/>
+              <svg [lucideIcon]="icons.LucideRss" class="text-primary me-1"></svg>
               <div class="text-truncate me-3">{{ server.name }}</div>
               @if (server.applications.syncs) {
                 <div>
-                  <fa-icon [icon]="icons.faArrowsRotate" animation="spin"/>
+                  <svg [lucideIcon]="icons.LucideRefreshCw" class="icon-spin"></svg>
                   <span class="translate-middle badge rounded-pill bg-purple fs-xxxs ms-1">{{ server.applications.syncs }}</span>
                 </div>
               }
               @if (server.applications.notifications) {
                 <div>
-                  <fa-icon [icon]="icons.faBell"/>
+                  <svg [lucideIcon]="icons.LucideBell"></svg>
                   <span class="translate-middle badge rounded-pill bg-warning fs-xxxs ms-1">{{ server.applications.notifications }}</span>
                 </div>
               }
               @if (server.applications.tasks) {
                 <div>
-                  <fa-icon [icon]="icons.faFlag"/>
+                  <svg [lucideIcon]="icons.LucideFlag"></svg>
                   <span class="translate-middle badge rounded-pill bg-maroon fs-xxxs ms-1">{{ server.applications.tasks }}</span>
                 </div>
               }
@@ -99,7 +92,7 @@
         }
         @if (updateDownloaded) {
           <button (click)="onUpdate()" class="btn border-start-0" type="button">
-            <fa-icon [icon]="icons.faTriangleExclamation" class="text-warning"/>
+            <svg [lucideIcon]="icons.LucideTriangleAlert" class="text-warning"></svg>
             <span class="ms-1">{{ updateDownloaded }}</span>
           </button>
         }

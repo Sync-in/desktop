@@ -127,6 +127,10 @@ export class ViewsManager {
   }
 
   checkView(server: Server, webView: AppWebContentsView, success = true) {
+    // Loading events can arrive after the server or its view has been removed.
+    if (this.mainWindow.isDestroyed() || webView.webContents.isDestroyed() || !ServersManager.list.includes(server)) {
+      return
+    }
     if (this.isBooting) {
       server.available = success
       this.countViewsOnBoot += 1
@@ -143,6 +147,7 @@ export class ViewsManager {
   }
 
   enableView(server: Server, webView: AppWebContentsView, toTopView = false, show = false) {
+    if (!webView || webView.webContents.isDestroyed() || this.mainWindow.isDestroyed()) return
     this.currentView = webView
     this.currentServer = server
     this.switchViewFocus(toTopView)
@@ -155,18 +160,14 @@ export class ViewsManager {
   }
 
   switchViewFocus(toTopView: boolean) {
-    if (toTopView) {
-      this.mainWindow.contentView.addChildView(this.wrapperView)
-      this.wrapperView.webContents.focus()
-    } else {
-      // Avoid losing focus on TopView if modal is open or the active server has no content
-      if (this.isModalOpen || !this.currentServer.available) {
-        return
-      }
-      this.mainWindow.contentView.addChildView(this.currentView)
-      // this.mainWindow.setContentView(this.activeView)
-      this.currentView.webContents.focus()
-    }
+    if (this.mainWindow.isDestroyed()) return
+    // Keep the wrapper visible while a modal is open or the active server is unavailable.
+    if (!toTopView && (this.isModalOpen || !this.currentServer.available)) return
+
+    const view = toTopView || !this.currentView || this.currentView.webContents.isDestroyed() ? this.wrapperView : this.currentView
+    if (view.webContents.isDestroyed()) return
+    this.mainWindow.contentView.addChildView(view)
+    view.webContents.focus()
   }
 
   reloadView(serverId?: number, clear = false) {
@@ -202,10 +203,18 @@ export class ViewsManager {
   async destroyView(server: Server) {
     const view = this.allViews[server.id]
     if (!view) return
-    this.mainWindow.contentView.removeChildView(view)
-    view.webContents.close()
-    // Force destruction to ensure all connections are closed
-    ;(view.webContents as any).destroy?.()
+    if (this.currentView === view) {
+      this.currentView = this.wrapperView
+      this.switchViewFocus(true)
+    }
+    if (!this.mainWindow.isDestroyed()) {
+      this.mainWindow.contentView.removeChildView(view)
+    }
+    if (!view.webContents.isDestroyed()) {
+      view.webContents.close()
+      // Force destruction to ensure all connections are closed
+      ;(view.webContents as any).destroy?.()
+    }
     delete this.allViews[server.id]
     const s = session.fromPartition(partitionFor(server.id))
     await s.clearStorageData({ storages: ['cookies', 'localstorage', 'cachestorage', 'filesystem'] })

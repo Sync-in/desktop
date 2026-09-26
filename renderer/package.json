@@ -17,13 +17,11 @@
     "lint:fix": "ng lint --fix"
   },
   "dependencies": {
-    "@angular/animations": "^21.2.18",
     "@angular/common": "^21.2.18",
     "@angular/compiler": "^21.2.18",
     "@angular/core": "^21.2.18",
     "@angular/forms": "^21.2.18",
     "@angular/platform-browser": "^21.2.18",
-    "@angular/platform-browser-dynamic": "^21.2.18",
     "@lucide/angular": "^1.48.0",
     "angular-l10n": "^17.0.0",
     "dayjs": "^1.11.13",

@@ -2,6 +2,10 @@
   .topBar {
     background-color: $bg-color;
 
+    .topBar-container {
+      border-bottom: .5px solid $border-color;
+    }
+
     .topBar-content {
       > div > button {
         color: $font-color;

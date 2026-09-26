@@ -75,8 +75,8 @@ $custom-dark-color: #28353b;
 $list-group-color: $custom-color;
 $placeholder-color: $muted;
 // Themed colors
-$dark-theme-bg-color: #222d32;
-$dark-theme-font-color: $gray-light;
+$dark-theme-bg-color: #253136;
+$dark-theme-font-color: $gray-lighter;
 $dark-theme-border-color: #304047;
 $dark-theme-dropdown-bg-color: $dark-theme-border-color;
 $dark-theme-dropdown-item-color: lighten($dark-theme-bg-color, 60%);
@@ -135,5 +135,5 @@ $input-box-shadow: none !important;
 $input-focus-box-shadow: none !important;
 $input-disabled-color: $muted;
 // Custom
-$top-bar-height: 40px;
+$top-bar-height: 39px; // Reserve 1px for the border
 $bottom-bar-height: $top-bar-height;

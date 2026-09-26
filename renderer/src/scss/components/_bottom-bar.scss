@@ -18,7 +18,7 @@
       @extend .truncate;
       display: flex;
       align-items: center;
-      height: $bottom-bar-height - 1px;
+      height: $bottom-bar-height;
       flex-wrap: nowrap;
       font-size: $font-size-base;
       width: 100%;
@@ -52,7 +52,7 @@
       align-items: center;
       justify-content: flex-start;
       flex-wrap: wrap;
-      height: $bottom-bar-height - 1px;
+      height: $bottom-bar-height;
 
       .btn-group {
         height: 100%;
@@ -70,7 +70,7 @@
           position: absolute;
           background-color: transparent;
           border-radius: 0;
-          height: $bottom-bar-height - 1px;
+          height: $bottom-bar-height;
         }
       }
 

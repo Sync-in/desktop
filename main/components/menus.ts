@@ -19,7 +19,7 @@ export function createTemplate() {
     click: () => appEvents.emit(LOCAL_RENDERER.UI.MODAL_TOGGLE)
   })
 
-  platformAppMenu.push({ label: 'Preferences', submenu: preferencesMenu() })
+  platformAppMenu.push({ label: i18n.tr('Preferences'), submenu: preferencesMenu() })
 
   if (IS_MACOS) {
     platformAppMenu = platformAppMenu.concat([

@@ -4,7 +4,7 @@
       <div class="btn-group" dropdown (isOpenChange)="onDropDownState($event)">
         <!-- App Menu (only for linux & windows -->
         @if (!appService.isMacOS) {
-          <button (click)="onAppMenu()" (mouseenter)="onDropDownState(true)" (mouseleave)="onDropDownState(false)" class="btn app-btn" type="button">
+          <button (click)="onAppMenu()" (mouseenter)="onAppMenuFocus(true)" (mouseleave)="onAppMenuFocus(false)" class="btn app-btn" type="button">
             <svg [lucideIcon]="icons.LucideEllipsisVertical"></svg>
           </button>
         }

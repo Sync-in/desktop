@@ -52,6 +52,8 @@ export class AppService {
   private modalRef: BsModalRef = null
   private readonly modalConfig = { animated: true, keyboard: true, backdrop: true, ignoreBackdropClick: true }
   private readonly modalBaseClass = 'modal-md modal-primary modal-dialog-centered'
+  private readonly topViewFocusSources = new Set<symbol>()
+  private topViewFocusUpdateQueued = false
   // Observable Network
   private _networkIsOnline = new BehaviorSubject<boolean>(navigator.onLine)
   public networkIsOnline: Observable<boolean> = this._networkIsOnline
@@ -106,6 +108,24 @@ export class AppService {
 
   setActiveServer(server: SyncServer) {
     this.activeServer.next(server)
+  }
+
+  setTopViewFocus(source: symbol, enabled: boolean) {
+    if (enabled) {
+      this.topViewFocusSources.add(source)
+    } else {
+      this.topViewFocusSources.delete(source)
+    }
+
+    if (this.topViewFocusUpdateQueued) {
+      return
+    }
+
+    this.topViewFocusUpdateQueued = true
+    queueMicrotask(() => {
+      this.topViewFocusUpdateQueued = false
+      this.ipcRenderer.send(LOCAL_RENDERER.UI.TOP_VIEW_FOCUS, this.topViewFocusSources.size > 0)
+    })
   }
 
   updateApp() {

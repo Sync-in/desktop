@@ -63,6 +63,8 @@ export class TopBarComponent {
   protected serversAppsCounter: ServerAppCounter[] = []
   protected activeServer = null
   protected updateDownloaded = null
+  private readonly appMenuFocusSource = Symbol('app-menu')
+  private readonly serverDropdownFocusSource = Symbol('server-dropdown')
 
   constructor() {
     this.appService.allServers.subscribe((servers: SyncServer[]) => (this.servers = servers))
@@ -72,7 +74,11 @@ export class TopBarComponent {
   }
 
   onDropDownState(toTopView: boolean) {
-    this.appService.ipcRenderer.send(LOCAL_RENDERER.UI.TOP_VIEW_FOCUS, toTopView)
+    this.appService.setTopViewFocus(this.serverDropdownFocusSource, toTopView)
+  }
+
+  onAppMenuFocus(toTopView: boolean) {
+    this.appService.setTopViewFocus(this.appMenuFocusSource, toTopView)
   }
 
   onAppMenu() {

@@ -22,6 +22,7 @@ export class BottomBarDownloadsComponent {
   protected downloads: IDownload[] = []
   protected dropdownView: any = {}
   protected activeDownloads: IDownload[] = []
+  private readonly topViewFocusSource = Symbol('downloads-dropdown')
   private globalProgress: IDownload
 
   constructor() {
@@ -31,7 +32,7 @@ export class BottomBarDownloadsComponent {
   }
 
   onDropDownState(toTopView: boolean) {
-    this.appService.ipcRenderer.send(LOCAL_RENDERER.UI.TOP_VIEW_FOCUS, toTopView)
+    this.appService.setTopViewFocus(this.topViewFocusSource, toTopView)
   }
 
   onPause(ev: Event, id: string) {

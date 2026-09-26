@@ -24,6 +24,8 @@
 
   .modal-title {
     @extend .truncate;
+    align-items: center;
+    display: flex;
     font-size: $font-size-md;
     line-height: 1;
 

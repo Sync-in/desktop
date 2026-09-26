@@ -7,13 +7,17 @@
 
   .dropdown-divider {
     margin: 0;
-    border-top-width: .5px;
+    border-top-width: 0.5px;
   }
 
   .dropdown-item {
     padding: 0.5rem;
     cursor: pointer;
     min-width: 200px;
+
+    .lucide {
+      font-size: $font-size-lg;
+    }
 
     .menu-item {
       cursor: pointer;

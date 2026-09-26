@@ -1,4 +1,4 @@
-<div class="app-main {{appService.themeMode()}}">
+<div class="app-main {{ appService.themeMode() }}">
   <app-top-bar-component></app-top-bar-component>
   @if (!activeServer.id || !activeServer.available) {
     <div class="app-content">
@@ -14,7 +14,7 @@
             </div>
             <button (click)="retryLoad()" type="button" class="btn btn-dark ms-auto me-auto">
               <span class="me-1" l10nTranslate>Retry</span>
-              <fa-icon [icon]="icons.faArrowsRotate" [animation]="isRetrying ? 'spin' : null"/>
+              <svg [lucideIcon]="icons.LucideRefreshCw" [class]="isRetrying ? 'icon-spin' : ''"></svg>
             </button>
           </div>
         </div>

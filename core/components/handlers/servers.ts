@@ -6,7 +6,7 @@ import { Server } from '../models/server'
 import { API } from '../constants/requests'
 import { SYNC_SERVER } from '../constants/auth'
 import type { SyncServerEvent } from '../interfaces/server.interface'
-import { NAME_ALREADY_USED, URL_ALREADY_USED } from '../constants/errors'
+import { NAME_ALREADY_USED, RATE_LIMIT_ERROR, URL_ALREADY_USED } from '../constants/errors'
 import type { SyncClientAuthRegistration, SyncClientRegistration } from '../interfaces/sync-client-auth.interface'
 
 export class ServersManager {
@@ -142,6 +142,8 @@ export class ServersManager {
           throw e.response.data?.message || 'Wrong login or password'
         case 403:
           throw e.response.data?.message || 'Account suspended or not authorized'
+        case 429:
+          throw RATE_LIMIT_ERROR
         default:
           throw await RequestsManager.handleHttpError(e, true)
       }

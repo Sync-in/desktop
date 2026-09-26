@@ -7,6 +7,7 @@ import { RequestsManager } from './requests'
 import { DEFAULT_HIGH_WATER_MARK, F_ACTION, F_STAT, SIDE, SYMBOLS } from '../constants/handlers'
 import {
   checkParentDir,
+  copyFile,
   downloadAndChecksum,
   downloadAndSize,
   getTmpPath,
@@ -516,7 +517,7 @@ export class Sync {
           }
           try {
             await checkParentDir(dstRealPath)
-            await fs.copyFile(srcRealPath, dstRealPath)
+            await copyFile(srcRealPath, dstRealPath)
             await fs.utimes(dstRealPath, f.mtime, f.mtime)
             this.diff.fParser.addFile(SIDE.LOCAL, f.dst, await this.diff.fParser.getStats(f.dst, dstRealPath, false))
             this.setTransferState(transfer)

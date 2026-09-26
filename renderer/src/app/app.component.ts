@@ -2,16 +2,15 @@ import { Component, effect, inject, OnInit } from '@angular/core'
 import { AppService } from './app.service'
 import { LOCAL_RENDERER } from '../../../main/constants/events'
 import { L10nTranslateDirective } from 'angular-l10n'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
+import { LucideDynamicIcon, LucideRefreshCw } from '@lucide/angular'
 import { TopBarComponent } from './components/top-bar.component'
 import { BottomBarComponent } from './components/bottom-bar-component'
-import { faIcons } from './common/icons'
 import { THEME } from '../../../main/constants/themes'
 import type { SyncServer } from '@sync-in-desktop/core/components/interfaces/server.interface'
 
 @Component({
   selector: 'app-root',
-  imports: [TopBarComponent, BottomBarComponent, L10nTranslateDirective, FaIconComponent],
+  imports: [TopBarComponent, BottomBarComponent, L10nTranslateDirective, LucideDynamicIcon],
   templateUrl: './app.component.html',
   standalone: true
 })
@@ -19,7 +18,7 @@ export class AppComponent implements OnInit {
   public activeServer = null
   public isRetrying = false
   protected readonly appService = inject(AppService)
-  protected icons = faIcons
+  protected readonly icons = { LucideRefreshCw }
 
   constructor() {
     this.appService.activeServer.subscribe((server: SyncServer) => this.setActiveServer(server))

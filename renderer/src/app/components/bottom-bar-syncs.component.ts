@@ -1,13 +1,23 @@
 import { Component, inject } from '@angular/core'
 import { AppService } from '../app.service'
 import { ProgressbarComponent } from 'ngx-bootstrap/progressbar'
-import { faIcons } from '../common/icons'
-import { FaIconComponent, IconDefinition } from '@fortawesome/angular-fontawesome'
+import type { LucideIcon } from '@lucide/angular'
+import {
+  LucideArrowDown,
+  LucideArrowUp,
+  LucideCircleAlert,
+  LucideCopy,
+  LucideDynamicIcon,
+  LucideMove,
+  LucidePencil,
+  LucidePlus,
+  LucideX
+} from '@lucide/angular'
 import type { SyncTransfer } from '@sync-in-desktop/core/components/interfaces/sync-transfer.interface'
 
-const sideIcon: Record<string, IconDefinition> = {
-  local: faIcons.faArrowDown,
-  remote: faIcons.faArrowUp
+const sideIcon: Record<string, LucideIcon> = {
+  local: LucideArrowDown,
+  remote: LucideArrowUp
 }
 
 const sideIconClass: Record<string, string> = {
@@ -15,26 +25,26 @@ const sideIconClass: Record<string, string> = {
   remote: 'circle-primary-icon'
 }
 
-const iconActions: Record<string, IconDefinition> = {
-  NEW: faIcons.faPlus,
-  MKDIR: faIcons.faPlus,
-  MKFILE: faIcons.faPlus,
-  RM: faIcons.faXmark,
-  RMDIR: faIcons.faXmark,
-  DIFF: faIcons.faPencil,
-  COPY: faIcons.faCopy,
-  MOVE: faIcons.faUpDownLeftRight,
-  ERROR: faIcons.faCircleExclamation
+const iconActions: Record<string, LucideIcon> = {
+  NEW: LucidePlus,
+  MKDIR: LucidePlus,
+  MKFILE: LucidePlus,
+  RM: LucideX,
+  RMDIR: LucideX,
+  DIFF: LucidePencil,
+  COPY: LucideCopy,
+  MOVE: LucideMove,
+  ERROR: LucideCircleAlert
 }
 
 @Component({
   selector: 'app-bottom-bar-syncs',
   templateUrl: 'bottom-bar-syncs-component.html',
-  imports: [ProgressbarComponent, FaIconComponent],
+  imports: [ProgressbarComponent, LucideDynamicIcon],
   standalone: true
 })
 export class BottomBarSyncsComponent {
-  public transfer: { name: string; sideIcon: IconDefinition; sideIconClass: string; actionIcon: IconDefinition; ok: boolean } = null
+  public transfer: { name: string; sideIcon: LucideIcon; sideIconClass: string; actionIcon: LucideIcon; ok: boolean } = null
   public transferProgress: { currentSize: string; totalSize: string; percent: number } = null
   protected readonly appService = inject(AppService)
 

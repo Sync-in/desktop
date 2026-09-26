@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { CLIENT_TOKEN_EXPIRED_ERROR } from '../../core/components/constants/auth'
+import { RATE_LIMIT_ERROR } from '../../core/components/constants/errors'
 import { API, CLIENT_MISSING_ERROR, CSRF_COOKIE_NAME } from '../../core/components/constants/requests'
 import { CORE, coreEvents } from '../../core/components/handlers/events'
 import type { Server } from '../../core/components/models/server'
@@ -102,6 +103,15 @@ describe('MainRequestsManager', () => {
     expect(electronMock.fetch).not.toHaveBeenCalled()
   })
 
+  it('normalizes rate limit errors returned by the server', async () => {
+    electronMock.fetch.mockResolvedValue(jsonResponse({ message: 'ThrottlerException: Too Many Requests' }, 429))
+
+    await expect(new MainRequestsManager(server).authenticateWithCookie()).rejects.toMatchObject({
+      message: RATE_LIMIT_ERROR,
+      status: 429
+    })
+  })
+
   it('registers with the authenticated server session without returning the client token', async () => {
     electronMock.cookiesGet.mockResolvedValue([{ value: encodeURIComponent('signed-csrf-cookie') }])
     electronMock.fetch.mockResolvedValue(
@@ -166,11 +176,11 @@ function serverFixture(): Server {
   } as Server
 }
 
-function jsonResponse(data: unknown): Response {
+function jsonResponse(data: unknown, status = 200): Response {
   return {
-    ok: true,
-    status: 200,
-    statusText: 'OK',
+    ok: status >= 200 && status < 300,
+    status,
+    statusText: status === 200 ? 'OK' : 'Error',
     text: vi.fn().mockResolvedValue(JSON.stringify(data))
   } as unknown as Response
 }

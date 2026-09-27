@@ -473,6 +473,11 @@ export class DiffParser {
       const moves = firstActions[`${side}Move`]
       for (let index = 0; index < moves.length; index++) {
         const file = moves[index]
+        const sourceStats = this.fParser.curSnap[side].get(file.src)
+        if (sourceStats && !sourceStats[F_STAT.IS_DIR]) {
+          // A file cannot contain other paths, so only directory moves need coherence fixes.
+          continue
+        }
         const srcPattern = regExpPathPattern(file.src)
         const dstPattern = regExpPathPattern(file.dst)
         /* fixes this potential conflict for which actions are not correctly ordered
@@ -517,7 +522,7 @@ export class DiffParser {
            remote add/diff file: 'a/kill/me' should be 'b/bill/me'
            remote move/copy file: {src: 'c/kill', dst: 'a/kill/toto'} where dst should be 'b/bill/toto'
         */
-        if (this.isSyncBothMode && this.fParser.curSnap[side].get(file.src)[F_STAT.IS_DIR]) {
+        if (this.isSyncBothMode && sourceStats[F_STAT.IS_DIR]) {
           const matchFile = regExpPathPattern(file.src)
           for (const action of ALL_MODES[INVERSE_SIDE[side]].filter((action: SIDE_STATE) => firstActions[action] && firstActions[action].length)) {
             for (const other of [...firstActions[action]]) {

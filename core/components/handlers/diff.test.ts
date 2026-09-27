@@ -219,6 +219,30 @@ describe('DiffParser moves', () => {
     expect(actions).toEqual({ [SIDE_STATE.REMOTE_MOVE]: [{ src: 'old.txt', dst: 'new.txt' }] })
   })
 
+  it('keeps independent directory moves separate', async () => {
+    const previous: Entries = [
+      ['a', directory(10, 1)],
+      ['c', directory(10, 2)]
+    ]
+    const actions = await diffActions({
+      mode: SYNC_MODE.UPLOAD,
+      local: [
+        ['b', previous[0][1]],
+        ['d', previous[1][1]]
+      ],
+      remote: previous,
+      oldLocal: previous,
+      oldRemote: previous
+    })
+
+    expect(actions).toEqual({
+      [SIDE_STATE.REMOTE_MOVE]: [
+        { src: 'a', dst: 'b' },
+        { src: 'c', dst: 'd' }
+      ]
+    })
+  })
+
   it.each([
     { mode: SYNC_MODE.DOWNLOAD, local: [['old.txt', oldFile]] as Entries, remote: [['new.txt', oldFile]] as Entries, state: SIDE_STATE.LOCAL_MOVE },
     { mode: SYNC_MODE.BOTH, local: [['new.txt', oldFile]] as Entries, remote: [['old.txt', oldFile]] as Entries, state: SIDE_STATE.REMOTE_MOVE },

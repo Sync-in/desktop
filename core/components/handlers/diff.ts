@@ -328,28 +328,31 @@ export class DiffParser {
     const [side, dirsMoved, snap, oldSnap, invSnap, invOldSnap] = settings
     // try to find the matches in the removed items with inodes and checksums
     const matches = []
-    for (const f of [...lastActions[`${side}Remove`], ...ignoreRemoved[side]]) {
-      let curSnap: SyncSnapShot
-      let curOldSnap: SyncSnapShot
-      if (oldSnap.has(f)) {
+    const removed: string[] = lastActions[`${side}Remove`]
+    const ignored = ignoreRemoved[side]
+    const sourceStats = snap.get(filePath)
+    const inverseSourceStats = !this.syncPath.isBothMode ? invOldSnap.get(filePath) : undefined
+    for (let index = 0, count = removed.length + ignored.length; index < count; index++) {
+      const f = index < removed.length ? removed[index] : ignored[index - removed.length]
+      let currentStats: SyncFileStats
+      let previousStats: SyncFileStats
+      const oldStats = oldSnap.get(f)
+      if (oldStats !== undefined) {
         // works in bidirectional mode and partially with unidirectional sync (only for movement actions that follow the direction of synchronization)
         // e.g: we rename/move a remote file for a sync in download mode, this is working
         // e.g: we rename/move a local file for a sync in download mode, in this case we don't found the file in the last snapshot
-        curSnap = snap
-        curOldSnap = oldSnap
-      } else if (!this.syncPath.isBothMode && invOldSnap.has(filePath) && invSnap.has(f)) {
+        currentStats = sourceStats
+        previousStats = oldStats
+      } else if (inverseSourceStats !== undefined && invSnap.has(f)) {
         // fix the unidirectional behaviour described above
-        curSnap = invOldSnap
-        curOldSnap = invSnap
+        currentStats = inverseSourceStats
+        previousStats = invSnap.get(f)
       } else {
         continue
       }
       if (
-        (curSnap.get(filePath)[F_STAT.INO] === curOldSnap.get(f)[F_STAT.INO] &&
-          curSnap.get(filePath)[F_STAT.SIZE] === curOldSnap.get(f)[F_STAT.SIZE]) ||
-        (this.syncPath.secureDiff &&
-          !curSnap.get(filePath)[F_STAT.IS_DIR] &&
-          curSnap.get(filePath)[F_STAT.CHECKSUM] === curOldSnap.get(f)[F_STAT.CHECKSUM])
+        (currentStats[F_STAT.INO] === previousStats[F_STAT.INO] && currentStats[F_STAT.SIZE] === previousStats[F_STAT.SIZE]) ||
+        (this.syncPath.secureDiff && !currentStats[F_STAT.IS_DIR] && currentStats[F_STAT.CHECKSUM] === previousStats[F_STAT.CHECKSUM])
       ) {
         matches.push(f)
       }
@@ -370,9 +373,15 @@ export class DiffParser {
         srcPath = matches[0]
       }
       // delete remove action, replace it with a move
-      lastActions[`${side}Remove`] = lastActions[`${side}Remove`].filter((f) => f != srcPath)
+      const removedIndex = removed.indexOf(srcPath)
+      if (removedIndex !== -1) {
+        removed.splice(removedIndex, 1)
+      }
       // avoid reusing file in another move
-      ignoreRemoved[side] = ignoreRemoved[side].filter((f) => f != srcPath)
+      const ignoredIndex = ignored.indexOf(srcPath)
+      if (ignoredIndex !== -1) {
+        ignored.splice(ignoredIndex, 1)
+      }
       if (
         alreadyMatched ||
         (!alreadyChecked &&
@@ -430,7 +439,7 @@ export class DiffParser {
     // if its directory was moved, we have to restore the action
     for (const side of [SIDE.LOCAL, SIDE.REMOTE]) {
       for (const srcPath of ignoreRemoved[side]) {
-        for (const [src, dst] of firstActions[`${side}Move`].map((m) => [m.src, m.dst])) {
+        for (const { src, dst } of firstActions[`${side}Move`]) {
           if (path.dirname(srcPath) === src) {
             const dstPath = srcPath.replace(regExpPathPattern(src), `${dst}/`)
             if (this.fParser.curSnap[INVERSE_SIDE[side]].has(dstPath)) {
@@ -461,7 +470,11 @@ export class DiffParser {
 
   private fixMoveCoherence(firstActions: any) {
     for (const side of [SIDE.LOCAL, SIDE.REMOTE]) {
-      for (const file of [...firstActions[`${side}Move`]]) {
+      const moves = firstActions[`${side}Move`]
+      for (let index = 0; index < moves.length; index++) {
+        const file = moves[index]
+        const srcPattern = regExpPathPattern(file.src)
+        const dstPattern = regExpPathPattern(file.dst)
         /* fixes this potential conflict for which actions are not correctly ordered
            == example 1 ==
            ** file **
@@ -475,13 +488,14 @@ export class DiffParser {
            ** others **
            other moved file: { src: 'a/kill/pid/1', dst: 'b/1' } ==> 'a/kill/pid/1' should be 'b/kill/pid/1'
         */
-        for (const other of [...firstActions[`${side}Move`]]) {
+        for (let otherIndex = 0; otherIndex < moves.length; otherIndex++) {
+          const other = moves[otherIndex]
           if (file.src === other.src && file.dst === other.dst) {
             // skip if it's the same file
             continue
           }
-          if (regExpPathPattern(file.src).test(other.src) && regExpPathPattern(file.dst).test(other.dst)) {
-            if (firstActions[`${side}Move`].indexOf(file) > firstActions[`${side}Move`].indexOf(other)) {
+          if (srcPattern.test(other.src) && dstPattern.test(other.dst)) {
+            if (index > otherIndex) {
               // if the parent will be moved after the child (example 1)
               const dst = other.dst.replace(file.dst, file.src)
               this.logger.debug(`fixMoveCoherence (1) - ${side}Move destination: ${other.dst} -> ${dst}`)

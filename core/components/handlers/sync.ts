@@ -59,7 +59,18 @@ export class Sync {
   }
 
   async run() {
-    await Promise.all([this.getTasks(), this.tasksManager.run()])
+    const taskGeneration = this.getTasks()
+    const taskExecution = this.tasksManager.run()
+    try {
+      await Promise.all([taskGeneration, taskExecution])
+    } catch (e) {
+      this.wasAborted = true
+      this.tasksManager.stop()
+      // Drain in-flight tasks before the caller closes the request agents.
+      await Promise.allSettled([taskGeneration, taskExecution])
+      this.transfers.stop()
+      throw e
+    }
     this.cleanOnExit()
     streamStdout()
     if (this.wasAborted) {

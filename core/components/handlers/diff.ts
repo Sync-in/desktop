@@ -29,7 +29,8 @@ export class DiffParser {
     try {
       yield* this.sort()
     } catch (e) {
-      this.logger.error(e.stack)
+      this.logger.error(e instanceof Error ? e.stack : String(e))
+      throw e
     }
     this.logger.debug('Parsing diff done')
   }
@@ -107,6 +108,7 @@ export class DiffParser {
 
   private async reduce(firstActions, lastActions): Promise<void> {
     // used to reduce actions
+    const copyIndexes = new Map<SIDE, Map<string, string[]>>()
     const localDirsRemoved: RegExp[] = []
     const remoteDirsRemoved: RegExp[] = []
     const localDirsMoved: [RegExp, RegExp][] = []
@@ -148,7 +150,7 @@ export class DiffParser {
         const [side, snap, refSnap] = state.startsWith(SIDE_STATE.DOWNLOAD)
           ? [SIDE.LOCAL, this.fParser.curSnap.local, this.fParser.curSnap.remote]
           : [SIDE.REMOTE, this.fParser.curSnap.remote, this.fParser.curSnap.local]
-        if (this.syncPath.secureDiff && this.findCopies(filePath, firstActions, [side, snap, refSnap])) {
+        if (this.syncPath.secureDiff && this.findCopies(filePath, firstActions, [side, snap, refSnap], copyIndexes)) {
           continue
         }
         if (this.findMK(filePath, firstActions, [side, refSnap])) {
@@ -207,6 +209,8 @@ export class DiffParser {
     removed: only exists on remote side
     */
     // it is necessary to delay these actions to detect moves (with removed files)
+    // Propagate a deletion only when the missing side held the path previously
+    // and the surviving copy has no detected changes since that snapshot.
     const delayActions = { localAdded: [], remoteAdded: [] }
     for await (const [state, filePath] of this.unidirectional(source, destination)) {
       if (state === 'added') {
@@ -216,11 +220,14 @@ export class DiffParser {
         } else if (this.syncPath.ignoreDelete) {
           // Restore the missing remote copy instead of propagating its deletion.
           delayActions.localAdded.push(filePath)
-        } else if (this.fParser.oldSnap.local.has(filePath)) {
-          // the file was removed from the remote side because found on the last snapshot
+        } else if (
+          this.fParser.oldSnap.remote.has(filePath) &&
+          !this.hasChangedSinceSnapshot(this.fParser.curSnap.local.get(filePath), this.fParser.oldSnap.local.get(filePath))
+        ) {
+          // the remote copy was removed while the local copy stayed unchanged
           yield ['remoteRemoved', filePath]
         } else {
-          // the file doesn't exist on last snapshot, it's a new file
+          // the remote copy is new or the local copy changed since the last snapshot
           delayActions.localAdded.push(filePath)
         }
       } else if (state === 'removed') {
@@ -230,11 +237,14 @@ export class DiffParser {
         } else if (this.syncPath.ignoreDelete) {
           // Restore the missing local copy instead of propagating its deletion.
           delayActions.remoteAdded.push(filePath)
-        } else if (this.fParser.oldSnap.remote.has(filePath)) {
-          // the file was removed from the local side because found on the last snapshot
+        } else if (
+          this.fParser.oldSnap.local.has(filePath) &&
+          !this.hasChangedSinceSnapshot(this.fParser.curSnap.remote.get(filePath), this.fParser.oldSnap.remote.get(filePath))
+        ) {
+          // the local copy was removed while the remote copy stayed unchanged
           yield ['localRemoved', filePath]
         } else {
-          // the file doesn't exist on last snapshot, it's a new file
+          // the local copy is new or the remote copy changed since the last snapshot
           delayActions.remoteAdded.push(filePath)
         }
       } else {
@@ -246,6 +256,16 @@ export class DiffParser {
         yield [state as keyof typeof BOTH_MODE, filePath]
       }
     }
+  }
+
+  private hasChangedSinceSnapshot(current: SyncFileStats, previous?: SyncFileStats): boolean {
+    return (
+      !previous ||
+      current[F_STAT.IS_DIR] !== previous[F_STAT.IS_DIR] ||
+      current[F_STAT.SIZE] !== previous[F_STAT.SIZE] ||
+      current[F_STAT.MTIME] !== previous[F_STAT.MTIME] ||
+      (this.secureDiff && current[F_STAT.CHECKSUM] !== previous[F_STAT.CHECKSUM])
+    )
   }
 
   private *hasChanged(
@@ -350,10 +370,13 @@ export class DiffParser {
       } else {
         continue
       }
-      if (
-        (currentStats[F_STAT.INO] === previousStats[F_STAT.INO] && currentStats[F_STAT.SIZE] === previousStats[F_STAT.SIZE]) ||
-        (this.syncPath.secureDiff && !currentStats[F_STAT.IS_DIR] && currentStats[F_STAT.CHECKSUM] === previousStats[F_STAT.CHECKSUM])
-      ) {
+      const sameType = currentStats[F_STAT.IS_DIR] === previousStats[F_STAT.IS_DIR]
+      const sameInodeAndSize = currentStats[F_STAT.INO] === previousStats[F_STAT.INO] && currentStats[F_STAT.SIZE] === previousStats[F_STAT.SIZE]
+      const sameChecksum = currentStats[F_STAT.CHECKSUM] !== null && currentStats[F_STAT.CHECKSUM] === previousStats[F_STAT.CHECKSUM]
+      // An inode can be reused after deletion; secure mode requires matching content.
+      // Directories have no checksum and retain the inode/size check.
+      const sameContent = this.secureDiff && !currentStats[F_STAT.IS_DIR] ? sameChecksum : sameInodeAndSize
+      if (sameType && sameContent) {
         matches.push(f)
       }
     }
@@ -405,16 +428,45 @@ export class DiffParser {
     return false
   }
 
-  private findCopies(filePath: string, firstActions: any, settings: [SIDE, SyncSnapShot, SyncSnapShot]): boolean {
-    // try to find copies if secureDiff is enabled
+  private findCopies(
+    filePath: string,
+    firstActions: any,
+    settings: [SIDE, SyncSnapShot, SyncSnapShot],
+    copyIndexes: Map<SIDE, Map<string, string[]>>
+  ): boolean {
     const [side, snap, refSnap] = settings
     const fileStats: SyncFileStats = refSnap.get(filePath)
-    if (!fileStats[F_STAT.IS_DIR] && fileStats[F_STAT.SIZE] !== 0) {
-      for (const [fPath, fStats] of snap) {
-        if (fPath != filePath && fStats[F_STAT.CHECKSUM] === fileStats[F_STAT.CHECKSUM]) {
-          firstActions[`${side}Copy`].push({ src: fPath, dst: filePath, mtime: fileStats[F_STAT.MTIME] })
-          return true
+    if (!fileStats[F_STAT.IS_DIR] && fileStats[F_STAT.SIZE] !== 0 && fileStats[F_STAT.CHECKSUM] !== null) {
+      let index = copyIndexes.get(side)
+      if (!index) {
+        // Build once per side and index only sources that will still exist when copies run.
+        index = new Map<string, string[]>()
+        for (const [fPath, fStats] of snap) {
+          if (fStats[F_STAT.IS_DIR] || fStats[F_STAT.SIZE] === 0 || fStats[F_STAT.CHECKSUM] === null) {
+            continue
+          }
+          const sourceStats = refSnap.get(fPath)
+          // Destination-only paths also survive when deletion is disabled.
+          const sourceIsStable = sourceStats
+            ? !sourceStats[F_STAT.IS_DIR] &&
+              sourceStats[F_STAT.SIZE] === fStats[F_STAT.SIZE] &&
+              sourceStats[F_STAT.CHECKSUM] === fStats[F_STAT.CHECKSUM]
+            : this.syncPath.ignoreDelete
+          if (sourceIsStable) {
+            const key = `${fStats[F_STAT.SIZE]}:${fStats[F_STAT.CHECKSUM]}`
+            const paths = index.get(key) || []
+            paths.push(fPath)
+            index.set(key, paths)
+          }
         }
+        copyIndexes.set(side, index)
+      }
+      const key = `${fileStats[F_STAT.SIZE]}:${fileStats[F_STAT.CHECKSUM]}`
+      const currentPath = snap.getResolvedKey(filePath)
+      const sourcePath = index.get(key)?.find((candidate) => candidate !== currentPath)
+      if (sourcePath !== undefined) {
+        firstActions[`${side}Copy`].push({ src: sourcePath, dst: filePath, mtime: fileStats[F_STAT.MTIME] })
+        return true
       }
     }
     return false

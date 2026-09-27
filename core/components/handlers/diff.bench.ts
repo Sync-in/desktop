@@ -37,8 +37,8 @@ const BenchDiffParser = bundledModule.exports.DiffParser as typeof import('./dif
 const BenchSyncPath = bundledModule.exports.SyncPath as typeof import('../models/syncpath').SyncPath
 const BenchNormalizedMap = bundledModule.exports.NormalizedMap as typeof import('../utils/normalizedMap').NormalizedMap
 
-function stats(size: number, ino: number, isDir = false): SyncFileStats {
-  return [isDir, size, 10, ino, null]
+function stats(size: number, ino: number, isDir = false, checksum: string | null = null): SyncFileStats {
+  return [isDir, size, 10, ino, checksum]
 }
 
 function createDiff(
@@ -46,7 +46,8 @@ function createDiff(
   remote: [string, SyncFileStats][],
   oldLocal: [string, SyncFileStats][] = [],
   oldRemote: [string, SyncFileStats][] = [],
-  firstSync = false
+  firstSync = false,
+  diffMode = DIFF_MODE.FAST
 ): DiffParser {
   const syncPath = new BenchSyncPath({
     id: 7,
@@ -55,7 +56,7 @@ function createDiff(
     remotePath: 'PERSONAL/benchmark',
     permissions: 'add:modify:delete',
     mode: SYNC_MODE.UPLOAD,
-    diffMode: DIFF_MODE.FAST,
+    diffMode,
     firstSync,
     filters: []
   })
@@ -102,6 +103,8 @@ const nestedNew: [string, SyncFileStats][] = [
   ['b', nestedOld[0][1]],
   ['b/bar', nestedOld[1][1]]
 ]
+const copySource: [string, SyncFileStats] = ['source.txt', stats(100, 1, false, 'same')]
+const copies = Array.from({ length: 2_000 }, (_, index) => [`copy-${index}.txt`, stats(100, index + 2, false, 'same')] as [string, SyncFileStats])
 
 const cases = [
   {
@@ -139,6 +142,14 @@ const cases = [
         ]
       ]
     ]
+  },
+  {
+    name: '2,000 checksum copies',
+    diff: createDiff([copySource, ...copies], [copySource], [], [], true, DIFF_MODE.SECURE),
+    expectedCount: 2_000,
+    expectedState: SIDE_STATE.REMOTE_COPY,
+    expectedDigest: null,
+    expectedActions: null
   }
 ]
 
@@ -151,6 +162,9 @@ describe('DiffParser', () => {
         const count = actions.reduce((total, [, values]) => total + values.length, 0)
         if (count !== fixture.expectedCount) {
           throw new Error(`${fixture.name}: ${count} actions instead of ${fixture.expectedCount}`)
+        }
+        if ('expectedState' in fixture && (actions.length !== 1 || actions[0][0] !== fixture.expectedState)) {
+          throw new Error(`${fixture.name}: expected only ${fixture.expectedState} actions`)
         }
         if (!reported) {
           if (fixture.expectedActions && JSON.stringify(actions) !== JSON.stringify(fixture.expectedActions)) {

@@ -12,8 +12,9 @@ This document describes how the `core` engine works, its decision rules, and the
 4. `Sync` executes these actions. In report mode, `Report` exposes them without modifying any files.
 5. After a successful run, the new local, remote, and incomplete-transfer snapshots are saved.
 
-Moves are executed first. Creations, transfers, copies, and property updates follow. Deletions are delayed until the end. Children of a deleted or
-moved directory are reduced to avoid redundant operations.
+Move tasks complete before other actions are scheduled. Creations and transfers use worker queues; copies and deletions enter an end queue, while
+property updates use a separate queue. These queues can overlap, so this is a scheduling priority rather than a strict global execution order.
+Children of a deleted or moved directory are reduced to avoid redundant operations.
 
 ## File inventories and snapshots
 
@@ -39,21 +40,25 @@ Temporary `.sync-in.*` files are tracked separately and cleaned up after their r
 
 ## Comparison modes
 
-The `fast` mode compares type, size, and modification time. The `secure` mode adds a checksum and can reuse a file with identical content already
-present on the destination by copying it.
+The `fast` mode compares type, size, and modification time. The `secure` mode adds a checksum and can reuse a nonempty file with identical content
+already present on the destination by copying it. A copy source must remain available after earlier moves, updates, and deletions; otherwise the
+file is transferred.
 
-A file↔directory type difference is always treated as a content difference, including between a directory and an empty file, which both have a size of
+A file ↔ directory type difference is always treated as a content difference, including between a directory and an empty file, which both have a size of
 zero.
 
 ## Directions
 
-Without `ignoreDelete`, the existing rules remain unchanged:
+With `ignoreDelete` set to `false`:
 
-| Situation                          | `upload`                | `download`       | `both`                                                                  |
-|------------------------------------|-------------------------|------------------|-------------------------------------------------------------------------|
-| Present only locally               | Copy to the remote side | Delete locally   | Copy to the remote side if new; otherwise propagate the remote deletion |
-| Present only remotely              | Delete remotely         | Copy locally     | Copy locally if new; otherwise propagate the local deletion             |
-| Different content at the same path | Local side wins         | Remote side wins | `conflictMode` decides                                                  |
+| Situation                          | `upload`                | `download`       | `both`                                         |
+|------------------------------------|-------------------------|------------------|------------------------------------------------|
+| Present only locally               | Copy to the remote side | Delete locally   | Copy remotely unless remote deletion confirmed |
+| Present only remotely              | Delete remotely         | Copy locally     | Copy locally unless local deletion confirmed   |
+| Different content at the same path | Local side wins         | Remote side wins | `conflictMode` decides                         |
+
+In `both` mode, a deletion is confirmed only if the path existed in the previous snapshot of the missing side and the surviving copy has no
+detected changes since its own previous snapshot. If the surviving copy changed, it is restored to the missing side instead.
 
 During the first synchronization, `both` mode does not propagate deletions because no previous snapshot exists to distinguish an addition from a
 deletion.
@@ -80,7 +85,8 @@ This behavior supports the following use cases:
 
 ### Moves
 
-A move is normally detected as a deletion followed by an addition with the same inode or, in `secure` mode, the same checksum.
+A move is detected from a deletion and an addition of the same type. In `fast` mode, their inode and size must match. In `secure` mode, files require
+matching non-null checksums; directories still use inode and size because they have no checksum.
 
 With `ignoreDelete`, the deletion part is not propagated:
 
@@ -119,6 +125,9 @@ With `ignoreDelete`, this guard is unnecessary: destination-only content is pres
 
 `ignoreDelete` does not change any of these rules.
 
+In `both` mode, when a path is deleted on one side but modified on the other, the modified copy is restored to the missing side. This case does not use
+`conflictMode`.
+
 ## Configuration and compatibility
 
 The setting is included in `SyncPath.settings()`, the local configuration, and server exchanges. Creation normalizes a missing value to `false`. A
@@ -128,8 +137,8 @@ From the command line:
 
 ```text
 paths add ... --ignore-delete
-paths set ... --ignore-delete
-paths set ... --no-ignore-delete
+paths set ... --ignore-delete true
+paths set ... --ignore-delete false
 ```
 
 When adding a path, the option defaults to `false` if omitted. During `set`, omitting the option leaves the existing configuration unchanged.

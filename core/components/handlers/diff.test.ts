@@ -118,7 +118,7 @@ describe('DiffParser unidirectional deletions', () => {
 })
 
 describe('DiffParser execution', () => {
-  it('logs a sorting error and completes without yielding actions', async () => {
+  it('propagates a sorting error after logging it', async () => {
     const failure = new Error('sorting failed')
     const errors: string[] = []
     const messages: string[] = []
@@ -138,13 +138,17 @@ describe('DiffParser execution', () => {
     })
 
     const actions = []
-    for await (const action of diff.run()) {
-      actions.push(action)
-    }
+    await expect(
+      (async () => {
+        for await (const action of diff.run()) {
+          actions.push(action)
+        }
+      })()
+    ).rejects.toBe(failure)
 
     expect(actions).toEqual([])
     expect(errors).toEqual([failure.stack])
-    expect(messages).toEqual(['Parsing diff done'])
+    expect(messages).toEqual([])
   })
 
   it('retains an action that has no dedicated reduction rule', async () => {
@@ -191,6 +195,26 @@ describe('DiffParser bidirectional deletions', () => {
     })
     await expect(diffActions({ mode: SYNC_MODE.BOTH, remote: previous, oldLocal: previous, oldRemote: previous })).resolves.toEqual({
       [SIDE_STATE.REMOTE_RM]: ['file.txt']
+    })
+  })
+
+  it('restores a file that was never present on the missing side', async () => {
+    await expect(diffActions({ mode: SYNC_MODE.BOTH, local: previous, oldLocal: previous })).resolves.toEqual({
+      [SIDE_STATE.UPLOAD]: ['file.txt']
+    })
+    await expect(diffActions({ mode: SYNC_MODE.BOTH, remote: previous, oldRemote: previous })).resolves.toEqual({
+      [SIDE_STATE.DOWNLOAD]: ['file.txt']
+    })
+  })
+
+  it('preserves a modification made concurrently with a deletion', async () => {
+    const changed: Entries = [['file.txt', stats(8, 20)]]
+
+    await expect(diffActions({ mode: SYNC_MODE.BOTH, local: changed, oldLocal: previous, oldRemote: previous })).resolves.toEqual({
+      [SIDE_STATE.UPLOAD]: ['file.txt']
+    })
+    await expect(diffActions({ mode: SYNC_MODE.BOTH, remote: changed, oldLocal: previous, oldRemote: previous })).resolves.toEqual({
+      [SIDE_STATE.DOWNLOAD]: ['file.txt']
     })
   })
 
@@ -292,6 +316,21 @@ describe('DiffParser moves', () => {
     await expect(diffActions({ ...options, diffMode: DIFF_MODE.SECURE })).resolves.toEqual({
       [SIDE_STATE.REMOTE_MOVE]: [{ src: 'old.txt', dst: 'new.txt' }]
     })
+  })
+
+  it('does not mistake a reused inode for a move when checksums differ', async () => {
+    const previous = stats(4, 10, 1, 'old')
+    const current = stats(4, 20, 1, 'new')
+    const actions = await diffActions({
+      mode: SYNC_MODE.UPLOAD,
+      diffMode: DIFF_MODE.SECURE,
+      local: [['new.txt', current]],
+      remote: [['old.txt', previous]],
+      oldLocal: [['old.txt', previous]],
+      oldRemote: [['old.txt', previous]]
+    })
+
+    expect(actions).toEqual({ [SIDE_STATE.UPLOAD]: ['new.txt'], [SIDE_STATE.REMOTE_RM]: ['old.txt'] })
   })
 
   it.each([
@@ -760,6 +799,70 @@ describe('DiffParser changes and conflicts', () => {
     })
 
     expect(actions).toEqual({ [SIDE_STATE.REMOTE_COPY]: [{ src: 'existing.txt', dst: 'copy.txt', mtime: 20 }] })
+  })
+
+  it('copies from a file that is unchanged on both sides', async () => {
+    const existing = stats(4, 10, 1, 'same')
+    const actions = await diffActions({
+      mode: SYNC_MODE.UPLOAD,
+      diffMode: DIFF_MODE.SECURE,
+      local: [
+        ['existing.txt', existing],
+        ['copy.txt', stats(4, 20, 2, 'same')]
+      ],
+      remote: [['existing.txt', existing]]
+    })
+
+    expect(actions).toEqual({ [SIDE_STATE.REMOTE_COPY]: [{ src: 'existing.txt', dst: 'copy.txt', mtime: 20 }] })
+  })
+
+  it('does not copy from a file scheduled to be removed', async () => {
+    const existing = stats(4, 10, 1, 'same')
+    const actions = await diffActions({
+      mode: SYNC_MODE.UPLOAD,
+      diffMode: DIFF_MODE.SECURE,
+      local: [['copy.txt', stats(4, 20, 2, 'same')]],
+      remote: [['existing.txt', existing]]
+    })
+
+    expect(actions).toEqual({ [SIDE_STATE.UPLOAD]: ['copy.txt'], [SIDE_STATE.REMOTE_RM]: ['existing.txt'] })
+  })
+
+  it('does not copy from a file scheduled to move', async () => {
+    const previous = stats(4, 10, 1, 'same')
+    const actions = await diffActions({
+      mode: SYNC_MODE.UPLOAD,
+      diffMode: DIFF_MODE.SECURE,
+      local: [
+        ['moved.txt', previous],
+        ['copy.txt', stats(4, 20, 2, 'same')]
+      ],
+      remote: [['old.txt', previous]],
+      oldLocal: [['old.txt', previous]],
+      oldRemote: [['old.txt', previous]]
+    })
+
+    expect(actions).toEqual({
+      [SIDE_STATE.REMOTE_MOVE]: [{ src: 'old.txt', dst: 'moved.txt' }],
+      [SIDE_STATE.UPLOAD]: ['copy.txt']
+    })
+  })
+
+  it('does not copy from a file scheduled to be overwritten', async () => {
+    const previous = stats(4, 10, 1, 'old')
+    const actions = await diffActions({
+      mode: SYNC_MODE.UPLOAD,
+      diffMode: DIFF_MODE.SECURE,
+      local: [
+        ['existing.txt', stats(4, 20, 1, 'new')],
+        ['copy.txt', stats(4, 20, 2, 'old')]
+      ],
+      remote: [['existing.txt', previous]],
+      oldLocal: [['existing.txt', previous]],
+      oldRemote: [['existing.txt', previous]]
+    })
+
+    expect(actions).toEqual({ [SIDE_STATE.UPLOAD]: ['copy.txt'], [SIDE_STATE.UPLOAD_DIFF]: ['existing.txt'] })
   })
 
   it('creates a new empty file instead of copying another empty file in secure mode', async () => {

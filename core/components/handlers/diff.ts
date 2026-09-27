@@ -166,7 +166,7 @@ export class DiffParser {
     source: NormalizedMap<string, any[]>,
     destination: NormalizedMap<string, any[]>
   ): AsyncGenerator<[keyof typeof DOWNLOAD_MODE | keyof typeof BOTH_MODE, string]> {
-    // we have to order the deleted items, in DownloadMode deleted items become added items
+    // Destination-only entries are deletions in upload mode, but additions in download mode.
     function* removed(): Generator<[keyof typeof DOWNLOAD_MODE, string]> {
       for (const dstPath of destination.keys()) {
         if (!source.has(dstPath)) {
@@ -175,13 +175,17 @@ export class DiffParser {
       }
     }
 
-    if (!this.syncPath.isDownloadMode) {
+    // Both mode always needs both one-sided sets: bidirectional() decides whether
+    // each entry represents a deletion or content that must be restored.
+    if (this.isSyncBothMode || (!this.syncPath.isDownloadMode && !this.syncPath.ignoreDelete)) {
       yield* removed()
     }
     for (const [srcPath, srcStats] of source) {
       const dstStats = destination.get(srcPath)
       if (dstStats === undefined) {
-        yield ['added', srcPath]
+        if (!(this.syncPath.isDownloadMode && this.syncPath.ignoreDelete)) {
+          yield ['added', srcPath]
+        }
       } else {
         // get the right dstPath (normalized as the local or remote source)
         const dstPath = destination.getResolvedKey(srcPath)
@@ -206,8 +210,11 @@ export class DiffParser {
     const delayActions = { localAdded: [], remoteAdded: [] }
     for await (const [state, filePath] of this.unidirectional(source, destination)) {
       if (state === 'added') {
-        // no snapshots found, we use no destructive actions
         if (this.syncPath.firstSync) {
+          // Without history, a one-sided entry is treated as new content.
+          delayActions.localAdded.push(filePath)
+        } else if (this.syncPath.ignoreDelete) {
+          // Restore the missing remote copy instead of propagating its deletion.
           delayActions.localAdded.push(filePath)
         } else if (this.fParser.oldSnap.local.has(filePath)) {
           // the file was removed from the remote side because found on the last snapshot
@@ -217,8 +224,11 @@ export class DiffParser {
           delayActions.localAdded.push(filePath)
         }
       } else if (state === 'removed') {
-        // no snapshots found, we use no destructive actions
         if (this.syncPath.firstSync) {
+          // Without history, a one-sided entry is treated as new content.
+          delayActions.remoteAdded.push(filePath)
+        } else if (this.syncPath.ignoreDelete) {
+          // Restore the missing local copy instead of propagating its deletion.
           delayActions.remoteAdded.push(filePath)
         } else if (this.fParser.oldSnap.remote.has(filePath)) {
           // the file was removed from the local side because found on the last snapshot
@@ -244,8 +254,13 @@ export class DiffParser {
     srcStats: any[],
     dstStats: any[]
   ): Generator<[keyof typeof DOWNLOAD_MODE | keyof typeof BOTH_MODE, string]> {
-    if ((this.secureDiff && srcStats[F_STAT.CHECKSUM] !== dstStats[F_STAT.CHECKSUM]) || srcStats[F_STAT.SIZE] !== dstStats[F_STAT.SIZE]) {
-      // if the file has been replaced by a folder or vice versa, it will be detected because the directories size is 0
+    // A file/directory mismatch replaces an existing path; it is not a deletion
+    // and therefore remains governed by the configured direction/conflict winner.
+    if (
+      srcStats[F_STAT.IS_DIR] !== dstStats[F_STAT.IS_DIR] ||
+      (this.secureDiff && srcStats[F_STAT.CHECKSUM] !== dstStats[F_STAT.CHECKSUM]) ||
+      srcStats[F_STAT.SIZE] !== dstStats[F_STAT.SIZE]
+    ) {
       if (this.isSyncBothMode) {
         yield this.conflictResolver('Changed', srcPath, dstPath, srcStats, dstStats)
       } else {

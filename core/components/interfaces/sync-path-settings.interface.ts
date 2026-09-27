@@ -6,6 +6,7 @@ export interface SyncPathSettings {
   remotePath: string
   permissions: string
   mode: SYNC_MODE
+  ignoreDelete: boolean
   enabled: boolean
   diffMode: DIFF_MODE
   conflictMode: CONFLICT_MODE

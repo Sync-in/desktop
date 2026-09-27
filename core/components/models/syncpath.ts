@@ -16,6 +16,7 @@ export class SyncPath {
   localPath: string
   remotePath: string
   mode: SYNC_MODE
+  ignoreDelete: boolean
   enabled: boolean
   firstSync = true
   lastSync: Date = null
@@ -34,6 +35,8 @@ export class SyncPath {
     this.localPath = data.localPath
     this.remotePath = data.remotePath
     this.mode = data.mode
+    // Missing and non-boolean values from older stored settings keep the feature disabled.
+    this.ignoreDelete = data.ignoreDelete === true
     this.enabled = data.enabled == null ? true : data.enabled
     this.lastSync = data.lastSync || this.lastSync
     this.lastErrors = data.lastErrors || this.lastErrors
@@ -63,6 +66,7 @@ export class SyncPath {
       remotePath: this.remotePath,
       permissions: this.permissions,
       mode: this.mode,
+      ignoreDelete: this.ignoreDelete,
       diffMode: this.diffMode,
       conflictMode: this.conflictMode,
       lastSync: this.lastSync,
@@ -174,7 +178,19 @@ export class SyncPath {
   }
 
   settingsList() {
-    return ['mode', 'diffMode', 'conflictMode', 'filters', 'enabled', 'scheduler', 'timestamp', 'localPath', 'remotePath', 'permissions']
+    return [
+      'mode',
+      'ignoreDelete',
+      'diffMode',
+      'conflictMode',
+      'filters',
+      'enabled',
+      'scheduler',
+      'timestamp',
+      'localPath',
+      'remotePath',
+      'permissions'
+    ]
   }
 
   update(data: any) {
@@ -190,6 +206,7 @@ export class SyncPath {
       remotePath: this.remotePath,
       permissions: this.permissions,
       mode: this.mode,
+      ignoreDelete: this.ignoreDelete,
       diffMode: this.diffMode,
       conflictMode: this.conflictMode,
       filters: this.filters,

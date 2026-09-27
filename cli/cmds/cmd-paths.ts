@@ -55,6 +55,11 @@ const pathADD: CommandModule = {
       type: 'string',
       demandOption: true
     },
+    ignoreDelete: {
+      describe: 'Do not synchronize deletions',
+      type: 'boolean',
+      default: false
+    },
     diffMode: {
       alias: 'd',
       describe: 'Defines how differences are analyzed',
@@ -136,6 +141,12 @@ const pathSET: CommandModule = {
       choices: [SYNC_MODE.DOWNLOAD, SYNC_MODE.UPLOAD, SYNC_MODE.BOTH],
       type: 'string'
     },
+    ignoreDelete: {
+      describe: 'Enable or disable deletion synchronization',
+      type: 'string',
+      choices: ['true', 'false'],
+      requiresArg: true
+    },
     diffMode: {
       alias: 'd',
       describe: 'Defines how differences are analyzed',
@@ -152,6 +163,9 @@ const pathSET: CommandModule = {
   handler: async (argv: any) => {
     try {
       const manager = new PathsManager(argv.server)
+      if (argv.ignoreDelete !== undefined) {
+        argv.ignoreDelete = argv.ignoreDelete === 'true'
+      }
       const syncPath = await manager.set(argv)
       console.log(manager.server.printName())
       console.log(syncPath.repr())

@@ -197,8 +197,9 @@ export class FilesParser {
   }
 
   private checkOnFirstSync() {
-    if (this.syncPath.firstSync) {
-      // a guard to avoid delete data on a first sync
+    // An empty source is safe with ignoreDelete because destination-only content
+    // is preserved; otherwise stop before the first sync can erase the destination.
+    if (this.syncPath.firstSync && !this.syncPath.ignoreDelete) {
       if (
         (this.syncPath.isDownloadMode && this.curSnap.remote.size === 0 && this.curSnap.local.size > 0) ||
         (this.syncPath.isUploadMode && this.curSnap.local.size === 0 && this.curSnap.remote.size > 0)

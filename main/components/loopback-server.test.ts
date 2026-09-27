@@ -9,7 +9,7 @@ vi.mock('@sync-in-desktop/core/components/handlers/loggers', () => ({
   })
 }))
 
-describe.sequential('LoopbackServer', () => {
+describe('LoopbackServer', () => {
   afterEach(async () => {
     const sessions = [...LoopbackServer.sessions.values()]
     await Promise.all(sessions.map((session) => session.stop()))

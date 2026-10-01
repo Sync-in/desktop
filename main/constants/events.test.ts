@@ -33,6 +33,10 @@ describe('renderer event allowlists', () => {
     expect(WEBVIEW_RENDERER_EVENTS.ON.has(REMOTE_RENDERER.SYNC.STATUS)).toBe(true)
   })
 
+  it('allows webviews to publish their system notification preference', () => {
+    expect(WEBVIEW_RENDERER_EVENTS.SEND.has(REMOTE_RENDERER.APPLICATIONS.SYSTEM_NOTIFICATIONS)).toBe(true)
+  })
+
   it('allows webviews to call transitional and desktop-handled auth channels', () => {
     expect(WEBVIEW_RENDERER_EVENTS.INVOKE.has(REMOTE_RENDERER.SERVER.AUTHENTICATION)).toBe(true)
     expect(WEBVIEW_RENDERER_EVENTS.INVOKE.has(REMOTE_RENDERER.SERVER.AUTHENTICATION_COOKIE)).toBe(true)

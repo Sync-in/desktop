@@ -83,7 +83,8 @@ export const REMOTE_RENDERER = {
   // tasks & notifications & chats
   APPLICATIONS: {
     MSG: 'applications-msg',
-    COUNTER: 'applications-counter'
+    COUNTER: 'applications-counter',
+    SYSTEM_NOTIFICATIONS: 'applications-system-notifications'
   },
   MISC: {
     DIALOG_OPEN: 'dialog-open',
@@ -137,6 +138,7 @@ export const WEBVIEW_RENDERER_EVENTS: RendererEventAllowlist = {
   SEND: new Set([
     REMOTE_RENDERER.APPLICATIONS.COUNTER,
     REMOTE_RENDERER.APPLICATIONS.MSG,
+    REMOTE_RENDERER.APPLICATIONS.SYSTEM_NOTIFICATIONS,
     REMOTE_RENDERER.MISC.FILE_OPEN,
     REMOTE_RENDERER.MISC.SWITCH_THEME,
     REMOTE_RENDERER.MISC.URL_OPEN,

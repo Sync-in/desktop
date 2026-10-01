@@ -8,6 +8,7 @@ import { Logger } from 'winston'
 import { getLogger, LOG_LEVEL_REPORT, LOG_LEVEL_SYNC, LOG_MODULE_REPORT, LOG_MODULE_SYNC } from './loggers'
 import type { SyncTransfer, SyncTransferContext } from '../interfaces/sync-transfer.interface'
 import type { ThrottledFunction } from '../interfaces/throttled.interface'
+import type { SyncNotificationMessage } from '../../../main/interfaces/notification.interface'
 
 export class TransferProgress {
   tasks: { count: number; done: number }
@@ -228,10 +229,11 @@ export class TransfersManager {
         }
       } else if (type === 'notification' && !this.reportOnly) {
         this.appEvents.emit(LOCAL_RENDERER.SYNC.MSG, {
+          serverId: this.sync.server.id,
           title: `${this.sync.server.name} - ${this.sync.path.name}`,
           body: this.tasks.done === 1 ? 'element synchronized' : 'elements synchronized',
           nb: this.tasks.done
-        })
+        } satisfies SyncNotificationMessage)
       }
     }
   }

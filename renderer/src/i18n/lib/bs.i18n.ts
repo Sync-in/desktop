@@ -1,5 +1,6 @@
 import {
   defineLocale,
+  caLocale,
   deLocale,
   enGbLocale,
   esLocale,
@@ -19,6 +20,7 @@ import {
 import { i18nLocaleSupported } from '../../../../i18n'
 
 const BOOTSTRAP_LOCALES: Record<i18nLocaleSupported, LocaleData> = {
+  ca: caLocale,
   de: deLocale,
   en: enGbLocale,
   es: esLocale,

@@ -32,10 +32,12 @@ export class TasksManager {
   }
 
   async run(): Promise<void> {
-    const allPipes = Object.entries(this.queues).flatMap(([name, queue]) =>
-      Array.from({ length: queue.concurrency }, (_, i) => this.queuePipe(name as keyof typeof this.queues, i))
-    )
-    await Promise.all(allPipes)
+    const transferPipes = Object.entries(this.queues)
+      .filter(([name]) => name !== 'props')
+      .flatMap(([name, queue]) => Array.from({ length: queue.concurrency }, (_, i) => this.queuePipe(name as keyof typeof this.queues, i)))
+    await Promise.all(transferPipes)
+    // Restore deferred properties after all file operations have completed.
+    await Promise.all(Array.from({ length: this.queues.props.concurrency }, (_, i) => this.queuePipe('props', i)))
     this.logger.debug('All queues are done')
   }
 

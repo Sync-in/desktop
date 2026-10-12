@@ -221,9 +221,9 @@ export class Sync {
         return
       }
       await checkParentDir(realPath)
+      // Preserve the mtime before publishing the downloaded file.
+      await fs.utimes(realTmpPath, fileStats[F_STAT.MTIME], fileStats[F_STAT.MTIME])
       await fs.rename(realTmpPath, realPath)
-      // update the file mtime
-      this.addLocalProperties([{ path: filePath, mtime: fileStats[F_STAT.MTIME] }])
       // update ino
       fileStats[F_STAT.INO] = (await fs.stat(realPath)).ino
       // add file to current snapshot
@@ -450,12 +450,15 @@ export class Sync {
               await fs.mkdir(realPath, { recursive: true })
             } else {
               await fs.writeFile(realPath, '')
+              await fs.utimes(realPath, f.mtime, f.mtime)
             }
             const fileStats = [...this.diff.fParser.curSnap.remote.get(f.path)]
             // update ino
             fileStats[F_STAT.INO] = (await fs.stat(realPath)).ino
             this.diff.fParser.addFile(SIDE.LOCAL, f.path, fileStats)
-            this.addLocalProperties([f])
+            if (f.isDir) {
+              this.addLocalProperties([f])
+            }
             this.setTransferState(transfer)
           } catch (e) {
             this.diff.fParser.removeFile(SIDE.REMOTE, f.path)

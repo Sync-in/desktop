@@ -132,7 +132,7 @@ export default [
         extensions: ['ts'],
         exclude: ['node_modules', path.resolve(__dirname, 'renderer'), path.resolve(__dirname, 'main')]
       }),
-      new ShebangPlugin(),
+      new ShebangPlugin({ shebangRegExp: /^(#![^\r\n]*)[\r\n]*/ }),
       ...(!isProduction ? [new WarningsAsErrorsPlugin()] : [])
     ],
     resolve: { extensions: ['.ts', '.js'] },

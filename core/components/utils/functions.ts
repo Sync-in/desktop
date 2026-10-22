@@ -2,14 +2,12 @@ import os from 'node:os'
 import path from 'node:path'
 import fs from 'node:fs/promises'
 import { constants, createReadStream, createWriteStream, existsSync, readFileSync, writeFileSync } from 'node:fs'
-import mime from 'mime-types'
 import { ENVIRONMENT, HAS_TTY, IS_WINDOWS } from '../../constants'
 import { DEFAULT_HIGH_WATER_MARK, INCOMPLETE_PREFIX, SYNC_CHECKSUM_ALG } from '../constants/handlers'
 import type { TransferProgress } from '../handlers/transfers'
 import type { SyncClientInfo } from '../interfaces/sync-client-info.interface'
 import crypto from 'node:crypto'
 import type { SyncFileStats } from '../interfaces/sync-diff.interface'
-import type { SyncTransfer } from '../interfaces/sync-transfer.interface'
 import type { ThrottledFunction } from '../interfaces/throttled.interface'
 import { NormalizedMap } from './normalizedMap'
 import { pipeline } from 'node:stream/promises'
@@ -90,18 +88,6 @@ export const throttleFunc = <TArgs extends any[]>(context: any, func: (...args: 
   }
 
   return throttled
-}
-
-export function setMimeType(tr: SyncTransfer): SyncTransfer {
-  if (tr.isDir) {
-    tr.mime = 'directory'
-  } else {
-    tr.mime = mime.lookup(tr.file) || 'file'
-    if (tr.mime !== 'file') {
-      tr.mime = tr.mime.replace('/', '-')
-    }
-  }
-  return tr
 }
 
 function encodeReservedUrlChars(url: string): string {

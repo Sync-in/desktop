@@ -1,10 +1,24 @@
 import { shell } from 'electron'
 import path from 'node:path'
 import { realpathSync } from 'node:fs'
+import mime from 'mime-types'
 import { isPathInsideRoot, units } from '@sync-in-desktop/core/components/utils/functions'
 import type { Server } from '@sync-in-desktop/core/components/models/server'
+import type { SyncTransfer } from '@sync-in-desktop/core/components/interfaces/sync-transfer.interface'
 
 const EXTERNAL_URL_PROTOCOLS = new Set(['http:', 'https:'])
+
+export function setMimeType(tr: SyncTransfer): SyncTransfer {
+  if (tr.isDir) {
+    tr.mime = 'directory'
+  } else {
+    tr.mime = mime.lookup(tr.file) || 'file'
+    if (tr.mime !== 'file') {
+      tr.mime = tr.mime.replace('/', '-')
+    }
+  }
+  return tr
+}
 
 export function bytesToHuman(bytes: number, asDict: true, precision?: number, perSecond?: boolean): { value: number; unit: string }
 export function bytesToHuman(bytes: number, asDict: false, precision?: number, perSecond?: boolean): string

@@ -12,8 +12,7 @@ import {
   currentTimeStamp,
   fileBaseName,
   isPathExistsBool,
-  regExpPathPattern,
-  setMimeType
+  regExpPathPattern
 } from '../utils/functions'
 import { RequestsManager } from './requests'
 import {
@@ -417,7 +416,7 @@ export class FilesParser {
           serverId: this.req.server.id,
           syncPathId: this.syncPath.id,
           nbTasks: this.nbFiltered,
-          ...setMimeType(tr)
+          ...tr
         })
       }
       return true

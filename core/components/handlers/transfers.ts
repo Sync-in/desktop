@@ -1,6 +1,6 @@
 import { CORE, coreEvents } from './events'
 import { F_ACTION, SIDE, SYMBOLS, TRANSFER_MIN_SIZE } from '../constants/handlers'
-import { currentTimeStamp, fileBaseName, setMimeType, streamStdout, throttleFunc, toHumanSize, toHumanTime } from '../utils/functions'
+import { currentTimeStamp, fileBaseName, streamStdout, throttleFunc, toHumanSize, toHumanTime } from '../utils/functions'
 import { setTimeout as wait } from 'timers/promises'
 import { EventEmitter } from 'events'
 import { LOCAL_RENDERER, REMOTE_RENDERER } from '../../../main/constants/events'
@@ -222,7 +222,7 @@ export class TransfersManager {
             serverId: this.sync.server.id,
             syncPathId: this.sync.path.id,
             nbTasks: this.tasks.done,
-            ...setMimeType(tr)
+            ...tr
           })
         } else {
           this.sendSyncEventDone(tr)

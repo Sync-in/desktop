@@ -30,6 +30,7 @@ import { CLIENT_TOKEN_EXPIRED_ERROR } from '../../core/components/constants/auth
 import { CLIENT_MISSING_ERROR } from '../../core/components/constants/requests'
 import type { SyncClientAuthenticatedRegistration } from './requests'
 import { MainRequestsManager } from './requests'
+import { setMimeType } from './utils'
 
 export const appEvents: any = new EventEmitter()
 // hook to delete to trash bin during sync
@@ -62,7 +63,7 @@ export class EventsManager {
     coreEvents.on(CORE.SYNC_STATUS, (params: SyncStatus) => this.viewsManager.sendToWebRenderer(params.serverId, CORE.SYNC_STATUS, params))
     // APP EVENTS
     appEvents.on(REMOTE_RENDERER.SYNC.REPORT_TRANSFER, (tr: SyncTransfer) =>
-      this.viewsManager.sendToWebRenderer(tr.serverId, REMOTE_RENDERER.SYNC.REPORT_TRANSFER, tr)
+      this.viewsManager.sendToWebRenderer(tr.serverId, REMOTE_RENDERER.SYNC.REPORT_TRANSFER, setMimeType(tr))
     )
     appEvents.on(REMOTE_RENDERER.SYNC.TASKS_COUNT, (params) =>
       this.viewsManager.sendToWebRenderer(params.serverId, REMOTE_RENDERER.SYNC.TASKS_COUNT, params)

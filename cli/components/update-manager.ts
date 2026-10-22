@@ -13,7 +13,7 @@ import type {
   CliUpdateDownloader,
   CliUpdateManagerOptions,
   CliUpdateResult
-} from './interfaces/update-manifest.interface'
+} from './update-manifest.interface'
 
 const RELEASES_URL = new URL(`${ENVIRONMENT.appReleasesPage}/`)
 const LATEST_MANIFEST_URL = new URL('latest/download/latest.json', RELEASES_URL)

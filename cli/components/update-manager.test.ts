@@ -5,7 +5,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { TextReader, Uint8ArrayWriter, ZipWriter } from '@zip.js/zip.js'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { CliBinaryRename, CliBinaryWrite } from './interfaces/update-manifest.interface'
+import type { CliBinaryRename, CliBinaryWrite } from './update-manifest.interface'
 import { CliUpdateManager, compareVersions, replaceCliBinary } from './update-manager'
 
 const temporaryDirectories: string[] = []

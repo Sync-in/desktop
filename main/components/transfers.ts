@@ -8,12 +8,12 @@ import { DEFAULT_HIGH_WATER_MARK } from '@sync-in-desktop/core/components/consta
 
 export class TransfersLogs {
   private maxLines = 1000
-  private readonly search: RegExp
+  private readonly searchTerms: string[]
   private syncPaths: any[] = []
   private logs: any[] = []
 
   constructor(serverId: number, syncPathId: number, query: string) {
-    this.search = query ? new RegExp(query, 'i') : null
+    this.searchTerms = query ? [...new Set(query.toLowerCase().trim().split(/\s+/).filter(Boolean))] : []
     const server = ServersManager.find(serverId)
     if (syncPathId) {
       const syncPath = server.syncPaths.find((s) => s.id === syncPathId)
@@ -56,7 +56,7 @@ export class TransfersLogs {
     })
     for await (const line of rl) {
       nbLines++
-      if (line.includes('file') && (!this.search || this.search.test(line))) {
+      if (line.includes('file') && this.matchesSearch(line)) {
         lines.unshift([`${syncPath.id}${nbLines}`, line])
         counter++
         if (counter > this.maxLines * 2) {
@@ -69,5 +69,13 @@ export class TransfersLogs {
       lines.splice(-(lines.length - this.maxLines))
     }
     return lines.map(([id, line]) => ({ ...{ id: Number(id), syncPathName: syncPath.name }, ...JSON.parse(line) }))
+  }
+
+  private matchesSearch(line: string): boolean {
+    if (!this.searchTerms.length) {
+      return true
+    }
+    const normalizedLine = line.toLowerCase()
+    return this.searchTerms.every((term) => normalizedLine.includes(term))
   }
 }

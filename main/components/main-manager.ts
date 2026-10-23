@@ -10,6 +10,7 @@ import { ENVIRONMENT, IS_MACOS, IS_PROD_ENV, IS_WINDOWS } from '../../core/const
 import { createMenu } from './menus'
 import { appSettings } from './settings'
 import { LoopbackServer } from './loopback-server'
+import { disableConsoleTransports } from '../../core/components/handlers/loggers'
 
 export class MainManager {
   trayManager: TrayManager
@@ -46,6 +47,7 @@ export class MainManager {
     app.on('window-all-closed', () => console.log('all windows closed'))
     app.on('before-quit', (e: Event) => {
       e.preventDefault()
+      disableConsoleTransports()
       LoopbackServer.cleanupLoopbackSessions()
       this.eventsManager.runManager.exitGracefully()
       this.windowManager.setAppIsQuitting(true)

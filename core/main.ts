@@ -1,4 +1,4 @@
-import { getLogger } from './components/handlers/loggers'
+import { disableConsoleTransports, getLogger } from './components/handlers/loggers'
 import { ServersManager } from './components/handlers/servers'
 import { SyncManager } from './components/main'
 import { CORE, coreEvents } from './components/handlers/events'
@@ -30,6 +30,9 @@ export class RunManager {
     }
     ;['SIGTERM', 'SIGINT'].forEach((eventType) => {
       process.on(eventType, async (eventType) => {
+        if (this.appEvents) {
+          disableConsoleTransports()
+        }
         mainLogger.warn(`${eventType} signal received`)
         this.exitGracefully()
       })

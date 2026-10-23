@@ -31,6 +31,7 @@ const levels = {
 }
 
 const dateFormat = { format: 'YYYY-MM-DD HH:mm:ss' }
+let consoleTransportsEnabled = true
 
 const checkTransfer = format((info: any) => {
   if (info.message.tasks) {
@@ -48,6 +49,7 @@ function formatInfo(info: any) {
 }
 
 const consoleFormat = format.combine(
+  format((info) => (consoleTransportsEnabled ? info : false))(),
   checkTransfer(),
   format.timestamp(dateFormat),
   format.colorize({ all: true, colors: levels.colors }),
@@ -101,6 +103,10 @@ export function getLogger(module: string, sync: SyncTransferContext = null, stor
     return getSyncLogger(sync)
   }
   return logger.child({ module, sync })
+}
+
+export function disableConsoleTransports() {
+  consoleTransportsEnabled = false
 }
 
 export function setLevelLogger(level) {

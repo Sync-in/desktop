@@ -27,12 +27,15 @@ import {
 } from '../constants/handlers'
 import { Logger } from 'winston'
 import { EventEmitter } from 'events'
-import { REMOTE_RENDERER } from '../../../main/constants/events'
+import { LOCAL_RENDERER, REMOTE_RENDERER } from '../../../main/constants/events'
 import { API } from '../constants/requests'
 import type { SyncTransfer } from '../interfaces/sync-transfer.interface'
 import type { SyncDiff, SyncFileSpecialStats, SyncFileStats, SyncSnapShot } from '../interfaces/sync-diff.interface'
 import { NormalizedMap } from '../utils/normalizedMap'
 import { Readable } from 'node:stream'
+import { buildPathFilterSource, compilePathFilters } from '../utils/path-filters/path-filter-compiler'
+import { SYNC_MAX_PATH_FILTER_LENGTH, SYNC_MAX_PATH_FILTER_WARNINGS } from '../utils/path-filters/constants'
+import type { SyncPathFilterMatcher } from '../utils/path-filters/path-filter-compiler.interface'
 
 export class FilesParser {
   public logger: Logger
@@ -68,7 +71,8 @@ export class FilesParser {
   private readonly iPath: string
   private readonly secureDiff: boolean
   private readonly regexPath: RegExp
-  private readonly syncPathFilters: RegExp
+  private readonly syncPathFilterSource: string | null
+  private readonly syncPathFilters: SyncPathFilterMatcher | null
   private nbFiltered = 0
   private syncPath: SyncPath
 
@@ -80,7 +84,24 @@ export class FilesParser {
     this.logger = getLogger('Parser', { server: this.req.server.identity(), path: this.syncPath.identity() })
     this.secureDiff = this.syncPath.secureDiff
     this.regexPath = regExpPathPattern(this.syncPath.localPath)
-    this.syncPathFilters = this.syncPath.filters.length ? new RegExp(this.syncPath.filters.join('|')) : undefined
+    this.syncPathFilterSource = buildPathFilterSource(this.syncPath.filters)
+    const pathFilters = compilePathFilters(this.syncPathFilterSource)
+    this.syncPathFilters = pathFilters.matcher
+    for (const rejection of pathFilters.rejected.slice(0, SYNC_MAX_PATH_FILTER_WARNINGS)) {
+      this.logger.warn(
+        `Ignoring path filter alternative #${rejection.index + 1} ${JSON.stringify(rejection.pattern.slice(0, SYNC_MAX_PATH_FILTER_LENGTH))}: ${rejection.reason}`
+      )
+    }
+    if (pathFilters.rejected.length > SYNC_MAX_PATH_FILTER_WARNINGS) {
+      this.logger.warn(`Ignoring ${pathFilters.rejected.length - SYNC_MAX_PATH_FILTER_WARNINGS} additional path filter alternatives`)
+    }
+    if (pathFilters.rejected.length) {
+      this.appEvents?.emit(LOCAL_RENDERER.SYNC.MSG, {
+        serverId: this.req.server.id,
+        title: `${this.req.server.identity().name} - ${this.syncPath.name}`,
+        body: `${pathFilters.rejected.length} path filter alternative(s) ignored. See synchronization logs for details.`
+      })
+    }
     for (const [side, path] of snapshotSides.map((side) => [side, syncPath.getSnapshotPath(side, this.req.server.id)])) {
       this[`${side}Path`] = path
     }
@@ -300,7 +321,7 @@ export class FilesParser {
       secureDiff: this.syncPath.secureDiff,
       firstSync: this.syncPath.firstSync,
       defaultFilters: [...DEFAULT_FILTERS],
-      pathFilters: this.syncPathFilters ? this.syncPathFilters.toString().slice(1, -1) : null
+      pathFilters: this.syncPathFilterSource
     } satisfies SyncDiff)
     let stream: Readable | undefined
     let rl: readline.Interface | undefined

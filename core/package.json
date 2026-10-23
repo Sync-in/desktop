@@ -8,7 +8,9 @@
     "email": "johan.legrand@sync-in.com"
   },
   "dependencies": {
+    "@eslint-community/regexpp": "4.12.2",
     "axios": "^1.8.1",
+    "re2js": "2.9.0",
     "winston": "^3.8.2",
     "js-yaml": "^5.2.1"
   }

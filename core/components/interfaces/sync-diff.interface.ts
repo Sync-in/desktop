@@ -11,6 +11,6 @@ export class SyncDiff {
   secureDiff: boolean
   firstSync: boolean
   defaultFilters: string[]
-  pathFilters: string
+  pathFilters: string | null
   snapshot?: Record<string, SyncFileStats>
 }

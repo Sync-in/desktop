@@ -4,7 +4,7 @@ import { i18n } from './translate'
 import { CORE, coreEvents } from '../../core/components/handlers/events'
 import { LOCAL_RENDERER, REMOTE_RENDERER } from '../constants/events'
 import { appEvents } from './events'
-import { ENVIRONMENT, IS_MACOS, IS_WINDOWS } from '../../core/constants'
+import { ENVIRONMENT, IS_LINUX, IS_MACOS, IS_WINDOWS } from '../../core/constants'
 import { ServersManager } from '../../core/components/handlers/servers'
 import { SyncStatus } from '@sync-in-desktop/core/components/interfaces/sync-status.interface'
 import { helpMenu, preferencesMenu, separatorItem } from '../constants/menus'
@@ -36,6 +36,9 @@ export class TrayManager {
   private listeners() {
     if (IS_WINDOWS) {
       this.tray.on('right-click', () => this.tray.popUpContextMenu())
+    }
+    // Linux maps the desktop environment's single- or double-click activation to `click`.
+    if (IS_WINDOWS || IS_LINUX) {
       this.tray.on('click', () => appEvents.emit(LOCAL_RENDERER.WINDOW.SHOW))
     }
     coreEvents.on(CORE.SAVE_SETTINGS, () => this.setTrayMenu())

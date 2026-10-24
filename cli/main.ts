@@ -1,48 +1,53 @@
 #!/usr/bin/env node
 import process from 'node:process'
-import _yargs from 'yargs/yargs'
-import { hideBin } from 'yargs/helpers'
+import { Command, CommanderError } from 'commander'
 import { getLogger } from '../core/components/handlers/loggers'
 import { ENVIRONMENT } from '../core/constants'
 import { CliUpdateManager } from './components/update-manager'
+import type { GlobalCommandOptions } from './interfaces/cli-options.interface'
 
 const logger = getLogger('CommandLine')
-const cliArguments = hideBin(process.argv)
-const updateRequested = _yargs(cliArguments).help(false).version(false).exitProcess(false).boolean('update').parseSync().update === true
+const cliArguments = process.argv.slice(2)
+const updateRequested = hasUpdateFlag(cliArguments)
 
-const yargs = _yargs(cliArguments).version(ENVIRONMENT.appVersion).option('update', {
-  type: 'boolean',
-  describe: 'Update the CLI to the latest stable version'
-})
-yargs.check((argv) => {
-  if (argv.update && argv._.length) {
-    throw new Error('--update cannot be combined with a command')
-  }
-  return true
-})
-yargs.fail((msg: string, e: Error | string) => {
-  if (msg) {
-    yargs.showHelp()
-    logger.error(msg)
-  } else if (typeof e === 'string' && e.includes('argument')) {
-    // hook to show help when handler manages argv options
-    yargs.showHelp()
-    logger.error(e)
-  } else {
-    logger.error(e)
-  }
-  process.exit(1)
-})
-yargs.strict()
+function hasUpdateFlag(args: readonly string[]): boolean {
+  const optionTerminatorIndex = args.indexOf('--')
+  const options = optionTerminatorIndex === -1 ? args : args.slice(0, optionTerminatorIndex)
+  return options.includes('--update')
+}
+
+function createProgram(): Command {
+  const program = new Command()
+    .name('sync-in-cli')
+    .description('Sync-in command line interface')
+    .version(ENVIRONMENT.appVersion, '-v, --version', 'output the version number')
+    .option('--update', 'Update the CLI to the latest stable version', false)
+    .allowExcessArguments(false)
+    .showHelpAfterError()
+    .exitOverride()
+    .configureOutput({
+      outputError: (message) => logger.error(message.trimEnd())
+    })
+
+  program.action(() => {
+    if (!program.opts<GlobalCommandOptions>().update) {
+      program.outputHelp()
+    }
+  })
+
+  return program
+}
 
 async function main(): Promise<void> {
+  const program = createProgram()
+
   if (!updateRequested) {
-    const { getCMDS } = await import(/* webpackMode: 'eager' */ './cmds')
-    yargs.command(getCMDS(yargs) as any)
+    const { registerCommands } = await import(/* webpackMode: 'eager' */ './cmds')
+    registerCommands(program)
   }
 
-  const argv = await yargs.parseAsync()
-  if (!argv.update) return
+  await program.parseAsync(cliArguments, { from: 'user' })
+  if (!program.opts<GlobalCommandOptions>().update) return
 
   const result = await new CliUpdateManager().update()
   switch (result.status) {
@@ -59,6 +64,11 @@ async function main(): Promise<void> {
 }
 
 void main().catch((error) => {
+  if (error instanceof CommanderError) {
+    process.exitCode = error.exitCode
+    return
+  }
+
   const message = error instanceof Error ? error.message : String(error)
   console.error(`Sync-in CLI${updateRequested ? ' update' : ''} failed: ${message}`)
   logger.error(error)

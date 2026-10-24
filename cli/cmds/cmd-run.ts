@@ -1,54 +1,30 @@
+import type { Command } from 'commander'
 import { setLevelLogger } from '../../core/components/handlers/loggers'
-import { CommandModule } from 'yargs'
 import { RunManager } from '../../core/main'
+import { parseNameOrId } from '../components/argument-parsers'
+import type { RunCommandOptions } from '../interfaces/cli-options.interface'
 
-const runCMD: CommandModule = {
-  command: 'run',
-  describe: 'Synchronize (help for options)',
-  builder: {
-    report: {
-      alias: 'r',
-      describe: 'Only report (dry run)',
-      default: false,
-      boolean: true,
-      type: 'boolean'
-    },
-    debug: {
-      alias: 'd',
-      describe: 'Enable debug mode',
-      default: false,
-      boolean: true,
-      type: 'boolean'
-    },
-    async: {
-      alias: 'a',
-      describe: 'Run syncs in parallel',
-      default: false,
-      boolean: true,
-      type: 'boolean'
-    },
-    server: {
-      alias: 's',
-      describe: 'Given id or name to sync the target server'
-    },
-    path: {
-      alias: 'p',
-      array: true,
-      describe: 'Given id or name to sync the target path, "server" must be specified'
-    }
-  },
-  handler: async (argv: any) => {
-    try {
-      if (argv.debug) {
-        setLevelLogger('debug')
+export function registerRunCommand(program: Command): void {
+  program
+    .command('run')
+    .description('Synchronize (help for options)')
+    .option('-r, --report', 'Only report (dry run)', false)
+    .option('-d, --debug', 'Enable debug mode', false)
+    .option('-a, --async', 'Run syncs in parallel', false)
+    .option('-s, --server <server>', 'Given id or name to sync the target server', parseNameOrId)
+    .option('-p, --path <paths...>', 'Given id or name to sync the target path, "server" must be specified')
+    .action(async (options: RunCommandOptions) => {
+      try {
+        if (options.debug) {
+          setLevelLogger('debug')
+        }
+        await new RunManager().run(
+          { server: options.server, paths: options.path?.map((value) => parseNameOrId(value)) },
+          options.report,
+          options.async
+        )
+      } catch (error) {
+        console.error(error)
       }
-      await new RunManager().run({ server: argv.server, paths: argv.path }, argv.report, argv.async)
-    } catch (e) {
-      console.error(e)
-    }
-  }
-}
-
-export function getRunCMD() {
-  return runCMD
+    })
 }

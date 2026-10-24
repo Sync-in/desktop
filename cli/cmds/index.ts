@@ -1,7 +1,10 @@
-import { getRunCMD } from './cmd-run'
-import { getServerCMD } from './cmd-servers'
-import { getPathsCMD } from './cmd-paths'
+import type { Command } from 'commander'
+import { registerRunCommand } from './cmd-run'
+import { registerServerCommands } from './cmd-servers'
+import { registerPathCommands } from './cmd-paths'
 
-export function getCMDS(yargs): any[] {
-  return [getRunCMD(), getServerCMD(yargs), getPathsCMD(yargs)]
+export function registerCommands(program: Command): void {
+  registerRunCommand(program)
+  registerServerCommands(program)
+  registerPathCommands(program)
 }

@@ -139,13 +139,6 @@ export default [
     output: {
       path: path.resolve(__dirname, 'releases', 'sync-in-cli'),
       filename: `sync-in-cli-${version}.js`
-    },
-    ignoreWarnings: [
-      {
-        module: /node_modules[\\/]yargs(?:[\\/]node_modules[\\/]yargs-parser)?[\\/]build[\\/]index\.cjs/,
-        message:
-          /Critical dependency: (?:the request of a dependency is an expression|require function is used in a way in which dependencies cannot be statically extracted)/
-      }
-    ]
+    }
   }
 ]

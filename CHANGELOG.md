@@ -1,4 +1,10 @@
 
+## [2.3.1](https://github.com/Sync-in/desktop/compare/v2.3.0...v2.3.1) (2026-10-25)
+
+### Bug Fixes
+
+* **main:** reactivate existing window on second instance ([#59](https://github.com/Sync-in/desktop/issues/59)) ([bcab644](https://github.com/Sync-in/desktop/commit/bcab6445e1f5fadc839a93e122ea22115fa7e6c2))
+
 ## [2.3.0](https://github.com/Sync-in/desktop/compare/v2.2.1...v2.3.0) (2026-10-25)
 
 ### Features

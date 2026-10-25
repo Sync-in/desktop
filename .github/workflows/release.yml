@@ -1054,7 +1054,7 @@ jobs:
             fi
 
             gh release edit "$RELEASE_TAG" \
-              --title "Sync-in Desktop ${RELEASE_VERSION}" \
+              --title "v${RELEASE_VERSION}" \
               --notes-file latest-changelog.md
 
             asset_names="$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name')"
@@ -1070,7 +1070,7 @@ jobs:
 
           gh release create "$RELEASE_TAG" \
             --target "$RELEASE_TARGET_SHA" \
-            --title "Sync-in Desktop ${RELEASE_VERSION}" \
+            --title "v${RELEASE_VERSION}" \
             --notes-file latest-changelog.md \
             --draft
 

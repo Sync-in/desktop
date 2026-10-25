@@ -1,4 +1,27 @@
 
+## [2.3.0](https://github.com/Sync-in/desktop/compare/v2.2.1...v2.3.0) (2026-10-25)
+
+### Features
+
+* **cli:** add self-update command ([5983466](https://github.com/Sync-in/desktop/commit/598346662621660f4ee9a79475b33abed95dc094))
+* **core:** support ignored source deletions ([#49](https://github.com/Sync-in/desktop/issues/49)) ([5837797](https://github.com/Sync-in/desktop/commit/5837797d472e47116060c7ab707b50ad6fa954a2))
+* **notifications:** respect per-server system notification preferences ([ddd3039](https://github.com/Sync-in/desktop/commit/ddd3039c1a91ea648dbfa87d5473f0644564e59b))
+* **renderer:** improve bottom bar download manager ([16b535b](https://github.com/Sync-in/desktop/commit/16b535bc10e7f039a2cfc8b04bcbb5059a55aecf))
+
+### Bug Fixes
+
+* **core:** ignore empty path filters during sync ([bee3c0f](https://github.com/Sync-in/desktop/commit/bee3c0f4ed7422595df3a7e88715909145eed0dc))
+* **core:** preserve file mtime on download and defer properties until transfers complete ([#53](https://github.com/Sync-in/desktop/issues/53)) ([0a13142](https://github.com/Sync-in/desktop/commit/0a131429f1dd0f71e6bb5e2a5644b6011f3df98e))
+* **core:** prevent path filter ReDoS ([66478d8](https://github.com/Sync-in/desktop/commit/66478d861329c779f19ea60426998bbbec7f1e20))
+* **logging:** disable console transports during app shutdown ([d90352f](https://github.com/Sync-in/desktop/commit/d90352fc88ffc837c81d03eadd61d488d4b4bbc6))
+* **main:** prevent focus changes on destroyed views ([407de85](https://github.com/Sync-in/desktop/commit/407de85e7a1cc7642500423cfc4a23fc30a1f1b5))
+* **main:** support double-click tray activation on Linux ([#56](https://github.com/Sync-in/desktop/issues/56)) ([a455c10](https://github.com/Sync-in/desktop/commit/a455c10f40a59dd88bfdcb074478fc696afa08a2))
+* **main:** support multi-term transfer log searches ([9c1b3df](https://github.com/Sync-in/desktop/commit/9c1b3dfe084a23d02ea9890b8d5aa310e315030e))
+* **renderer:** adjust dimensions and colors for dark theme consistency ([48b01b3](https://github.com/Sync-in/desktop/commit/48b01b3dcdcbb2cc82d843617648c8e82f537ea4))
+* **renderer:** improve bottom bar transfer feedback ([b838126](https://github.com/Sync-in/desktop/commit/b838126c86d90bc8c4d9e43062ded5649280feb9))
+* **renderer:** preserve focus when switching between dropdowns ([381b9a3](https://github.com/Sync-in/desktop/commit/381b9a30ca6129b94363846ff41b57cbd3c458dc))
+* **sync:** make diff planning safer and index checksum copies ([35ff721](https://github.com/Sync-in/desktop/commit/35ff72196b9ca8218bcc0fce425af7c5da3b4eb3))
+
 ## [2.2.1](https://github.com/Sync-in/desktop/compare/v2.2.0...v2.2.1) (2026-07-31)
 
 

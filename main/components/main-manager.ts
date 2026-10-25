@@ -19,6 +19,7 @@ export class MainManager {
   notifyManager: NotifyManager
   eventsManager: EventsManager
   updateManager: UpdateManager
+  private showWindowWhenReady = false
 
   start() {
     app.whenReady().then(() => this.appIsReady())
@@ -30,6 +31,7 @@ export class MainManager {
       app.quit()
       return
     }
+    app.on('second-instance', () => this.showWindow())
     if (IS_WINDOWS) {
       app.setAppUserModelId(ENVIRONMENT.appID)
     }
@@ -43,7 +45,7 @@ export class MainManager {
     this.notifyManager = new NotifyManager(this.windowManager.viewsManager)
     this.downloadManager = new DownloadManager(this.windowManager, this.notifyManager)
     this.updateManager = new UpdateManager()
-    app.on('activate', () => this.windowManager.show())
+    app.on('activate', () => this.showWindow())
     app.on('window-all-closed', () => console.log('all windows closed'))
     app.on('before-quit', (e: Event) => {
       e.preventDefault()
@@ -53,6 +55,20 @@ export class MainManager {
       this.windowManager.setAppIsQuitting(true)
     })
     this.windowManager.setAppIsQuitting(false)
+    if (this.showWindowWhenReady) {
+      this.showWindow()
+    }
+  }
+
+  private showWindow() {
+    if (!this.windowManager) {
+      this.showWindowWhenReady = true
+      return
+    }
+    this.showWindowWhenReady = false
+    if (!this.windowManager.appIsQuitting) {
+      this.windowManager.show()
+    }
   }
 
   private checkStartUp() {

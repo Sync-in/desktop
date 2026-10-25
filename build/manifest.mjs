@@ -12,8 +12,9 @@ import { fileURLToPath } from 'node:url'
  * releases/. It creates the CLI archives, removes builder-only outputs, reads
  * the electron-updater latest*.yml files, and writes releases/latest.json.
  *
- * latest.json keeps the existing client-facing platform index and now also
- * includes a deployment manifest for the server-side sync script:
+ * latest.json keeps the client-facing platform index, whose download URLs
+ * target versioned GitHub Release assets, and also includes a deployment
+ * manifest for the server-side sync script:
  *
  * {
  *   "version": "2.1.1",
@@ -41,6 +42,7 @@ const packageJsonPath = path.join(appPath, 'package.json')
 const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
 const packageVersion = packageJson.version
 const updatesURL = packageJson.build.publish[0].url.split('/$')[0]
+const githubReleaseDownloadURL = `${packageJson.releasespage.replace(/\/$/, '')}/download/v${packageVersion}`
 const appName = 'sync-in-desktop'
 const cliName = 'sync-in-cli'
 const releasePath = path.join(appPath, 'releases')
@@ -55,6 +57,10 @@ const latestApp = { platform: { linux: [], mac: [], win: [], node: [] }, version
 
 function sha512Base64(filePath) {
   return crypto.createHash('sha512').update(fs.readFileSync(filePath)).digest('base64')
+}
+
+function githubReleaseAssetURL(assetName) {
+  return `${githubReleaseDownloadURL}/${encodeURIComponent(assetName)}`
 }
 
 function toPosixPath(filePath) {
@@ -79,15 +85,16 @@ async function genCliLatest() {
     fs.rmSync(releaseCliFilePath)
   }
   for (const archive of [releaseCliFileZip, releaseCmdFileTarGZ]) {
+    const packageName = path.basename(archive)
     const extension = archive.split(releaseCliFilePath).join('').substring(1).toLowerCase()
     const stats = fs.lstatSync(archive)
     latestApp.platform.node.push({
-      package: path.basename(archive),
+      package: packageName,
       ext: extension,
       date: stats.ctime,
       size: stats.size,
       sha512: sha512Base64(archive),
-      url: `${updatesURL}/${cliName}/${path.basename(archive)}`
+      url: githubReleaseAssetURL(packageName)
     })
   }
 }
@@ -111,8 +118,9 @@ function parseDirs(dir) {
         latestApp.date = latestContent.releaseDate
       }
       for (const f of latestContent.files) {
-        const arch = f.url.split('-').splice(-1)[0].split('.')[0]
-        let ext = f.url.split('.').splice(-1)[0]
+        const packageName = f.url
+        const arch = packageName.split('-').splice(-1)[0].split('.')[0]
+        let ext = packageName.split('.').splice(-1)[0]
         if (os === 'mac' && ext === 'zip') {
           continue
         }
@@ -120,12 +128,12 @@ function parseDirs(dir) {
           ext = 'Setup'
         }
         latestApp.platform[os].push({
-          package: f.url,
+          package: packageName,
           arch: arch,
           ext: ext,
           sha512: f.sha512,
           size: f.size,
-          url: `${updatesURL}/${appName}/${os}/${f.url}`
+          url: githubReleaseAssetURL(packageName)
         })
       }
     }

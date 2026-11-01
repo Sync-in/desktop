@@ -44,8 +44,8 @@ export class NotifyManager {
   private receivedMsgFromSync(msg: SyncNotificationMessage) {
     const server = ServersManager.list.find((server: Server) => server.id === msg.serverId)
     if (!server || !this.canUseSystemNotifications(server)) return
-    if (msg.nb) {
-      this.send(msg.title, `${msg.nb} ${i18n.tr(msg.body)}`)
+    if (msg.nb !== undefined) {
+      this.send(msg.title, `${msg.nb} ${i18n.tr(msg.body, msg.nb)}`)
     } else {
       this.send(msg.title, msg.body)
     }

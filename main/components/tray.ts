@@ -7,7 +7,7 @@ import { appEvents } from './events'
 import { ENVIRONMENT, IS_LINUX, IS_MACOS, IS_WINDOWS } from '../../core/constants'
 import { ServersManager } from '../../core/components/handlers/servers'
 import { SyncStatus } from '@sync-in-desktop/core/components/interfaces/sync-status.interface'
-import { helpMenu, preferencesMenu, separatorItem } from '../constants/menus'
+import { helpMenu, preferencesMenu, separatorItem, translateAppLabel } from '../constants/menus'
 
 const enabledTrayIcon = nativeImage.createFromPath(path.join(__dirname, './assets/tray/enabled.png')).resize({ width: 22 })
 const disabledTrayIcon = nativeImage.createFromPath(path.join(__dirname, './assets/tray/disabled.png')).resize({ width: 22 })
@@ -56,7 +56,7 @@ export class TrayManager {
   private buildMenu(): Electron.MenuItemConstructorOptions[] {
     const mainMenu: Electron.MenuItemConstructorOptions[] = [
       {
-        label: `${i18n.tr('Open')} ${ENVIRONMENT.appID}`,
+        label: translateAppLabel('Open'),
         type: 'normal',
         click: () => appEvents.emit(LOCAL_RENDERER.WINDOW.SHOW)
       },
@@ -67,7 +67,7 @@ export class TrayManager {
       separatorItem,
       ...this.buildInfoMenu(),
       {
-        label: `${i18n.tr('Quit')} ${ENVIRONMENT.appID}`,
+        label: translateAppLabel('Quit'),
         type: 'normal',
         role: 'quit'
       }

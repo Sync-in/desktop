@@ -64,7 +64,7 @@ export const LANG_DEFAULT: i18nLocaleSupported = 'en'
 export function normalizeLanguage(language: string): i18nLocaleSupported | null {
   if (!language) return null
 
-  const normalizedLanguage = language.toLowerCase()
+  const normalizedLanguage = language.trim().replace(/_/g, '-').split(/[.@]/, 1)[0].toLowerCase()
   const supportedLanguage = LANG_SUPPORTED_VALUES.find((code) => code.toLowerCase() === normalizedLanguage)
   if (supportedLanguage) return supportedLanguage
 
@@ -72,4 +72,12 @@ export function normalizeLanguage(language: string): i18nLocaleSupported | null 
   if (code === 'nb') return 'no'
   if (code === 'tl') return 'fil'
   return LANG_SUPPORTED.has(code as i18nLocaleSupported) ? (code as i18nLocaleSupported) : null
+}
+
+export function resolveSupportedLanguage(languages: readonly string[]): i18nLocaleSupported {
+  for (const language of languages) {
+    const normalizedLanguage = normalizeLanguage(language)
+    if (normalizedLanguage) return normalizedLanguage
+  }
+  return LANG_DEFAULT
 }

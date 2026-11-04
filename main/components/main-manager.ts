@@ -11,6 +11,7 @@ import { createMenu } from './menus'
 import { appSettings } from './settings'
 import { LoopbackServer } from './loopback-server'
 import { disableConsoleTransports } from '../../core/components/handlers/loggers'
+import { resolveSupportedLanguage } from '../../i18n'
 
 export class MainManager {
   trayManager: TrayManager
@@ -36,8 +37,7 @@ export class MainManager {
       app.setAppUserModelId(ENVIRONMENT.appID)
     }
     this.checkStartUp()
-    // `app.getLocale()` returns English by default if the language is not listed in `electronLanguages` in the main package.json
-    i18n.updateLanguage(app.getLocale())
+    i18n.updateLanguage(resolveSupportedLanguage([app.commandLine.getSwitchValue('lang'), ...app.getPreferredSystemLanguages(), app.getLocale()]))
     Menu.setApplicationMenu(createMenu())
     this.trayManager = new TrayManager()
     this.windowManager = new WindowManager()

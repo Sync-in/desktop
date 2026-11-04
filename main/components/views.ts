@@ -20,6 +20,7 @@ import { appEvents } from './events'
 import { AppWebContentsView } from '../interfaces/app-web-contents-view'
 import { IpcMainEventServer, IpcMainInvokeEventServer, VerifiedSenderOptions } from '../interfaces/ipc-main-event.interface'
 import { isUrlWithinServerScope, openExternal, showItemInFolder } from './utils'
+import { i18n } from './translate'
 
 export class ViewsManager {
   mainWindow: BrowserWindow
@@ -260,7 +261,7 @@ export class ViewsManager {
     })
     this.wrapperView = new WebContentsView(viewProps('wrapper'))
     this.mainWindow.contentView.addChildView(this.wrapperView)
-    this.wrapperView.webContents.loadFile(RENDERER_FILE).then(() => {
+    this.wrapperView.webContents.loadFile(RENDERER_FILE, { query: { locale: i18n.language } }).then(() => {
       this.wrapperView.webContents.setZoomFactor(1)
       this.wrapperView.webContents.setVisualZoomLevelLimits(1, 1).catch(console.error)
       this.resizeViews()

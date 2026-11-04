@@ -1,16 +1,6 @@
 import { inject, Injectable } from '@angular/core'
-import {
-  getBrowserLanguage,
-  getSchema,
-  L10N_CONFIG,
-  L10nConfig,
-  L10nFormat,
-  L10nLocale,
-  L10nLocaleResolver,
-  L10nStorage,
-  L10nTranslationLoader
-} from 'angular-l10n'
-import { i18nLocaleSupported, LANG_SUPPORTED, normalizeLanguage } from '../../../i18n'
+import { getSchema, L10N_CONFIG, L10nConfig, L10nFormat, L10nLocale, L10nLocaleResolver, L10nStorage, L10nTranslationLoader } from 'angular-l10n'
+import { i18nLocaleSupported, LANG_SUPPORTED, normalizeLanguage, resolveSupportedLanguage } from '../../../i18n'
 import { catchError, from, map, Observable, of } from 'rxjs'
 import { BsLocaleService } from 'ngx-bootstrap/datepicker'
 import { loadDayjsLocale } from './lib/dayjs.i18n'
@@ -44,6 +34,7 @@ export class TranslationStorage implements L10nStorage {
 
   async read(): Promise<L10nLocale | null> {
     if (!this.hasStorage) return null
+    const requestedLanguage = normalizeLanguage(new URLSearchParams(window.location.search).get('locale') || '')
     let stored: L10nLocale | null = null
     const raw = sessionStorage.getItem(STORAGE_SESSION_KEY)
     if (raw) {
@@ -56,7 +47,7 @@ export class TranslationStorage implements L10nStorage {
     }
     const lang = stored?.language
     const isSupported = !!lang && LANG_SUPPORTED.has(lang as i18nLocaleSupported)
-    if (!isSupported) {
+    if (!isSupported || (requestedLanguage && lang !== requestedLanguage)) {
       sessionStorage.removeItem(STORAGE_SESSION_KEY)
       return null
     }
@@ -99,12 +90,13 @@ export class TranslateLocaleResolver implements L10nLocaleResolver {
   private readonly config = inject(L10N_CONFIG)
 
   public async get(): Promise<L10nLocale | null> {
-    const browserLanguage = normalizeLanguage(getBrowserLanguage(LANG_FORMAT))
-    if (browserLanguage) {
-      const schema = getSchema(this.config.schema, browserLanguage, LANG_FORMAT)
-      if (schema) {
-        return Promise.resolve(schema.locale)
-      }
+    const language = resolveSupportedLanguage([
+      new URLSearchParams(window.location.search).get('locale') || '',
+      ...(typeof navigator === 'undefined' ? [] : navigator.languages)
+    ])
+    const schema = getSchema(this.config.schema, language, LANG_FORMAT)
+    if (schema) {
+      return Promise.resolve(schema.locale)
     }
     return Promise.resolve(null)
   }

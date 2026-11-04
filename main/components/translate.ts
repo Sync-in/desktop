@@ -11,7 +11,11 @@ class i18nManager {
     this.load()
   }
 
-  tr(phrase: string) {
+  tr(phrase: string, count?: number) {
+    if (count !== undefined) {
+      const pluralTranslation = this.dictionary[`${phrase}_${new Intl.PluralRules(this.language).select(count)}`]
+      if (pluralTranslation !== undefined) return pluralTranslation
+    }
     const translation = this.dictionary[phrase]
     return translation === undefined ? phrase : translation
   }

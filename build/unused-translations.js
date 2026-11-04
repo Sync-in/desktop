@@ -169,6 +169,15 @@ function findUsageMap(keys, files) {
     }
   }
 
+  for (const key of Array.from(remaining)) {
+    const baseKey = key.replace(/_(?:zero|one|two|few|many|other)$/, '').replace(/ \{\{ app \}\}$/, '')
+    if (baseKey !== key && used.has(baseKey)) {
+      used.add(key)
+      where.set(key, where.get(baseKey))
+      remaining.delete(key)
+    }
+  }
+
   const unused = keys.filter((k) => !used.has(k) && !IGNORE_UNUSED_KEYS.includes(k))
   return { used: Array.from(used), unused, where }
 }

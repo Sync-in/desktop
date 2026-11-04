@@ -3,7 +3,7 @@ import { i18n } from './translate'
 import { Menu, MenuItem, MenuItemConstructorOptions } from 'electron'
 import { LOCAL_RENDERER } from '../constants/events'
 import { appEvents } from './events'
-import { checkUpdateMenu, helpMenu, preferencesMenu, separatorItem } from '../constants/menus'
+import { checkUpdateMenu, helpMenu, preferencesMenu, separatorItem, translateAppLabel } from '../constants/menus'
 
 export function createTemplate() {
   const template = []
@@ -26,7 +26,7 @@ export function createTemplate() {
       separatorItem,
       {
         role: 'hide',
-        label: `${i18n.tr('Hide')} ${ENVIRONMENT.appID}`
+        label: translateAppLabel('Hide')
       },
       {
         role: 'hideOthers',
@@ -39,7 +39,7 @@ export function createTemplate() {
       separatorItem,
       {
         role: 'quit',
-        label: `${i18n.tr('Quit')} ${ENVIRONMENT.appID}`
+        label: translateAppLabel('Quit')
       }
     ])
   } else {

@@ -30,6 +30,7 @@ Sync-in Desktop is designed for daily workstation use, while the CLI fits automa
 ## Features
 
 - 💻 Desktop application for Windows, macOS, and Linux
+- 🌐 Multilingual interface available in more than 50 languages
 - 🌐 Multi-server support from a single local client
 - 🔁 One-way and two-way synchronization workflows
 - 🛡️ Secure checksum-based sync mode for stronger integrity checks

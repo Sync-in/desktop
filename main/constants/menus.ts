@@ -10,8 +10,14 @@ export const separatorItem: MenuItemConstructorOptions = {
   type: 'separator'
 }
 
+export function translateAppLabel(phrase: string): string {
+  const templatePhrase = `${phrase} {{ app }}`
+  const translation = i18n.tr(templatePhrase)
+  return translation === templatePhrase ? `${i18n.tr(phrase)} ${ENVIRONMENT.appID}` : translation.replace('{{ app }}', ENVIRONMENT.appID)
+}
+
 const supportMenu: (withAppName?: boolean) => MenuItemConstructorOptions = (withAppName = true) => ({
-  label: `${i18n.tr('Support')}${withAppName ? ` ${ENVIRONMENT.appID} ` : ' '}💛`,
+  label: `${withAppName ? translateAppLabel('Support') : i18n.tr('Support')} 💛`,
   click: () => openExternal(`${ENVIRONMENT.appHomePage}${i18n.language === 'fr' ? '/fr' : ''}/support/`).catch(console.error)
 })
 

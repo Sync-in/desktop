@@ -1,4 +1,4 @@
-import { Component, inject, type OnDestroy, ViewChild } from '@angular/core'
+import { Component, computed, inject, ViewChild } from '@angular/core'
 import { AppService } from '../app.service'
 import { BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective } from 'ngx-bootstrap/dropdown'
 import { LOCAL_RENDERER } from '../../../../main/constants/events'
@@ -19,13 +19,11 @@ import {
   LucideRss,
   LucideServer,
   LucideTrash,
-  LucideTriangleAlert
+  LucideTriangleExclamationPoint
 } from '@lucide/angular'
 import { SyncServer } from '../../../../core/components/interfaces/server.interface'
-import { ServerAppCounter } from '@sync-in-desktop/main/interfaces/counter.interface'
 import { SERVER_ACTION } from '../../../../core/components/constants/server'
 import { ModalServerComponent } from './modal-server.component'
-import type { Subscription } from 'rxjs'
 
 @Component({
   selector: 'app-top-bar-component',
@@ -40,7 +38,7 @@ import type { Subscription } from 'rxjs'
   ],
   standalone: true
 })
-export class TopBarComponent implements OnDestroy {
+export class TopBarComponent {
   @ViewChild(BsDropdownDirective, { static: true }) dropDownServer: BsDropdownDirective
   protected readonly appService = inject(AppService)
   protected readonly icons = {
@@ -56,32 +54,16 @@ export class TopBarComponent implements OnDestroy {
     LucideRss,
     LucideServer,
     LucideTrash,
-    LucideTriangleAlert
+    LucideTriangleExclamationPoint
   }
   protected hoverIndex = null
-  protected servers: SyncServer[] = []
-  // [{'id': 1, 'name': 'test', 'applications': {'notifications': 2, 'tasks': 4, 'syncs': 1}}, ...]
-  protected serversAppsCounter: ServerAppCounter[] = []
-  protected activeServer = null
-  protected updateDownloaded = null
+  protected readonly serversAppsCounter = computed(() =>
+    this.appService
+      .serversAppsCounter()
+      .filter((server) => server.id !== this.appService.activeServer().id && Object.values<number>(server.applications).some((count) => count > 0))
+  )
   private readonly appMenuFocusSource = Symbol('app-menu')
   private readonly serverDropdownFocusSource = Symbol('server-dropdown')
-  private readonly subscriptions: Subscription[] = []
-
-  constructor() {
-    this.subscriptions.push(
-      this.appService.allServers.subscribe((servers: SyncServer[]) => (this.servers = servers)),
-      this.appService.activeServer.subscribe((server: SyncServer) => this.setActiveServer(server)),
-      this.appService.serversAppsCounter.subscribe((servers: ServerAppCounter[]) => this.setServersAppsCounter(servers)),
-      this.appService.updateDownloaded.subscribe((msg: string) => (this.updateDownloaded = msg))
-    )
-  }
-
-  ngOnDestroy() {
-    for (const subscription of this.subscriptions) {
-      subscription.unsubscribe()
-    }
-  }
 
   onDropDownState(toTopView: boolean) {
     this.appService.setTopViewFocus(this.serverDropdownFocusSource, toTopView)
@@ -96,7 +78,7 @@ export class TopBarComponent implements OnDestroy {
   }
 
   onActiveServer(_ev: Event, id: number) {
-    if (id !== this.activeServer.id) {
+    if (id !== this.appService.activeServer().id) {
       this.appService.setActiveServer(this.findServerByID(id))
       this.appService.ipcRenderer.send(LOCAL_RENDERER.SERVER.SET_ACTIVE, id)
     }
@@ -153,28 +135,7 @@ export class TopBarComponent implements OnDestroy {
     return 'text-primary'
   }
 
-  private setActiveServer(server: SyncServer) {
-    this.activeServer = server
-    this.setServersAppsCounter(this.appService.serversAppsCounter.getValue())
-  }
-
-  private setServersAppsCounter(servers: ServerAppCounter[]) {
-    const serversAppsCounter = []
-    for (const server of servers) {
-      if (server.id === this.activeServer.id) {
-        continue
-      }
-      for (const count of Object.values<number>(server.applications)) {
-        if (count > 0) {
-          serversAppsCounter.push(server)
-          break
-        }
-      }
-    }
-    this.serversAppsCounter = serversAppsCounter
-  }
-
   private findServerByID(id: number): SyncServer {
-    return this.servers.find((server) => server.id === id)
+    return this.appService.allServers().find((server) => server.id === id)
   }
 }

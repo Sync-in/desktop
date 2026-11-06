@@ -12,21 +12,21 @@
         <button id="button-basic" dropdownToggle type="button" class="btn" aria-controls="dropdown-basic">
           <div class="d-flex align-items-center no-text-select">
             <svg [lucideIcon]="icons.LucideServer" class="me-1"></svg>
-            @if (activeServer.id === 0) {
-              <div class="me-1 text-truncate" l10nTranslate>{{ activeServer.name }}</div>
+            @if (appService.activeServer().id === 0) {
+              <div class="me-1 text-truncate" l10nTranslate>{{ appService.activeServer().name }}</div>
             } @else {
-              <div class="me-1 text-truncate">{{ activeServer.name }}</div>
+              <div class="me-1 text-truncate">{{ appService.activeServer().name }}</div>
             }
             <svg [lucideIcon]="icons.LucideChevronDown" class="ms-auto"></svg>
           </div>
         </button>
         <ul id="dropdown-basic" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-basic">
-          @for (server of servers; track server.id) {
+          @for (server of appService.allServers(); track server.id) {
             <li role="menuitem" (mouseenter)="enterMenuItem(server.id)" (mouseleave)="leaveMenuItem()" (click)="onActiveServer($event, server.id)">
               <a class="d-flex align-items-center dropdown-item no-text-select">
                 <svg
                   [lucideIcon]="icons.LucideCircle"
-                  class="{{ serverStatusClass(server) }} {{ activeServer.id === server.id ? 'icon-fill' : '' }}"
+                  class="{{ serverStatusClass(server) }} {{ appService.activeServer().id === server.id ? 'icon-fill' : '' }}"
                 ></svg>
                 <span class="text-truncate ms-1 me-auto">{{ server.name }}</span>
                 <div class="ms-auto">
@@ -64,7 +64,7 @@
       </div>
       <!-- Tabs menu-->
       <div class="btn-group">
-        @for (server of serversAppsCounter; track server.id) {
+        @for (server of serversAppsCounter(); track server.id) {
           <button type="button" class="btn border-start-0" (click)="onActiveServer(null, server.id)">
             <div class="d-flex align-items-center no-text-select">
               <svg [lucideIcon]="icons.LucideRss" class="text-primary me-1"></svg>
@@ -90,10 +90,10 @@
             </div>
           </button>
         }
-        @if (updateDownloaded) {
+        @if (appService.updateDownloaded()) {
           <button (click)="onUpdate()" class="btn border-start-0" type="button">
-            <svg [lucideIcon]="icons.LucideTriangleAlert" class="text-warning"></svg>
-            <span class="ms-1">{{ updateDownloaded }}</span>
+            <svg [lucideIcon]="icons.LucideTriangleExclamationPoint" class="text-warning"></svg>
+            <span class="ms-1">{{ appService.updateDownloaded() }}</span>
           </button>
         }
       </div>

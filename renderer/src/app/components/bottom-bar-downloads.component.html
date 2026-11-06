@@ -1,26 +1,28 @@
-@if (downloads.length) {
-  <div class="btn-group" dropdown (isOpenChange)="onDropDownState($event)" [dropup]="true" [class.has-active-download]="dropdownView.id !== '0'">
-    @if (dropdownView.state === DOWNLOAD_STATE.PROGRESSING) {
-      <progressbar class="download-toggle-progress" [value]="dropdownView?.progress" [max]="1"></progressbar>
+@if (downloads().length) {
+  <div class="btn-group" dropdown (isOpenChange)="onDropDownState($event)" [dropup]="true" [class.has-active-download]="dropdownView().id !== '0'">
+    @if (dropdownView().state === DOWNLOAD_STATE.PROGRESSING) {
+      <progressbar class="download-toggle-progress" [value]="dropdownView().progress" [max]="1"></progressbar>
     }
     <button id="downloads-toggle" dropdownToggle type="button" class="btn download-toggle" aria-controls="downloads-menu">
       <div class="download-toggle-content no-text-select">
-        @if (dropdownView.id !== '0') {
-          <img class="download-toggle-icon" width="30" height="30" [src]="dropdownView?.icon" alt="" />
+        @if (dropdownView().id !== '0') {
+          <img class="download-toggle-icon" width="30" height="30" [src]="dropdownView().icon" alt="" />
         } @else {
           <div class="download-count">
             <svg [lucideIcon]="icons.LucideDownload" class="fs-lg"></svg>
-            <span class="badge rounded-pill bg-primary">{{ dropdownView?.name }}</span>
+            <span class="badge rounded-pill bg-primary">{{ dropdownView().name }}</span>
           </div>
         }
-        @if (dropdownView.id !== '0') {
+        @if (dropdownView().id !== '0') {
           <div class="download-toggle-details">
-            <div class="download-name">{{ dropdownView?.name }}</div>
-            @if (dropdownView.state === DOWNLOAD_STATE.PROGRESSING) {
+            <div class="download-name">{{ dropdownView().name }}</div>
+            @if (dropdownView().state === DOWNLOAD_STATE.PROGRESSING) {
               <div class="download-meta text-gray">
-                <span class="download-size">{{ dropdownView.humanSize?.done }}/{{ dropdownView.humanSize?.total }}{{ dropdownView.humanSize?.unit }}</span>
-                <span class="download-time text-truncate">{{ dropdownView.timeLeft | amDuration: 's' }}</span>
-                <span class="download-speed">{{ dropdownView.humanSpeed?.value }}&nbsp;{{ dropdownView.humanSpeed?.unit }}</span>
+                <span class="download-size"
+                  >{{ dropdownView().humanSize?.done }}/{{ dropdownView().humanSize?.total }}{{ dropdownView().humanSize?.unit }}</span
+                >
+                <span class="download-time text-truncate">{{ dropdownView().timeLeft | amDuration: 's' }}</span>
+                <span class="download-speed">{{ dropdownView().humanSpeed?.value }}&nbsp;{{ dropdownView().humanSpeed?.unit }}</span>
               </div>
             }
           </div>
@@ -28,7 +30,7 @@
       </div>
     </button>
     <ul id="downloads-menu" *dropdownMenu class="dropdown-menu downloads-menu" role="menu" aria-labelledby="downloads-toggle">
-      @for (d of downloads; track d.id) {
+      @for (d of downloads(); track d.id) {
         <li class="download-item" role="menuitem">
           <div class="dropdown-item download-item-content no-text-select" tabindex="-1">
             <img class="download-item-icon" width="28" height="28" [src]="d.icon" alt="" />
@@ -67,11 +69,7 @@
                 <button
                   (click)="onRemove($event, d.id)"
                   type="button"
-                  class="btn btn-outline-danger"
-                  aria-label="Remove"
-                  l10n-aria-label
-                  l10nTranslate
-                >
+                  class="btn btn-outline-danger">
                   <svg [lucideIcon]="icons.LucideX"></svg>
                 </button>
               }

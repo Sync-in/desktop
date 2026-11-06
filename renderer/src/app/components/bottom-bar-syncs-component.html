@@ -1,19 +1,19 @@
-@if (transfer) {
+@if (transfer(); as currentTransfer) {
 <div class="d-flex align-items-center truncate fs-base ms-auto me-auto">
   <span class="d-flex align-items-center me-1">
-    <span class="{{transfer.ok ? transfer.sideIconClass : 'circle-error-icon'}} me-1">
-      <svg [lucideIcon]="transfer.sideIcon"></svg>
+    <span class="{{ currentTransfer.ok ? currentTransfer.sideIconClass : 'circle-error-icon' }} me-1">
+      <svg [lucideIcon]="currentTransfer.sideIcon"></svg>
     </span>
-    <span class="circle-gray-icon" [class.text-danger]="!transfer.ok">
-      <svg [lucideIcon]="transfer.actionIcon" class="fs-sm"></svg>
+    <span class="circle-gray-icon" [class.text-danger]="!currentTransfer.ok">
+      <svg [lucideIcon]="currentTransfer.actionIcon" class="fs-sm"></svg>
     </span>
   </span>
-  <span class="truncate">{{ transfer.name }}</span>
+  <span class="truncate">{{ currentTransfer.name }}</span>
 </div>
-@if (transferProgress) {
+@if (transferProgress(); as currentTransferProgress) {
 <div class="d-flex bottomBar-syncProgress">
-  <progressbar [value]="transferProgress.percent" [max]="100" [animate]="true">
-    <div class="progress-text">{{ transferProgress.currentSize }}&nbsp;•&nbsp;{{ transferProgress.totalSize }}</div>
+  <progressbar [value]="currentTransferProgress.percent" [max]="100" [animate]="true">
+    <div class="progress-text">{{ currentTransferProgress.currentSize }}&nbsp;•&nbsp;{{ currentTransferProgress.totalSize }}</div>
   </progressbar>
 </div>
 } }

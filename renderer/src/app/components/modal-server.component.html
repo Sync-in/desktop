@@ -7,7 +7,7 @@
   <h4 class="modal-title ms-auto fw-normal">
     <span l10nTranslate>{{ titleText }}</span>
   </h4>
-  @if (activeServer.id) {
+  @if (appService.activeServer().id) {
     <button type="button" class="btn-close btn-close-white close pull-right ms-2" aria-label="Close" (click)="closeModal()">
       <span aria-hidden="true" class="visually-hidden">&times;</span>
     </button>
@@ -16,9 +16,9 @@
 <div class="modal-body" (keyup.enter)="onSubmit()">
   <div>
     <p class="mb-2">
-      @if (hasError) {
-        <span class="text-danger" l10nTranslate>{{ textError }}</span>
-      } @else if (submitted) {
+      @if (hasError()) {
+        <span class="text-danger" l10nTranslate>{{ textError() }}</span>
+      } @else if (submitted()) {
         <span class="text-dark">
           <span class="me-1" l10nTranslate>Please wait</span>
           <svg [lucideIcon]="icons.LucideRefreshCw" class="icon-spin"></svg>
@@ -80,7 +80,7 @@
   <button type="button" class="btn btn-secondary" (click)="closeModal()" l10nTranslate>Cancel</button>
   <button
     (click)="onSubmit()"
-    [disabled]="submitted || loginForm.invalid"
+    [disabled]="submitted() || loginForm.invalid"
     class="btn {{ isRemoveModal ? 'btn-danger' : 'btn-primary' }}"
     type="submit"
     role="button"

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core'
+import { Component, inject, OnInit, signal } from '@angular/core'
 import { AppService } from '../app.service'
 import { ReactiveFormsModule, UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms'
 import { LOCAL_RENDERER } from '../../../../main/constants/events'
@@ -28,22 +28,17 @@ export class ModalServerComponent implements OnInit {
   public config: { type: SERVER_ACTION; server: SyncServer } = null
   public titleIcon: LucideIcon = null
   public titleText: string = null
-  public activeServer: SyncServer = null
   public loginForm: UntypedFormGroup = null
-  public hasError = false
-  public textError = ''
-  public submitted = false
+  public readonly hasError = signal(false)
+  public readonly textError = signal('')
+  public readonly submitted = signal(false)
   protected locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly icons = { LucideChevronDown, LucideGlobe, LucidePencil, LucidePlus, LucideRefreshCw, LucideServer, LucideTrash }
   protected isAddModal = false
   protected isRemoveModal = false
   protected showAdvancedOptions = false
-  private readonly appService = inject(AppService)
+  protected readonly appService = inject(AppService)
   private readonly fb = inject(UntypedFormBuilder)
-
-  constructor() {
-    this.appService.activeServer.subscribe((server: SyncServer) => (this.activeServer = server))
-  }
 
   ngOnInit() {
     switch (this.config.type) {
@@ -83,9 +78,9 @@ export class ModalServerComponent implements OnInit {
     if (this.loginForm.invalid) {
       return
     }
-    this.hasError = false
-    this.textError = ''
-    this.submitted = true
+    this.hasError.set(false)
+    this.textError.set('')
+    this.submitted.set(true)
     this.appService.ipcRenderer
       .invoke(LOCAL_RENDERER.SERVER.ACTION, this.config.type, {
         id: this.config.server ? this.config.server.id : null,
@@ -101,10 +96,10 @@ export class ModalServerComponent implements OnInit {
     if (info.ok) {
       this.closeModal()
     } else {
-      this.textError = info.msg
-      this.hasError = true
+      this.textError.set(info.msg)
+      this.hasError.set(true)
     }
-    this.submitted = false
+    this.submitted.set(false)
   }
 
   private serverName() {

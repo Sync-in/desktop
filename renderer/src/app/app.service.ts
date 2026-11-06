@@ -1,4 +1,4 @@
-import { inject, Injectable, NgZone, signal, WritableSignal } from '@angular/core'
+import { inject, Injectable, signal } from '@angular/core'
 import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal'
 import { LOCAL_RENDERER, REMOTE_RENDERER } from '../../../main/constants/events'
 import { BehaviorSubject, fromEvent, map, mergeWith, Observable, Subject } from 'rxjs'
@@ -8,6 +8,7 @@ import type { ElectronIpcRenderer } from './common/interfaces/electron'
 import type { SyncServer } from '../../../core/components/interfaces/server.interface'
 import { IDownload } from '../../../main/interfaces/download.interface'
 import type { SyncTransfer } from '@sync-in-desktop/core/components/interfaces/sync-transfer.interface'
+import type { ServerAppCounter } from '@sync-in-desktop/main/interfaces/counter.interface'
 import { THEME } from '../../../main/constants/themes'
 import { ModalServerComponent } from './components/modal-server.component'
 import { SERVER_ACTION } from '@sync-in-desktop/core/components/constants/server'
@@ -24,23 +25,22 @@ export class AppService {
   public ipcRenderer = window.ipcRenderer
   public isMacOS = window.process.platform === 'darwin'
   // Observables Windows
-  public themeMode: WritableSignal<THEME> = signal(getTheme())
-  public isMaximized: WritableSignal<boolean> = signal(false)
-  public isFullScreen: WritableSignal<boolean> = signal(false)
-  // Observables Servers
-  public allServers = new BehaviorSubject<SyncServer[]>([])
+  public readonly themeMode = signal(getTheme())
+  public readonly isMaximized = signal(false)
+  public readonly isFullScreen = signal(false)
+  // Signals Servers
+  public readonly allServers = signal<SyncServer[]>([])
   // Observables Downloads
-  public downloadProgress = new BehaviorSubject<any>({})
-  public downloadGlobalProgress = new BehaviorSubject<any>({})
+  public readonly downloadProgress = new Subject<IDownload>()
+  public readonly downloadGlobalProgress = new Subject<IDownload>()
   // Observables Syncs
-  public syncTransfer = new Subject<SyncTransfer | null>()
-  // Observables Servers Applications Notifications/Counters
-  public serversAppsCounter = new BehaviorSubject<any[]>([])
-  // Observable AutoUpdate
-  public updateDownloaded: Subject<string> = new Subject<string>()
-  private readonly ngZone = inject(NgZone)
+  public readonly syncTransfer = new Subject<SyncTransfer | null>()
+  // Signals Servers Applications Notifications/Counters
+  public readonly serversAppsCounter = signal<ServerAppCounter[]>([])
+  // Signal AutoUpdate
+  public readonly updateDownloaded = signal<string | null>(null)
   private readonly translation = inject(L10nTranslationService)
-  public activeServer = new BehaviorSubject<SyncServer>({
+  public readonly activeServer = signal<SyncServer>({
     id: 0,
     name: this.translation.translate('No server configured'),
     url: null,
@@ -64,18 +64,16 @@ export class AppService {
     setTheme('bs5')
     this.networkIsOnline.subscribe((state: boolean) => this.ipcRenderer.send(REMOTE_RENDERER.MISC.NETWORK_IS_ONLINE, state))
     this.ipcRenderer.on(REMOTE_RENDERER.MISC.SWITCH_THEME, (_e: Event, theme: THEME) => this.themeMode.set(theme))
-    this.ipcRenderer.on(LOCAL_RENDERER.SERVER.LIST, (_e: Event, servers: SyncServer[]) => this.ngZone.run(() => this.allServers.next(servers)))
-    this.ipcRenderer.on(LOCAL_RENDERER.SERVER.SET_ACTIVE, (_e: Event, server: SyncServer) => this.ngZone.run(() => this.activeServer.next(server)))
+    this.ipcRenderer.on(LOCAL_RENDERER.SERVER.LIST, (_e: Event, servers: SyncServer[]) => this.allServers.set(servers))
+    this.ipcRenderer.on(LOCAL_RENDERER.SERVER.SET_ACTIVE, (_e: Event, server: SyncServer) => this.activeServer.set(server))
     this.ipcRenderer.on(LOCAL_RENDERER.WINDOW.IS_MAXIMIZED, (_e: Event, state) => this.isMaximized.set(state))
     this.ipcRenderer.on(LOCAL_RENDERER.WINDOW.IS_FULLSCREEN, (_e: Event, state) => this.isFullScreen.set(state))
-    this.ipcRenderer.on(LOCAL_RENDERER.DOWNLOAD.PROGRESS, (_e: Event, item: IDownload) => this.ngZone.run(() => this.downloadProgress.next(item)))
-    this.ipcRenderer.on(LOCAL_RENDERER.DOWNLOAD.GLOBAL_PROGRESS, (_e: Event, item) => this.ngZone.run(() => this.downloadGlobalProgress.next(item)))
-    this.ipcRenderer.on(REMOTE_RENDERER.APPLICATIONS.COUNTER, (_e: Event, counter) => this.ngZone.run(() => this.serversAppsCounter.next(counter)))
-    this.ipcRenderer.on(REMOTE_RENDERER.SYNC.TRANSFER, (_e: Event, transfer: SyncTransfer | null) =>
-      this.ngZone.run(() => this.syncTransfer.next(transfer))
-    )
-    this.ipcRenderer.on(LOCAL_RENDERER.UPDATE.DOWNLOADED, (_e: Event, msg: string) => this.ngZone.run(() => this.updateDownloaded.next(msg)))
-    this.ipcRenderer.on(LOCAL_RENDERER.UI.MODAL_TOGGLE, () => this.ngZone.run(() => this.openDialog()))
+    this.ipcRenderer.on(LOCAL_RENDERER.DOWNLOAD.PROGRESS, (_e: Event, item: IDownload) => this.downloadProgress.next(item))
+    this.ipcRenderer.on(LOCAL_RENDERER.DOWNLOAD.GLOBAL_PROGRESS, (_e: Event, item: IDownload) => this.downloadGlobalProgress.next(item))
+    this.ipcRenderer.on(REMOTE_RENDERER.APPLICATIONS.COUNTER, (_e: Event, counter: ServerAppCounter[]) => this.serversAppsCounter.set(counter))
+    this.ipcRenderer.on(REMOTE_RENDERER.SYNC.TRANSFER, (_e: Event, transfer: SyncTransfer | null) => this.syncTransfer.next(transfer))
+    this.ipcRenderer.on(LOCAL_RENDERER.UPDATE.DOWNLOADED, (_e: Event, msg: string) => this.updateDownloaded.set(msg))
+    this.ipcRenderer.on(LOCAL_RENDERER.UI.MODAL_TOGGLE, () => this.openDialog())
     this.bsModal.onHide.subscribe(() => this.onHide())
   }
 
@@ -109,7 +107,7 @@ export class AppService {
   }
 
   setActiveServer(server: SyncServer) {
-    this.activeServer.next(server)
+    this.activeServer.set(server)
   }
 
   setTopViewFocus(source: symbol, enabled: boolean) {

@@ -1,12 +1,12 @@
 <div class="app-main {{ appService.themeMode() }}">
   <app-top-bar-component></app-top-bar-component>
-  @if (!activeServer.id || !activeServer.available) {
+  @if (!appService.activeServer().id || !appService.activeServer().available) {
     <div class="app-content">
-      @if (!activeServer.available) {
+      @if (!appService.activeServer().available) {
         <div class="d-flex align-items-center justify-content-center h-100">
           <div class="d-flex flex-column">
             <div class="text-white fs-md mb-3">
-              @if (isRetrying) {
+              @if (isRetrying()) {
                 <span l10nTranslate>Trying to connect to the server...</span>
               } @else {
                 <span l10nTranslate>Unable to connect to this server !</span>
@@ -14,7 +14,7 @@
             </div>
             <button (click)="retryLoad()" type="button" class="btn btn-dark ms-auto me-auto">
               <span class="me-1" l10nTranslate>Retry</span>
-              <svg [lucideIcon]="icons.LucideRefreshCw" [class]="isRetrying ? 'icon-spin' : ''"></svg>
+              <svg [lucideIcon]="icons.LucideRefreshCw" [class]="isRetrying() ? 'icon-spin' : ''"></svg>
             </button>
           </div>
         </div>

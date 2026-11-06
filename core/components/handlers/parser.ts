@@ -308,7 +308,7 @@ export class FilesParser {
     } catch (e) {
       this.logger.error(`Unable to parse: ${dir} (${e})`)
       if (dir === this.syncPath.localPath) {
-        throw new Error('Abort parsing')
+        throw new Error('Abort parsing', { cause: e })
       }
       yield [dir.replace(this.regexPath, ''), [F_SPECIAL_STAT.ERROR, e.toString()]]
     }

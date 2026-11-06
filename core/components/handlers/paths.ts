@@ -42,7 +42,7 @@ export class PathsManager {
       coreEvents.emit(CORE.SAVE_SETTINGS, true)
       return syncPath
     } catch (e) {
-      throw new Error(await RequestsManager.handleHttpError(e, true))
+      throw new Error(await RequestsManager.handleHttpError(e, true), { cause: e })
     }
   }
 
@@ -52,7 +52,7 @@ export class PathsManager {
       try {
         await this.req.http.delete(`${API.PATHS}/${syncPath.id}`)
       } catch (e) {
-        throw new Error(await RequestsManager.handleHttpError(e, true))
+        throw new Error(await RequestsManager.handleHttpError(e, true), { cause: e })
       }
     }
     await syncPath.removeSnapShots(this.req.server.id)
@@ -76,7 +76,7 @@ export class PathsManager {
     try {
       r = await this.req.http.put(API.PATHS, syncPaths)
     } catch (e) {
-      throw new Error(await RequestsManager.handleHttpError(e, true))
+      throw new Error(await RequestsManager.handleHttpError(e, true), { cause: e })
     }
     let hasChanges = false
     for (const path of r.data.update) {

@@ -104,7 +104,7 @@ export class RunManager {
     } catch (e) {
       if (e.message === CLIENT_TOKEN_EXPIRED_ERROR) {
         server.authTokenExpired = true
-        throw new Error(`${CLIENT_TOKEN_EXPIRED_ERROR} for server ${server.name} (${server.id})`)
+        throw new Error(`${CLIENT_TOKEN_EXPIRED_ERROR} for server ${server.name} (${server.id})`, { cause: e })
       } else {
         mainLogger.error(`Update Paths ${server.name}: ${e.message}`)
       }

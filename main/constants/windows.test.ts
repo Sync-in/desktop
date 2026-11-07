@@ -17,14 +17,14 @@ describe('window view props', () => {
     const props = viewProps('wrapper')
 
     expect(props.webPreferences?.partition).toBe('persist:wrapper')
-    expect(props.webPreferences?.preload).toMatch(/preload-wrapper\.js$/)
+    expect(props.webPreferences?.preload).toMatch(/preload-wrapper\.cjs$/)
   })
 
   it('uses the webview preload for server views', () => {
     const props = viewProps(12)
 
     expect(props.webPreferences?.partition).toBe('persist:12')
-    expect(props.webPreferences?.preload).toMatch(/preload-webview\.js$/)
+    expect(props.webPreferences?.preload).toMatch(/preload-webview\.cjs$/)
   })
 
   it('keeps renderer isolation options enabled', () => {

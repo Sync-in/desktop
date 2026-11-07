@@ -13,8 +13,8 @@ export const THEMES = { [THEME.LIGHT]: '#0b2640', [THEME.DARK]: '#222d32' }
 export const TAB_BAR_HEIGHT = 40
 export const WRAPPER_VIEW_OFFSET_HEIGHT = 80
 export const RENDERER_FILE = './dist/renderer/index.html'
-const WRAPPER_PRELOAD_FILE = path.join(__dirname, 'preload-wrapper.js')
-const WEBVIEW_PRELOAD_FILE = path.join(__dirname, 'preload-webview.js')
+const WRAPPER_PRELOAD_FILE = path.join(import.meta.dirname, 'preload-wrapper.cjs')
+const WEBVIEW_PRELOAD_FILE = path.join(import.meta.dirname, 'preload-webview.cjs')
 
 export const defaultWindowProps: BrowserWindowConstructorOptions = {
   width: DEFAULT_WINDOW_WIDTH,

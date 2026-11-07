@@ -3,7 +3,7 @@ import path from 'node:path'
 import { i18nLocaleSupported, LANG_DEFAULT, normalizeLanguage } from '../../i18n'
 
 class i18nManager {
-  i18nPath = path.join(__dirname, 'i18n')
+  i18nPath = path.join(import.meta.dirname, 'i18n')
   language: i18nLocaleSupported = LANG_DEFAULT
   dictionary: any = {}
 

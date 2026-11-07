@@ -2,6 +2,7 @@
   "name": "@sync-in-desktop/cli",
   "description": "Command Line",
   "license": "AGPL-3.0-or-later",
+  "type": "module",
   "private": true,
   "author": {
     "name": "Johan Legrand",

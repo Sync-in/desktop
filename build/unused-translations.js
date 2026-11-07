@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Script: unused_translations.js
+ * Script: unused-translations.js
  *
  * Purpose:
  *  - Read one or many translation JSON files
@@ -10,8 +10,8 @@
  *  - Print the list of unused keys per translation file
  *
  * Usage:
- *  - node scripts/unused_translations.js
- *  - node scripts/unused_translations.js --i18n=<path>
+ *  - node build/unused-translations.js
+ *  - node build/unused-translations.js --i18n=<path>
  *    <path> can be:
  *      - a directory containing .json files (non-recursive)
  *      - a specific .json file
@@ -22,8 +22,8 @@
  *  - Ignored directories: all directories that starts with '.' and node_modules, dist, build, out, coverage, tmp
  */
 
-const fs = require('fs')
-const path = require('path')
+import fs from 'node:fs'
+import path from 'node:path'
 
 const argv = process.argv.slice(2)
 const argMap = new Map(
@@ -261,6 +261,4 @@ function main() {
   // process.exit(totalUnused ? 1 : 0);
 }
 
-if (require.main === module) {
-  main()
-}
+main()

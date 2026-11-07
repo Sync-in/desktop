@@ -2,6 +2,7 @@
   "name": "@sync-in-desktop/main",
   "description": "Desktop Application Main",
   "license": "AGPL-3.0-or-later",
+  "type": "module",
   "author": {
     "name": "Johan Legrand",
     "email": "johan.legrand@sync-in.com"

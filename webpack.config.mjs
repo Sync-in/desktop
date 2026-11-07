@@ -12,6 +12,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const version = pkg.version
 const isProduction = process.env.NODE_ENV !== 'development'
+const preloadAsset = /^preload-.*\.cjs(?:\.map)?$/
 
 class WarningsAsErrorsPlugin {
   apply(compiler) {
@@ -30,11 +31,9 @@ export default [
     mode: isProduction ? 'production' : 'development',
     devtool: isProduction ? undefined : 'inline-source-map',
     name: 'app',
-    target: 'electron-main',
+    target: 'electron43-main',
     entry: {
-      main: path.join(__dirname, 'main', 'main.ts'),
-      'preload-wrapper': path.join(__dirname, 'main', 'preload-wrapper.ts'),
-      'preload-webview': path.join(__dirname, 'main', 'preload-webview.ts')
+      main: path.join(__dirname, 'main', 'main.ts')
     },
     module: {
       rules: [
@@ -88,14 +87,75 @@ export default [
     ],
     resolve: { extensions: ['.ts', '.js'] },
     output: {
-      path: path.resolve(__dirname, 'dist', 'main')
+      path: path.resolve(__dirname, 'dist', 'main'),
+      filename: '[name].js',
+      chunkFilename: '[name].js',
+      module: true,
+      chunkFormat: 'module',
+      chunkLoading: 'import',
+      clean: {
+        keep: preloadAsset
+      }
+    }
+  },
+  {
+    mode: isProduction ? 'production' : 'development',
+    devtool: isProduction ? undefined : 'inline-source-map',
+    name: 'preloads',
+    target: 'electron43-preload',
+    entry: {
+      'preload-wrapper': path.join(__dirname, 'main', 'preload-wrapper.ts'),
+      'preload-webview': path.join(__dirname, 'main', 'preload-webview.ts')
+    },
+    module: {
+      rules: [
+        {
+          test: /\.ts$/,
+          include: path.resolve(__dirname, 'main'),
+          exclude: /node_modules/,
+          use: {
+            loader: 'swc-loader',
+            options: {
+              jsc: { parser: { syntax: 'typescript' }, target: 'es2022' }
+            }
+          }
+        }
+      ]
+    },
+    optimization: {
+      minimize: true,
+      splitChunks: false,
+      runtimeChunk: false,
+      minimizer: [
+        new TerserPlugin({
+          terserOptions: {
+            format: {
+              comments: false
+            }
+          },
+          extractComments: false
+        })
+      ]
+    },
+    plugins: [...(!isProduction ? [new WarningsAsErrorsPlugin()] : [])],
+    resolve: { extensions: ['.ts', '.js'] },
+    output: {
+      path: path.resolve(__dirname, 'dist', 'main'),
+      filename: '[name].cjs',
+      module: false,
+      chunkFormat: 'commonjs',
+      chunkLoading: false,
+      asyncChunks: false,
+      clean: {
+        keep: (asset) => !preloadAsset.test(asset)
+      }
     }
   },
   {
     mode: isProduction ? 'production' : 'development',
     devtool: isProduction ? undefined : 'inline-source-map',
     name: 'cli',
-    target: 'node',
+    target: 'node22.12',
     entry: path.join(__dirname, 'cli', 'main.ts'),
     module: {
       rules: [
@@ -113,6 +173,8 @@ export default [
     },
     optimization: {
       minimize: true,
+      splitChunks: false,
+      runtimeChunk: false,
       minimizer: [
         new TerserPlugin({
           terserOptions: {
@@ -137,8 +199,13 @@ export default [
     ],
     resolve: { extensions: ['.ts', '.js'] },
     output: {
-      path: path.resolve(__dirname, 'releases', 'sync-in-cli'),
-      filename: `sync-in-cli-${version}.js`
+      path: path.resolve(__dirname, 'releases'),
+      filename: `sync-in-cli/sync-in-cli-${version}.js`,
+      module: true,
+      chunkFormat: 'module',
+      chunkLoading: 'import',
+      asyncChunks: false,
+      clean: isProduction
     }
   }
 ]

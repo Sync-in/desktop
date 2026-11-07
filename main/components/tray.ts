@@ -9,17 +9,17 @@ import { ServersManager } from '../../core/components/handlers/servers'
 import { SyncStatus } from '@sync-in-desktop/core/components/interfaces/sync-status.interface'
 import { helpMenu, preferencesMenu, separatorItem, translateAppLabel } from '../constants/menus'
 
-const enabledTrayIcon = nativeImage.createFromPath(path.join(__dirname, './assets/tray/enabled.png')).resize({ width: 22 })
-const disabledTrayIcon = nativeImage.createFromPath(path.join(__dirname, './assets/tray/disabled.png')).resize({ width: 22 })
-const inSyncTrayIcon = nativeImage.createFromPath(path.join(__dirname, './assets/tray/sync.png')).resize({ width: 22 })
+const enabledTrayIcon = nativeImage.createFromPath(path.join(import.meta.dirname, './assets/tray/enabled.png')).resize({ width: 22 })
+const disabledTrayIcon = nativeImage.createFromPath(path.join(import.meta.dirname, './assets/tray/disabled.png')).resize({ width: 22 })
+const inSyncTrayIcon = nativeImage.createFromPath(path.join(import.meta.dirname, './assets/tray/sync.png')).resize({ width: 22 })
 
-const enabledServerIcon = nativeImage.createFromPath(path.join(__dirname, './assets/tray/states/ok.png')).resize({ width: 14 })
-const failedServerIcon = nativeImage.createFromPath(path.join(__dirname, './assets/tray/states/failed.png')).resize({ width: 14 })
-const warningServerIcon = nativeImage.createFromPath(path.join(__dirname, './assets/tray/states/warning.png')).resize({ width: 14 })
+const enabledServerIcon = nativeImage.createFromPath(path.join(import.meta.dirname, './assets/tray/states/ok.png')).resize({ width: 14 })
+const failedServerIcon = nativeImage.createFromPath(path.join(import.meta.dirname, './assets/tray/states/failed.png')).resize({ width: 14 })
+const warningServerIcon = nativeImage.createFromPath(path.join(import.meta.dirname, './assets/tray/states/warning.png')).resize({ width: 14 })
 
-const enabledDockIcon = IS_MACOS ? nativeImage.createFromPath(path.join(__dirname, './assets/tray/dock/enabled.png')) : null
-const disabledDockIcon = IS_MACOS ? nativeImage.createFromPath(path.join(__dirname, './assets/tray/dock/disabled.png')) : null
-const inSyncDockIcon = IS_MACOS ? nativeImage.createFromPath(path.join(__dirname, './assets/tray/dock/sync.png')) : null
+const enabledDockIcon = IS_MACOS ? nativeImage.createFromPath(path.join(import.meta.dirname, './assets/tray/dock/enabled.png')) : null
+const disabledDockIcon = IS_MACOS ? nativeImage.createFromPath(path.join(import.meta.dirname, './assets/tray/dock/disabled.png')) : null
+const inSyncDockIcon = IS_MACOS ? nativeImage.createFromPath(path.join(import.meta.dirname, './assets/tray/dock/sync.png')) : null
 
 export class TrayManager {
   private tray: Tray

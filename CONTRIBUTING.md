@@ -86,19 +86,19 @@ Run these commands in separate terminals. Both run in watch mode.
 
 ```bash
 npm run angular:dev # build renderer (dist/renderer)
-npm run webpack:all:dev # build app (dist/main) & cli (releases/sync-in-cli)
+npm run rspack:all:dev # build app (dist/main) & cli (releases/sync-in-cli)
 ```
 
 To build only App:
 
 ```bash
-npm run webpack:app:dev
+npm run rspack:app:dev
 ```
 
 To build only CLI:
 
 ```bash
-npm run webpack:cli:dev
+npm run rspack:cli:dev
 ```
 
 ### Start App (dev mode)

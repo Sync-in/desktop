@@ -63,11 +63,11 @@
     "electron:make": "electron-builder --dir -m",
     "electron:dist": "electron-builder -m -l -w",
     "app": "electron . --trace-warnings",
-    "app:dist": "npm run angular:prod && npm run webpack:all:prod && npm run electron:dist && node build/manifest.mjs",
-    "webpack:all:prod": "webpack --config-node-env production --config webpack.config.mjs --progress --fail-on-warnings",
-    "webpack:all:dev": "webpack --config-node-env development --config webpack.config.mjs --progress --watch",
-    "webpack:cli:dev": "webpack --config-node-env development --config webpack.config.mjs --config-name cli --progress --watch",
-    "webpack:app:dev": "webpack --config-node-env development --config webpack.config.mjs --config-name app --config-name preloads --progress --watch",
+    "app:dist": "npm run angular:prod && npm run rspack:all:prod && npm run electron:dist && node build/manifest.mjs",
+    "rspack:all:prod": "rspack build --node-env production --config rspack.config.mjs",
+    "rspack:all:dev": "rspack build --node-env development --config rspack.config.mjs --watch",
+    "rspack:cli:dev": "rspack build --node-env development --config rspack.config.mjs --config-name cli --watch",
+    "rspack:app:dev": "rspack build --node-env development --config rspack.config.mjs --config-name app --config-name preloads --watch",
     "angular:prod": "npm -w renderer run angular:prod",
     "angular:dev": "npm -w renderer run angular:dev",
     "angular:update": "npx -w renderer ng update @angular/cli @angular/core --allow-dirty",
@@ -91,27 +91,22 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@swc/cli": "^0.8.1",
+    "@rspack/cli": "^2.3.1",
+    "@rspack/core": "^2.3.1",
     "@types/node": "^24.13.3",
     "@vitest/coverage-v8": "^5.0.2",
     "@zip.js/zip.js": "^2.8.26",
     "commit-and-tag-version": "^13.3.0",
-    "copy-webpack-plugin": "^14.0.0",
     "eslint": "^10.14.0",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.3",
-    "eslint-webpack-plugin": "^6.0.0",
-    "fork-ts-checker-webpack-plugin": "^9.1.0",
+    "eslint-rspack-plugin": "^5.0.1",
     "globals": "^17.14.0",
-    "swc-loader": "^0.2.6",
-    "terser-webpack-plugin": "^5.3.14",
+    "ts-checker-rspack-plugin": "^1.7.2",
     "tslib": "^2.8.1",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.1",
-    "vitest": "^5.0.5",
-    "webpack": "^5.98.0",
-    "webpack-cli": "^7.2.1",
-    "webpack-shebang-plugin": "^1.1.8"
+    "vitest": "^5.0.5"
   },
   "build": {
     "afterPack": "build/after-pack-linux-wrapper.cjs",
@@ -234,7 +229,6 @@
     "esbuild": true,
     "msgpackr-extract": true,
     "lmdb": true,
-    "@parcel/watcher": true,
-    "@swc/core": true
+    "@parcel/watcher": true
   }
 }

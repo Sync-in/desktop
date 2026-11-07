@@ -81,6 +81,7 @@ async function genCliLatest() {
   const releaseCliFileZip = `${releaseCliFilePath}.zip`
   const releaseCmdFileTarGZ = `${releaseCliFilePath}.tar.gz`
   if (fs.existsSync(releaseCliFilePath)) {
+    fs.chmodSync(releaseCliFilePath, 0o755)
     execSync(`cd ${releaseCliPath} && zip ${releaseCliFileZip} ${releaseCliFileName} && tar zcf ${releaseCmdFileTarGZ} ${releaseCliFileName}`)
     fs.rmSync(releaseCliFilePath)
   }

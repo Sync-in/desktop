@@ -42,7 +42,7 @@ async function main(): Promise<void> {
   const program = createProgram()
 
   if (!updateRequested) {
-    const { registerCommands } = await import(/* webpackMode: 'eager' */ './cmds')
+    const { registerCommands } = await import(/* rspackMode: 'eager' */ './cmds')
     registerCommands(program)
   }
 

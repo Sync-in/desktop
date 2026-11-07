@@ -2,7 +2,7 @@ import fs, { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { execSync } from 'node:child_process'
 import crypto from 'node:crypto'
-import yaml from 'js-yaml'
+import { load } from 'js-yaml'
 import { fileURLToPath } from 'node:url'
 
 /**
@@ -114,7 +114,7 @@ function parseDirs(dir) {
     }
     if (regExpMatchLatestYML.test(f.name)) {
       const os = f.name === 'latest.yml' ? 'win' : f.name.includes('linux') ? 'linux' : 'mac'
-      const latestContent = yaml.load(fs.readFileSync(realPath))
+      const latestContent = load(fs.readFileSync(realPath))
       if (!latestApp.date) {
         latestApp.date = latestContent.releaseDate
       }

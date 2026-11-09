@@ -1,4 +1,15 @@
 
+## [2.3.2](https://github.com/Sync-in/desktop/compare/v2.3.1...v2.3.2) (2026-11-09)
+
+### Features
+
+* **i18n:** expand multilingual support with 40 new locales ([#62](https://github.com/Sync-in/desktop/issues/62)) ([967b97f](https://github.com/Sync-in/desktop/commit/967b97fe5eda3bdc0f4a5668fcc2f341b2e6b2b5))
+
+### Bug Fixes
+
+* **build:** update js-yaml ESM import for release manifest ([3d9db9d](https://github.com/Sync-in/desktop/commit/3d9db9d131a34b32077994a23e17d2c4b8f47df4))
+* **i18n:** unify locale detection and preserve --lang priority ([128b7c5](https://github.com/Sync-in/desktop/commit/128b7c558ba3ad2bb72d476b448f32188798349b))
+
 ## [2.3.1](https://github.com/Sync-in/desktop/compare/v2.3.0...v2.3.1) (2026-10-25)
 
 ### Bug Fixes

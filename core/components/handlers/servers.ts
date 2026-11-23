@@ -1,6 +1,7 @@
 import { RequestsManager } from './requests'
 import { settingsManager } from './settings'
 import { findByNameOrID, genClientInfos, genUUID } from '../utils/functions'
+import { cleanupDownloadTmpFiles } from '../utils/download-checkpoints'
 import { AxiosResponse } from 'axios'
 import { Server } from '../models/server'
 import { API } from '../constants/requests'
@@ -42,6 +43,7 @@ export class ServersManager {
     }
     if (server.syncPaths && server.syncPaths.length) {
       for (const syncPath of server.syncPaths) {
+        await cleanupDownloadTmpFiles(syncPath.localPath, server.authID, syncPath.id)
         await syncPath.removeSnapShots(server.id)
       }
     }

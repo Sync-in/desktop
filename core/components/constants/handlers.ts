@@ -43,14 +43,16 @@ export enum F_ACTION {
 }
 
 export const SYNC_CHECKSUM_ALG = 'sha512-256'
+export const SYNC_CHECKSUM_SIZE = 32
 export const DEFAULT_HIGH_WATER_MARK = 512 * 1024
 // min size to track progress and put the task in slow queue
 export const TRANSFER_MIN_SIZE = 10 * 1024 ** 2 // 10MB
 // parsers filters
 export const SYNC_DIFF_DONE = 'done'
-export const INCOMPLETE_PREFIX = '.sync-in.'
 export const INCOMPLETE_RETENTION = 172800 // 48 hours in seconds
+export const INTERNAL_TEMPORARY_DIRECTORY = '.sync-in-tmp'
 export const DEFAULT_FILTERS = new Set([
+  INTERNAL_TEMPORARY_DIRECTORY,
   '.DS_Store',
   '.swp',
   '.AppleDouble',

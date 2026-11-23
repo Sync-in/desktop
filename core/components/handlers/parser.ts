@@ -1,5 +1,6 @@
 import path from 'node:path'
 import fs from 'node:fs/promises'
+import type { Dirent } from 'node:fs'
 import zlib from 'node:zlib'
 import readline from 'node:readline'
 import { getLogger } from './loggers'
@@ -7,21 +8,22 @@ import { snapshotSides, SyncPath } from '../models/syncpath'
 import { IS_WINDOWS } from '../../constants'
 import {
   checksumFile,
+  checksumFileWithChunks,
   convertJSONToMap,
   convertMapToJSON,
-  currentTimeStamp,
   fileBaseName,
   isPathExistsBool,
   regExpPathPattern
 } from '../utils/functions'
+import { getDownloadTmpDirectory, getDownloadTmpPath, getDownloadTmpPrefix, isDownloadTmpFileName } from '../utils/download-checkpoints'
 import { RequestsManager } from './requests'
 import {
   DEFAULT_FILTERS,
   F_ACTION,
   F_SPECIAL_STAT,
   F_STAT,
-  INCOMPLETE_PREFIX,
   INCOMPLETE_RETENTION,
+  INTERNAL_TEMPORARY_DIRECTORY,
   SIDE,
   SYNC_DIFF_DONE
 } from '../constants/handlers'
@@ -29,13 +31,16 @@ import { Logger } from 'winston'
 import { EventEmitter } from 'events'
 import { LOCAL_RENDERER, REMOTE_RENDERER } from '../../../main/constants/events'
 import { API } from '../constants/requests'
+import type { AxiosExtendedRequestConfig } from '../interfaces/request.interface'
 import type { SyncTransfer } from '../interfaces/sync-transfer.interface'
 import type { SyncDiff, SyncFileSpecialStats, SyncFileStats, SyncSnapShot } from '../interfaces/sync-diff.interface'
+import type { SyncUploadChunkChecksumCache, SyncUploadSessionRecord } from '../interfaces/sync-upload-session.interface'
 import { NormalizedMap } from '../utils/normalizedMap'
 import { Readable } from 'node:stream'
 import { buildPathFilterSource, compilePathFilters } from '../utils/path-filters/path-filter-compiler'
 import { SYNC_MAX_PATH_FILTER_LENGTH, SYNC_MAX_PATH_FILTER_WARNINGS } from '../utils/path-filters/constants'
 import type { SyncPathFilterMatcher } from '../utils/path-filters/path-filter-compiler.interface'
+import { isUploadSessionRecord, uploadSessionMatchesFileStats } from '../utils/upload-session'
 
 export class FilesParser {
   public logger: Logger
@@ -61,6 +66,8 @@ export class FilesParser {
     local: SyncSnapShot
     remote: SyncSnapShot
   } = { local: new NormalizedMap<string, SyncFileStats>(), remote: new NormalizedMap<string, SyncFileStats>() }
+  public uploadSessions = new NormalizedMap<string, SyncUploadSessionRecord>()
+  private readonly uploadChunkChecksums = new NormalizedMap<string, SyncUploadChunkChecksumCache>()
   // parsing errors
   public errors = { local: new NormalizedMap<string, string>(), remote: new NormalizedMap<string, string>() }
   // constants
@@ -75,6 +82,7 @@ export class FilesParser {
   private readonly syncPathFilters: SyncPathFilterMatcher | null
   private nbFiltered = 0
   private syncPath: SyncPath
+  private incompleteSnapshotSave: Promise<void> = Promise.resolve()
 
   constructor(syncPath: SyncPath, req: RequestsManager, reportOnly = false, appEvents: EventEmitter = null) {
     this.syncPath = syncPath
@@ -109,8 +117,10 @@ export class FilesParser {
 
   async run() {
     await this.loadSnapShots()
+    await this.restoreDownloadCheckpoints()
     await Promise.all([this.runRemote(), this.runLocal()])
     this.checkOnFirstSync()
+    await this.reconcileUploadSessions()
     this.ignoreSnapshotErrors()
   }
 
@@ -188,6 +198,63 @@ export class FilesParser {
     this.logger.debug(`Incomplete ${side}Added: ${filePath}`)
   }
 
+  getUploadSession(filePath: string): SyncUploadSessionRecord | undefined {
+    return this.uploadSessions.get(filePath)
+  }
+
+  async setUploadSession(filePath: string, session: SyncUploadSessionRecord, persist = true): Promise<void> {
+    this.uploadSessions.set(filePath, session)
+    if (persist) await this.queueIncompleteSnapshotSave()
+  }
+
+  async removeUploadSession(filePath: string): Promise<void> {
+    this.uploadSessions.delete(filePath)
+  }
+
+  private async reconcileUploadSessions(): Promise<void> {
+    if (this.reportOnly || this.uploadSessions.size === 0) return
+
+    let changed = false
+    for (const [filePath, session] of this.uploadSessions) {
+      if (this.hasParsingError(filePath)) continue
+
+      const localStats = this.curSnap.local.get(filePath)
+      const remoteStats = this.curSnap.remote.get(filePath)
+      const validSession = isUploadSessionRecord(session)
+      // A matching remote file means publication succeeded even if its final response was lost.
+      const publishedRemoteFile = validSession && remoteStats && !remoteStats[F_STAT.IS_DIR] && uploadSessionMatchesFileStats(session, remoteStats)
+      if (
+        !this.req.server.transfers ||
+        !validSession ||
+        !localStats ||
+        localStats[F_STAT.IS_DIR] ||
+        !uploadSessionMatchesFileStats(session, localStats, true) ||
+        publishedRemoteFile
+      ) {
+        if (this.req.server.transfers && validSession) {
+          await this.req.http
+            .delete(this.syncPath.apiFromPath(`${API.UPLOAD_SESSION}/${session.uploadId}`, filePath), {
+              skipConnectionRetry: true
+            } as AxiosExtendedRequestConfig)
+            .catch(() => undefined)
+        }
+        this.uploadSessions.delete(filePath)
+        changed = true
+      }
+    }
+
+    if (changed) await this.queueIncompleteSnapshotSave()
+  }
+
+  private hasParsingError(filePath: string): boolean {
+    for (const errors of Object.values(this.errors)) {
+      for (const errorPath of errors.keys()) {
+        if (filePath === errorPath || filePath.startsWith(`${errorPath}/`)) return true
+      }
+    }
+    return false
+  }
+
   async removeIncomplete(side: string, filePath: string, realPath?: string, onlySnap = false) {
     this.curIncSnap[side].delete(filePath)
     if (onlySnap) {
@@ -197,7 +264,7 @@ export class FilesParser {
     try {
       if (side === SIDE.LOCAL) {
         if (await isPathExistsBool(realPath)) {
-          await fs.rm(realPath, { force: true })
+          await fs.rm(realPath, { force: true, recursive: true })
         }
       } else {
         await this.req.http.delete(this.syncPath.apiFromPath(API.OPERATION, filePath))
@@ -210,9 +277,9 @@ export class FilesParser {
 
   async saveSnapshots(wasStopped = false): Promise<void> {
     if (wasStopped) {
-      await this.saveIncompleteSnapshot()
+      await this.queueIncompleteSnapshotSave()
     } else {
-      await Promise.all([this.saveLocalSnapshot(), this.saveRemoteSnapshot(), this.saveIncompleteSnapshot()])
+      await Promise.all([this.saveLocalSnapshot(), this.saveRemoteSnapshot(), this.queueIncompleteSnapshotSave()])
     }
   }
 
@@ -296,9 +363,6 @@ export class FilesParser {
             yield* this.getLocalFiles(realPath)
           } else {
             const fileStats = await this.getStats(filePath, realPath, entry.isDirectory())
-            if (await this.checkIncomplete(SIDE.LOCAL, entry.name, filePath, fileStats, realPath)) {
-              continue
-            }
             yield [filePath, fileStats]
           }
         } catch (e) {
@@ -342,13 +406,6 @@ export class FilesParser {
 
         const [filePath, fileStats] = Object.entries(JSON.parse(line))[0] as [string, SyncFileStats | SyncFileSpecialStats]
 
-        if (
-          fileStats.length !== 2 && // filter SyncFileSpecialStats
-          !fileStats[F_STAT.IS_DIR] &&
-          (await this.checkIncomplete(SIDE.REMOTE, fileBaseName(filePath), filePath, fileStats as SyncFileStats))
-        ) {
-          continue
-        }
         yield [filePath, fileStats]
       }
     } catch (e) {
@@ -402,30 +459,119 @@ export class FilesParser {
         return fileStats[F_STAT.CHECKSUM]
       }
     }
-    return await checksumFile(realPath)
+    if (this.reportOnly || !this.req.server.transfers || this.syncPath.isDownloadMode) return await checksumFile(realPath)
+    const chunkSize = this.req.server.transfers.maxChunkSize ?? Math.max(size, 1)
+    if (size <= chunkSize) return await checksumFile(realPath)
+    const checksums = await checksumFileWithChunks(realPath, chunkSize)
+    this.uploadChunkChecksums.set(filePath, { ...checksums, chunkSize, ino, mtime, size })
+    return checksums.checksum
   }
 
-  private async checkIncomplete(side: string, fileName: string, filePath: string, fileStats: SyncFileStats, realPath?: string) {
-    // check if it is an incomplete file
-    if (!fileName.startsWith(INCOMPLETE_PREFIX)) return false
-    // do not delete the incomplete file if it is not referenced in the snapshot, it may belong to another client
-    if (currentTimeStamp() - fileStats[F_STAT.MTIME] > INCOMPLETE_RETENTION) {
-      // if incomplete is outdated, remove it
-      await this.removeIncomplete(side, filePath, realPath)
-    } else if (this.oldIncSnap[side].has(filePath)) {
-      // add file to the current snapshot based on the stored snapshot, this allows to not keep entries that no longer exist
-      // update the incomplete size based on the current parsing
-      const fStats: SyncFileStats = this.oldIncSnap[side].get(filePath)
-      fStats[F_STAT.INCOMPLETE_SIZE] = fileStats[F_STAT.SIZE]
-      // store to the current snapshot
-      this.curIncSnap[side].set(filePath, fStats)
-      this.logger.debug(`Incomplete ${side}: ${filePath}`)
+  async getUploadChunkChecksums(filePath: string, realPath: string, fileStats: SyncFileStats, chunkSize: number): Promise<string[]> {
+    if (fileStats[F_STAT.SIZE] === 0) return []
+    if (fileStats[F_STAT.SIZE] <= chunkSize && fileStats[F_STAT.CHECKSUM]) return [fileStats[F_STAT.CHECKSUM]]
+    const cached = this.uploadChunkChecksums.get(filePath)
+    if (
+      cached?.checksum === fileStats[F_STAT.CHECKSUM] &&
+      cached.chunkSize === chunkSize &&
+      cached.ino === fileStats[F_STAT.INO] &&
+      cached.mtime === fileStats[F_STAT.MTIME] &&
+      cached.size === fileStats[F_STAT.SIZE]
+    ) {
+      return cached.chunks
     }
-    return true
+    const checksums = await checksumFileWithChunks(realPath, chunkSize)
+    if (checksums.checksum !== fileStats[F_STAT.CHECKSUM]) throw new Error('checksum has changed since parsing')
+    this.uploadChunkChecksums.set(filePath, {
+      ...checksums,
+      chunkSize,
+      ino: fileStats[F_STAT.INO],
+      mtime: fileStats[F_STAT.MTIME],
+      size: fileStats[F_STAT.SIZE]
+    })
+    return checksums.chunks
+  }
+
+  private async restoreDownloadCheckpoints(): Promise<void> {
+    let temporaryDirectory: string
+    let temporaryPrefix: string
+    try {
+      temporaryDirectory = getDownloadTmpDirectory(this.syncPath.localPath)
+      temporaryPrefix = getDownloadTmpPrefix(this.req.server.authID, this.syncPath.id)
+    } catch (error) {
+      this.logger.warn(`Unable to resolve download checkpoints: ${error}`)
+      return
+    }
+
+    let entries: Dirent[]
+    try {
+      const directoryStats = await fs.lstat(temporaryDirectory)
+      if (!directoryStats.isDirectory() || directoryStats.isSymbolicLink()) {
+        this.logger.warn(`Ignore invalid internal temporary location: ${temporaryDirectory}`)
+        return
+      }
+      entries = await fs.readdir(temporaryDirectory, { withFileTypes: true })
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        this.logger.warn(`Unable to browse download checkpoints: ${temporaryDirectory}: ${error}`)
+      }
+      return
+    }
+
+    const trackedNames = new Set<string>()
+    // Snapshot metadata identifies the transfer; the current staging-file size is authoritative for resumption.
+    for (const [filePath, fileStats] of this.oldIncSnap.local) {
+      let realTmpPath: string
+      try {
+        realTmpPath = getDownloadTmpPath(this.syncPath.localPath, this.req.server.authID, this.syncPath.id, filePath)
+      } catch {
+        continue
+      }
+      trackedNames.add(path.basename(realTmpPath))
+      try {
+        const stats = await fs.lstat(realTmpPath)
+        if (!stats.isFile() || stats.isSymbolicLink()) {
+          await fs.rm(realTmpPath, { force: true, recursive: true })
+          continue
+        }
+        if (Date.now() - stats.ctimeMs > INCOMPLETE_RETENTION * 1000 || stats.size > fileStats[F_STAT.SIZE]) {
+          await fs.rm(realTmpPath, { force: true })
+          continue
+        }
+        const checkpoint: SyncFileStats = [...fileStats]
+        checkpoint[F_STAT.INCOMPLETE_SIZE] = stats.size
+        this.curIncSnap.local.set(filePath, checkpoint)
+        this.logger.debug(`Incomplete ${SIDE.LOCAL}: ${filePath}`)
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+          this.logger.warn(`Unable to restore download checkpoint: ${realTmpPath}: ${error}`)
+        }
+      }
+    }
+
+    // Clean only expired or invalid orphans owned by this exact client and sync path.
+    for (const entry of entries) {
+      if (!isDownloadTmpFileName(entry.name, temporaryPrefix) || trackedNames.has(entry.name)) {
+        continue
+      }
+      const realTmpPath = path.join(temporaryDirectory, entry.name)
+      try {
+        const stats = await fs.lstat(realTmpPath)
+        if (!stats.isFile() || stats.isSymbolicLink()) {
+          await fs.rm(realTmpPath, { force: true, recursive: true })
+          continue
+        }
+        if (Date.now() - stats.ctimeMs > INCOMPLETE_RETENTION * 1000) await fs.rm(realTmpPath, { force: true })
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+          this.logger.warn(`Unable to clean download checkpoint: ${realTmpPath}: ${error}`)
+        }
+      }
+    }
   }
 
   private isFiltered(side: SIDE.LOCAL | SIDE.REMOTE, fileName: string, filePath: string, isDir: boolean, alreadyChecked = false): boolean {
-    if (!alreadyChecked && DEFAULT_FILTERS.has(fileName)) {
+    if (!alreadyChecked && (DEFAULT_FILTERS.has(fileName) || fileName.toLowerCase() === INTERNAL_TEMPORARY_DIRECTORY)) {
       this.logger.silly(`Default Filters ${side}: ${filePath}`)
       return true
     } else if (alreadyChecked || (this.syncPathFilters && this.syncPathFilters.test(filePath))) {
@@ -471,9 +617,16 @@ export class FilesParser {
       this.iPath,
       JSON.stringify({
         local: [...this.curIncSnap.local],
-        remote: [...this.curIncSnap.remote]
+        remote: [...this.curIncSnap.remote],
+        uploads: [...this.uploadSessions]
       })
     )
+  }
+
+  private queueIncompleteSnapshotSave(): Promise<void> {
+    const save = this.incompleteSnapshotSave.catch(() => undefined).then(() => this.saveIncompleteSnapshot())
+    this.incompleteSnapshotSave = save
+    return save
   }
 
   private async loadSnapShots(): Promise<any> {
@@ -494,15 +647,24 @@ export class FilesParser {
       const oldIncSnap = JSON.parse(await fs.readFile(this.iPath, 'utf8'))
       this.oldIncSnap.local = new NormalizedMap(oldIncSnap.local)
       this.oldIncSnap.remote = new NormalizedMap(oldIncSnap.remote)
+      this.uploadSessions = new NormalizedMap(oldIncSnap.uploads || [])
     } catch (e) {
       this.oldIncSnap.local.clear()
       this.oldIncSnap.remote.clear()
+      this.uploadSessions.clear()
       this.logger.debug(`Loading incomplete snapshot: ${e}`)
     }
   }
 
   private async saveSnapshot(snapshotPath: string, content: string): Promise<void> {
-    await fs.writeFile(snapshotPath, content)
-    this.logger.debug(`${fileBaseName(snapshotPath)} saved`)
+    const temporaryPath = `${snapshotPath}.tmp`
+    try {
+      await fs.writeFile(temporaryPath, content)
+      await fs.rename(temporaryPath, snapshotPath)
+      this.logger.debug(`${fileBaseName(snapshotPath)} saved`)
+    } catch (error) {
+      await fs.rm(temporaryPath, { force: true }).catch(() => undefined)
+      throw error
+    }
   }
 }

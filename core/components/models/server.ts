@@ -1,6 +1,7 @@
 import { SyncPath } from './syncpath'
 import type { SyncServer } from '../interfaces/server.interface'
 import { SERVER_SCHEDULER_STATE } from '../constants/server'
+import type { SyncTransfersCapability } from '../interfaces/sync-client-auth.interface'
 
 export class Server implements SyncServer {
   public id: number = 0
@@ -13,10 +14,12 @@ export class Server implements SyncServer {
   public authTokenExpired: boolean
   public syncScheduler: SERVER_SCHEDULER_STATE = SERVER_SCHEDULER_STATE.ASYNC
   public syncPaths: SyncPath[] = []
+  public transfers?: SyncTransfersCapability
   // tokens
   public accessToken: string = null
   public refreshToken: string = null
   public refreshTokenExpiration = 0
+  public authentication: Promise<void> | null = null
 
   constructor(data: any) {
     this.id = data.id || this.id

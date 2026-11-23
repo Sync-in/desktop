@@ -1,6 +1,7 @@
 import { AxiosRequestConfig } from 'axios'
-import { ReadStream } from 'node:fs'
+import type { Readable } from 'node:stream'
 
 export interface AxiosExtendedRequestConfig extends AxiosRequestConfig {
-  getData?: () => ReadStream
+  getData?: () => Readable | Buffer
+  skipConnectionRetry?: boolean
 }

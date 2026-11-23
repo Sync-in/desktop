@@ -55,6 +55,7 @@ export class SyncManager {
     this.sendSyncEvent({ serverId: this.server.id, syncPathId: syncPath.id, state: true, reportOnly: reportOnly })
     try {
       await syncPath.checks()
+      await req.ensureAccessToken()
       const parser = new FilesParser(syncPath, req, reportOnly, this.appEvents)
       syncInstance.instance = parser
       await parser.run()
@@ -96,16 +97,16 @@ export class SyncManager {
       for (const s of sync.paths.length
         ? this.syncs.filter((s: SyncInstance) => sync.paths.indexOf(s.syncPathId) > -1 && s.reportOnly === reportOnly)
         : this.syncs) {
-        s.instance.logger.warn('Stop sync requested : %O', sync)
-        s.instance.stop()
+        s.instance?.logger.warn('Stop sync requested : %O', sync)
+        s.instance?.stop()
         s.req.cleanOnExit(true)
       }
     } else {
       // stop all syncs
       this.mustExit = true
       for (const s of this.syncs) {
-        s.instance.logger.warn('Stop sync requested : %O', sync)
-        s.instance.stop()
+        s.instance?.logger.warn('Stop sync requested : %O', sync)
+        s.instance?.stop()
         s.req.cleanOnExit(true)
       }
       this.removeListeners()

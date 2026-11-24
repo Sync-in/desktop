@@ -20,7 +20,16 @@ export class Report {
   }
 
   async run(): Promise<void> {
-    for await (const [state, filePaths] of this.diff.run()) {
+    try {
+      await this.process()
+    } finally {
+      this.cleanOnExit()
+    }
+  }
+
+  private async process(): Promise<void> {
+    for await (const [state, filePaths, taskCount] of this.diff.run()) {
+      this.transfers.addTasks(taskCount)
       if (this.mustStop) {
         this.logger.warn('Aborted')
         break
@@ -193,7 +202,6 @@ export class Report {
         this.logger.error(`${state}:${JSON.stringify(filePaths)}: ${e}`)
       }
     }
-    this.cleanOnExit()
   }
 
   private async waitForMoves(state: SIDE_STATE, filePaths) {

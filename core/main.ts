@@ -15,15 +15,19 @@ const mainLogger = getLogger('Runner')
 export class RunManager {
   private mustExit = false
   private currentSyncs: { serverId: number; serverName: string; syncPathIds: number[] }[] = []
+  private readonly syncManagers = new Set<SyncManager>()
   // only used for desktop app
   private readonly appEvents: EventEmitter
 
   constructor(appEvents: EventEmitter = null) {
     this.appEvents = appEvents
+    this.stopSyncManagers = this.stopSyncManagers.bind(this)
     this.listeners()
   }
 
   private listeners() {
+    coreEvents.on(CORE.SYNC_STOP, this.stopSyncManagers)
+    coreEvents.on(CORE.EXIT, this.stopSyncManagers)
     if (this.appEvents) {
       // only used for desktop app
       coreEvents.on(CORE.SYNC_START, async (filter, reportOnly, async) => await this.run(filter, reportOnly, async))
@@ -66,12 +70,16 @@ export class RunManager {
         }
         continue
       }
-      this.currentSyncs.push({ serverId: server.id, serverName: server.name, syncPathIds: syncPaths.map((s) => s.id) })
       const syncManager = new SyncManager(server, this.appEvents)
-      await syncManager.run(syncPaths, reportOnly, async)
-      this.currentSyncs = this.currentSyncs.filter(
-        (s) => s.serverId != server.id && JSON.stringify(s.syncPathIds) === JSON.stringify(syncPaths.map((s) => s.id))
-      )
+      const currentSync = { serverId: server.id, serverName: server.name, syncPathIds: syncPaths.map((s) => s.id) }
+      this.currentSyncs.push(currentSync)
+      this.syncManagers.add(syncManager)
+      try {
+        await syncManager.run(syncPaths, reportOnly, async)
+      } finally {
+        this.syncManagers.delete(syncManager)
+        this.currentSyncs = this.currentSyncs.filter((sync) => sync !== currentSync)
+      }
     }
     if (this.appEvents) {
       if (this.mustExit && !this.currentSyncs.length) {
@@ -120,6 +128,12 @@ export class RunManager {
       } else {
         coreEvents.emit(CORE.EXIT)
       }
+    }
+  }
+
+  private stopSyncManagers(sync: { server: number; paths: number[] } = null, reportOnly?: boolean) {
+    for (const syncManager of this.syncManagers) {
+      syncManager.checkBeforeStop(sync, reportOnly)
     }
   }
 

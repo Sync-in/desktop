@@ -7,11 +7,13 @@ import { getLogger } from './loggers'
 import { Server } from '../models/server'
 import { USER_AGENT } from '../../constants'
 import { CORE, coreEvents } from './events'
-import { API, TOKEN_RESPONSE } from '../constants/requests'
+import { API } from '../constants/requests'
 import { Readable } from 'stream'
 import { buffer } from 'node:stream/consumers'
 import { AxiosExtendedRequestConfig } from '../interfaces/request.interface'
 import { CONNECTION_ERRORS } from '../constants/errors'
+import type { SyncClientTokenResponse } from '../interfaces/sync-client-auth.interface'
+import { parseTransfersCapability } from '../utils/upload-session'
 
 const logger = getLogger('Http')
 
@@ -67,6 +69,60 @@ export class RequestsManager {
     logger.debug(`Cleanup done (exited: ${exited})`)
   }
 
+  async ensureAccessToken(): Promise<void> {
+    if (this.httpController.signal.aborted) throw new AxiosError('canceled', 'ERR_CANCELED')
+    if (!this.server.accessToken) {
+      await this.authorize(() => this.getToken())
+    } else {
+      this.setToken()
+    }
+  }
+
+  private async authorize(operation: () => Promise<void>): Promise<void> {
+    while (true) {
+      if (this.httpController.signal.aborted) throw new AxiosError('canceled', 'ERR_CANCELED')
+      const authentication = this.server.authentication ?? this.startAuthentication(operation)
+      try {
+        await this.waitForAuthentication(authentication)
+        this.setToken()
+        return
+      } catch (error) {
+        if (!axios.isAxiosError(error) || error.code !== 'ERR_CANCELED' || this.httpController.signal.aborted) throw error
+      }
+    }
+  }
+
+  private startAuthentication(operation: () => Promise<void>): Promise<void> {
+    const authentication = operation()
+    const trackedAuthentication: Promise<void> = authentication.finally(() => {
+      if (this.server.authentication === trackedAuthentication) this.server.authentication = null
+    })
+    this.server.authentication = trackedAuthentication
+    return trackedAuthentication
+  }
+
+  private waitForAuthentication(authentication: Promise<void>): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      const cleanup = () => this.httpController.signal.removeEventListener('abort', onAbort)
+      const onAbort = () => {
+        cleanup()
+        reject(new AxiosError('canceled', 'ERR_CANCELED'))
+      }
+      void authentication.then(
+        () => {
+          cleanup()
+          resolve()
+        },
+        (error) => {
+          cleanup()
+          reject(error)
+        }
+      )
+      this.httpController.signal.addEventListener('abort', onAbort, { once: true })
+      if (this.httpController.signal.aborted) onAbort()
+    })
+  }
+
   private initInterceptor() {
     this.http.interceptors.response.use(undefined, async (error: AxiosError) => {
       if (error.response?.status === 401 && [API.AUTH_TOKEN, API.REGISTER].indexOf(error.config.url) === -1) {
@@ -77,7 +133,7 @@ export class RequestsManager {
         }
         const req: AxiosExtendedRequestConfig = error.config
         logger.debug(`Intercepting [401] [${req.url}] [${this.countFailedTokenReq + 1}/${this.maxFailedTokenReq}]`)
-        this.authorizing ??= this.isRefreshTokenIsExpired() ? this.getToken() : this.refreshToken()
+        this.authorizing ??= this.authorize(() => (this.isRefreshTokenIsExpired() ? this.getToken() : this.refreshToken()))
         return this.authorizing
           .then(() => {
             delete req.headers['Authorization']
@@ -90,6 +146,9 @@ export class RequestsManager {
           .catch((e) => Promise.reject(e))
           .finally(() => (this.authorizing = null))
       } else if (CONNECTION_ERRORS.has(error.code)) {
+        if ((error.config as AxiosExtendedRequestConfig).skipConnectionRetry) {
+          throw error
+        }
         // break point to stop all pending requests
         if (this.countRetry >= this.maxRetry) {
           logger.warn('Too many connections refused')
@@ -116,7 +175,7 @@ export class RequestsManager {
   private async refreshToken(): Promise<void> {
     logger.debug('Updating Access Token')
     try {
-      const r: AxiosResponse = await this.http.post<TOKEN_RESPONSE>(API.AUTH_TOKEN_REFRESH, null, {
+      const r: AxiosResponse<SyncClientTokenResponse> = await this.http.post<SyncClientTokenResponse>(API.AUTH_TOKEN_REFRESH, null, {
         headers: { Authorization: `Bearer ${this.server.refreshToken}` }
       })
       this.setToken(r.data)
@@ -130,11 +189,12 @@ export class RequestsManager {
   private async getToken(): Promise<void> {
     logger.debug('Getting Access & Refresh Tokens')
     try {
-      const r: AxiosResponse = await this.http.post<TOKEN_RESPONSE>(API.AUTH_TOKEN, {
+      const r: AxiosResponse<SyncClientTokenResponse> = await this.http.post<SyncClientTokenResponse>(API.AUTH_TOKEN, {
         clientId: this.server.authID,
         token: this.server.authToken,
         info: genClientInfos()
       })
+      this.setTransfersCapability(r.data)
       this.setToken(r.data)
       this.countFailedTokenReq = 0
       logger.debug('Access & Refresh Tokens OK')
@@ -206,7 +266,7 @@ export class RequestsManager {
     return error.message
   }
 
-  private setToken(r?: TOKEN_RESPONSE) {
+  private setToken(r?: SyncClientTokenResponse) {
     if (r) {
       this.server.accessToken = r.access
       this.server.refreshTokenExpiration = r.refresh_expiration
@@ -220,6 +280,10 @@ export class RequestsManager {
     if (this.server.accessToken) {
       this.http.defaults.headers.common = { Authorization: `Bearer ${this.server.accessToken}` }
     }
+  }
+
+  private setTransfersCapability(response: SyncClientTokenResponse) {
+    this.server.transfers = parseTransfersCapability(response.capabilities?.transfers)
   }
 
   private isRefreshTokenIsExpired(): boolean {

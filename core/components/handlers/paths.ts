@@ -1,4 +1,5 @@
 import { findByNameOrID, isPathExistsBool, regexSlash } from '../utils/functions'
+import { cleanupDownloadTmpFiles } from '../utils/download-checkpoints'
 import { RequestsManager } from './requests'
 import { getLogger } from './loggers'
 import { Server } from '../models/server'
@@ -55,6 +56,7 @@ export class PathsManager {
         throw new Error(await RequestsManager.handleHttpError(e, true), { cause: e })
       }
     }
+    await cleanupDownloadTmpFiles(syncPath.localPath, this.req.server.authID, syncPath.id)
     await syncPath.removeSnapShots(this.req.server.id)
     await syncPath.removeLogs(this.req.server.id)
     this.server.syncPaths = this.server.syncPaths.filter((p: SyncPath) => p.id !== syncPath.id)

@@ -20,13 +20,6 @@ export class SyncManager {
   constructor(server: Server, appEvents: EventEmitter = null) {
     this.server = server
     this.appEvents = appEvents
-    this.checkBeforeStop = this.checkBeforeStop.bind(this)
-    this.listeners()
-  }
-
-  private listeners() {
-    coreEvents.once(CORE.EXIT, this.checkBeforeStop)
-    coreEvents.on(CORE.SYNC_STOP, this.checkBeforeStop)
   }
 
   async run(syncPaths: SyncPath[], reportOnly = false, async = false) {
@@ -40,7 +33,6 @@ export class SyncManager {
         await this.runSync(syncPath, reportOnly)
       }
     }
-    this.removeListeners()
   }
 
   async runSync(syncPath: SyncPath, reportOnly = false) {
@@ -55,6 +47,7 @@ export class SyncManager {
     this.sendSyncEvent({ serverId: this.server.id, syncPathId: syncPath.id, state: true, reportOnly: reportOnly })
     try {
       await syncPath.checks()
+      await req.ensureAccessToken()
       const parser = new FilesParser(syncPath, req, reportOnly, this.appEvents)
       syncInstance.instance = parser
       await parser.run()
@@ -89,35 +82,32 @@ export class SyncManager {
     }
   }
 
-  checkBeforeStop(sync: { server: number; paths: number[] } = null, reportOnly: boolean) {
-    if (sync && sync.server === this.server.id) {
+  checkBeforeStop(sync: { server: number; paths: number[] } = null, reportOnly?: boolean) {
+    if (sync && sync.server !== this.server.id) {
+      return
+    }
+    if (sync) {
       // stop sync for specific server/path (or all paths)
       this.mustExit = !sync.paths.length
       for (const s of sync.paths.length
         ? this.syncs.filter((s: SyncInstance) => sync.paths.indexOf(s.syncPathId) > -1 && s.reportOnly === reportOnly)
         : this.syncs) {
-        s.instance.logger.warn('Stop sync requested : %O', sync)
-        s.instance.stop()
+        s.instance?.logger.warn('Stop sync requested : %O', sync)
+        s.instance?.stop()
         s.req.cleanOnExit(true)
       }
     } else {
       // stop all syncs
       this.mustExit = true
       for (const s of this.syncs) {
-        s.instance.logger.warn('Stop sync requested : %O', sync)
-        s.instance.stop()
+        s.instance?.logger.warn('Stop sync requested : %O', sync)
+        s.instance?.stop()
         s.req.cleanOnExit(true)
       }
-      this.removeListeners()
     }
   }
 
   private sendSyncEvent(params: SyncStatus) {
     coreEvents.emit(CORE.SYNC_STATUS, params)
-  }
-
-  private removeListeners() {
-    coreEvents.removeListener(CORE.SYNC_STOP, this.checkBeforeStop)
-    coreEvents.removeListener(CORE.EXIT, this.checkBeforeStop)
   }
 }

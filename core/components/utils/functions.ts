@@ -2,13 +2,15 @@ import os from 'node:os'
 import path from 'node:path'
 import fs from 'node:fs/promises'
 import { constants, createReadStream, createWriteStream, existsSync, readFileSync, writeFileSync } from 'node:fs'
+import fse from 'fs-extra'
 import { ENVIRONMENT, HAS_TTY, IS_WINDOWS } from '../../constants'
-import { DEFAULT_HIGH_WATER_MARK, INCOMPLETE_PREFIX, SYNC_CHECKSUM_ALG } from '../constants/handlers'
+import { DEFAULT_HIGH_WATER_MARK, SYNC_CHECKSUM_ALG } from '../constants/handlers'
 import type { TransferProgress } from '../handlers/transfers'
 import type { SyncClientInfo } from '../interfaces/sync-client-info.interface'
-import crypto from 'node:crypto'
+import crypto, { type Hash } from 'node:crypto'
 import type { SyncFileStats } from '../interfaces/sync-diff.interface'
 import type { ThrottledFunction } from '../interfaces/throttled.interface'
+import type { SyncFileChunkChecksums } from '../interfaces/sync-upload-session.interface'
 import { NormalizedMap } from './normalizedMap'
 import { pipeline } from 'node:stream/promises'
 import { Readable } from 'node:stream'
@@ -208,10 +210,8 @@ export async function copyFile(src: string, dst: string): Promise<void> {
   await fs.copyFile(src, dst, constants.COPYFILE_FICLONE)
 }
 
-export function getTmpPath(aPath: string) {
-  const dir = path.dirname(aPath)
-  const name = fileBaseName(aPath)
-  return path.join(dir, `${INCOMPLETE_PREFIX}${name}`)
+export function moveFiles(srcPath: string, dstPath: string, overwrite = false): Promise<void> {
+  return fse.move(srcPath, dstPath, { overwrite })
 }
 
 export function findByNameOrID<T extends { id: number; name: string }>(nameOrID: string | number, store: T[]): T {
@@ -233,6 +233,34 @@ export async function checksumFile(filePath: string, alg = SYNC_CHECKSUM_ALG): P
   const stream = createReadStream(filePath, { highWaterMark: DEFAULT_HIGH_WATER_MARK })
   await pipeline(stream, hash)
   return hash.digest('hex')
+}
+
+export async function checksumFileWithChunks(filePath: string, chunkSize: number): Promise<SyncFileChunkChecksums> {
+  if (!Number.isSafeInteger(chunkSize) || chunkSize <= 0) throw new Error('Invalid checksum chunk size')
+  const checksum = crypto.createHash(SYNC_CHECKSUM_ALG)
+  const chunks: string[] = []
+  let chunkChecksum: Hash | undefined
+  let chunkOffset = 0
+  for await (const chunk of createReadStream(filePath, { highWaterMark: DEFAULT_HIGH_WATER_MARK })) {
+    for (let offset = 0; offset < chunk.length;) {
+      const length = Math.min(chunkSize - chunkOffset, chunk.length - offset)
+      const data = chunk.subarray(offset, offset + length)
+      checksum.update(data)
+      if (chunks.length > 0) {
+        chunkChecksum ??= crypto.createHash(SYNC_CHECKSUM_ALG)
+        chunkChecksum.update(data)
+      }
+      chunkOffset += length
+      offset += length
+      if (chunkOffset === chunkSize) {
+        chunks.push((chunkChecksum ?? checksum.copy()).digest('hex'))
+        chunkChecksum = undefined
+        chunkOffset = 0
+      }
+    }
+  }
+  if (chunkOffset > 0) chunks.push((chunkChecksum ?? checksum.copy()).digest('hex'))
+  return { checksum: checksum.digest('hex'), chunks }
 }
 
 export function regExpPathPattern(path: string): RegExp {

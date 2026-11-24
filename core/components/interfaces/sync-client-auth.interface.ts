@@ -28,3 +28,17 @@ export interface SyncClientAuthRegistration {
   clientId: string
   clientToken: string
 }
+
+export interface SyncTransfersCapability {
+  maxChunkSize: number | null
+}
+
+export interface SyncClientTokenResponse {
+  access: string
+  refresh: string
+  refresh_expiration: number
+  capabilities?: {
+    transfers?: SyncTransfersCapability
+  }
+  client_token_update?: string
+}

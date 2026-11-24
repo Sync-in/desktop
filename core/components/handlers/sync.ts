@@ -1,20 +1,22 @@
-import { setTimeout } from 'timers/promises'
 import path from 'node:path'
 import fs from 'node:fs/promises'
 import { createReadStream, ReadStream } from 'node:fs'
+import { setTimeout } from 'node:timers/promises'
 import { DiffParser } from './diff'
 import { RequestsManager } from './requests'
 import { DEFAULT_HIGH_WATER_MARK, F_ACTION, F_STAT, SIDE, SYMBOLS } from '../constants/handlers'
 import {
   checkParentDir,
+  checksumFile,
   copyFile,
   downloadAndChecksum,
   downloadAndSize,
-  getTmpPath,
   isPathExistsBool,
   limitConcurrency,
+  moveFiles,
   streamStdout
 } from '../utils/functions'
+import { ensureDownloadTmpDirectory, getDownloadTmpPath } from '../utils/download-checkpoints'
 import { TasksManager } from './tasks'
 import { TransfersManager } from './transfers'
 import { EventEmitter } from 'events'
@@ -24,6 +26,7 @@ import type { SyncTransfer } from '../interfaces/sync-transfer.interface'
 import type { SyncFileStats } from '../interfaces/sync-diff.interface'
 import { SIDE_STATE } from '../constants/diff'
 import { AxiosExtendedRequestConfig } from '../interfaces/request.interface'
+import { UploadSessionManager } from './upload-session'
 
 export class Sync {
   public logger: Logger
@@ -42,6 +45,8 @@ export class Sync {
   private readonly appEvents: EventEmitter | any
   private nbMoveTasks = 0
   public wasAborted = false
+  private readonly uploadSessionManager: UploadSessionManager
+  private downloadTmpDirectoryReady?: Promise<string>
 
   constructor(req: RequestsManager, diff: DiffParser, logger: Logger, appEvents: EventEmitter | any = null) {
     this.req = req
@@ -56,34 +61,39 @@ export class Sync {
       appEvents
     )
     this.tasksManager = new TasksManager({ server: this.req.server.identity(), path: this.diff.syncPath.identity() })
+    this.uploadSessionManager = new UploadSessionManager(this.req, this.diff.fParser, this.diff.syncPath, this.logger, this.incTrackMinSize)
   }
 
   async run() {
-    const taskGeneration = this.getTasks()
-    const taskExecution = this.tasksManager.run()
     try {
-      await Promise.all([taskGeneration, taskExecution])
-    } catch (e) {
-      this.wasAborted = true
-      this.tasksManager.stop()
-      // Drain in-flight tasks before the caller closes the request agents.
-      await Promise.allSettled([taskGeneration, taskExecution])
-      this.transfers.stop()
-      throw e
-    }
-    this.cleanOnExit()
-    streamStdout()
-    if (this.wasAborted) {
-      this.logger.warn('Aborted')
-    } else {
-      this.diff.syncPath.updateLastSync()
-      this.logger.info('Done')
+      const taskGeneration = this.getTasks()
+      const taskExecution = this.tasksManager.run()
+      try {
+        await Promise.all([taskGeneration, taskExecution])
+      } catch (e) {
+        this.wasAborted = true
+        this.uploadSessionManager.stop()
+        this.tasksManager.stop()
+        // Drain in-flight tasks before the caller closes the request agents.
+        await Promise.allSettled([taskGeneration, taskExecution])
+        throw e
+      }
+      streamStdout()
+      if (this.wasAborted) {
+        this.logger.warn('Aborted')
+      } else {
+        this.diff.syncPath.updateLastSync()
+        this.logger.info('Done')
+      }
+    } finally {
+      this.cleanOnExit()
     }
   }
 
   stop() {
-    // really used
     this.wasAborted = true
+    // Abort retry timers before stopping queues so pending upload tasks unwind immediately.
+    this.uploadSessionManager.stop()
     this.cleanOnExit()
   }
 
@@ -93,7 +103,8 @@ export class Sync {
   }
 
   private async getTasks() {
-    for await (const [state, filePaths] of this.diff.run()) {
+    for await (const [state, filePaths, taskCount] of this.diff.run()) {
+      this.transfers.addTasks(taskCount)
       await this.waitForMoves(state, filePaths)
       try {
         switch (state) {
@@ -191,47 +202,63 @@ export class Sync {
       isDir: false
     }
     const realPath = this.diff.syncPath.localRealPathFrom(filePath)
+    let realTmpPath: string | undefined
+    let hasRange: number | null = null
+    let temporaryDirectoryReady = false
     try {
       if ((await isPathExistsBool(realPath)) && (await fs.stat(realPath)).isDirectory()) {
         await this.localRemove([filePath])
       }
       const fileStats: SyncFileStats = [...this.diff.fParser.curSnap.remote.get(filePath)]
       const transferProgress = this.transfers.add(filePath, transfer.side, transfer.action, fileStats[F_STAT.SIZE])
-      const realTmpPath = getTmpPath(realPath)
-      const [tmpFilePath, hasRange] = await this.hasRange(SIDE.LOCAL, filePath, fileStats, realTmpPath)
-      await checkParentDir(realTmpPath)
-      const r = await this.req.http.get(this.diff.syncPath.apiFromPath(API.OPERATION, filePath), {
-        responseType: 'stream',
-        ...(hasRange ? { headers: { Range: `bytes=${hasRange}-` } } : {})
-      })
+      realTmpPath = getDownloadTmpPath(this.diff.syncPath.localPath, this.req.server.authID, this.diff.syncPath.id, filePath)
+      this.downloadTmpDirectoryReady ??= ensureDownloadTmpDirectory(this.diff.syncPath.localPath)
+      await this.downloadTmpDirectoryReady
+      temporaryDirectoryReady = true
+      hasRange = await this.hasRange(SIDE.LOCAL, filePath, fileStats, realTmpPath)
       const check: any = this.diff.secureDiff
         ? { type: 'checksum', prop: F_STAT.CHECKSUM }
         : {
             type: 'size',
             prop: F_STAT.SIZE
           }
-      const prop = this.diff.secureDiff
-        ? await downloadAndChecksum(r.data, realTmpPath, hasRange, transferProgress)
-        : await downloadAndSize(r.data, realTmpPath, hasRange, transferProgress)
+      let prop: string | number
+      if (hasRange === fileStats[F_STAT.SIZE]) {
+        if (transferProgress) transferProgress.currentSize = hasRange
+        prop = this.diff.secureDiff ? await checksumFile(realTmpPath) : hasRange
+      } else {
+        const r = await this.req.http.get(this.diff.syncPath.apiFromPath(API.OPERATION, filePath), {
+          responseType: 'stream',
+          ...(hasRange ? { headers: { Range: `bytes=${hasRange}-` } } : {})
+        })
+        prop = this.diff.secureDiff
+          ? await downloadAndChecksum(r.data, realTmpPath, hasRange, transferProgress)
+          : await downloadAndSize(r.data, realTmpPath, hasRange, transferProgress)
+      }
       if (prop != fileStats[check.prop]) {
         this.diff.fParser.removeFile(SIDE.REMOTE, filePath)
         // remove incomplete file and from the incomplete snapshot
-        await this.diff.fParser.removeIncomplete(SIDE.LOCAL, tmpFilePath, realTmpPath)
+        await this.diff.fParser.removeIncomplete(SIDE.LOCAL, filePath, realTmpPath)
         this.setTransferState(transfer, `${check.type} does not match`)
         return
       }
       await checkParentDir(realPath)
       // Preserve the mtime before publishing the downloaded file.
       await fs.utimes(realTmpPath, fileStats[F_STAT.MTIME], fileStats[F_STAT.MTIME])
-      await fs.rename(realTmpPath, realPath)
+      await moveFiles(realTmpPath, realPath, diff)
+      // Keep the remote mtime after fs-extra's cross-filesystem copy fallback.
+      await fs.utimes(realPath, fileStats[F_STAT.MTIME], fileStats[F_STAT.MTIME])
       // update ino
       fileStats[F_STAT.INO] = (await fs.stat(realPath)).ino
       // add file to current snapshot
       this.diff.fParser.addFile(SIDE.LOCAL, filePath, fileStats)
       // remove incomplete file and from the incomplete snapshot
-      await this.diff.fParser.removeIncomplete(SIDE.LOCAL, tmpFilePath, null, true)
+      await this.diff.fParser.removeIncomplete(SIDE.LOCAL, filePath, null, true)
       this.setTransferState(transfer)
     } catch (e) {
+      if (temporaryDirectoryReady && realTmpPath && hasRange === null) {
+        await this.diff.fParser.removeIncomplete(SIDE.LOCAL, filePath, realTmpPath)
+      }
       this.diff.fParser.removeFile(SIDE.REMOTE, filePath)
       this.setTransferState(transfer, await RequestsManager.handleHttpError(e, true))
     }
@@ -257,40 +284,43 @@ export class Sync {
         this.setTransferState(transfer, 'size has changed since parsing')
         return
       }
-      const [tmpFilePath, hasRange] = await this.hasRange(SIDE.REMOTE, filePath, fileStats)
-      const contentLength = hasRange ? fileStats[F_STAT.SIZE] - hasRange : fileStats[F_STAT.SIZE]
       const transferProgress = this.transfers.add(filePath, transfer.side, transfer.action, fileStats[F_STAT.SIZE])
-      const getStream: () => ReadStream = () => {
-        const stream = createReadStream(realPath, {
-          start: hasRange || 0,
-          highWaterMark: DEFAULT_HIGH_WATER_MARK
-        })
-        if (transferProgress) {
-          transferProgress.currentSize = hasRange || 0
-          stream.on('data', (chunk) => transferProgress.update(chunk.length))
+      if (this.req.server.transfers) {
+        fileStats[F_STAT.INO] = await this.uploadSessionManager.upload(filePath, realPath, fileStats, diff ? 'put' : 'post', transferProgress)
+      } else {
+        const hasRange = await this.hasRange(SIDE.REMOTE, filePath, fileStats)
+        const contentLength = hasRange ? fileStats[F_STAT.SIZE] - hasRange : fileStats[F_STAT.SIZE]
+        const getStream: () => ReadStream = () => {
+          const stream = createReadStream(realPath, {
+            start: hasRange || 0,
+            highWaterMark: DEFAULT_HIGH_WATER_MARK
+          })
+          if (transferProgress) {
+            transferProgress.currentSize = hasRange || 0
+            stream.on('data', (chunk) => transferProgress.update(chunk.length))
+          }
+          return stream
         }
-        return stream
+        const r = await this.req.http<{ ino: number }>({
+          method: diff ? 'put' : 'post',
+          url: this.diff.syncPath.apiFromPath(API.OPERATION, filePath),
+          headers: {
+            'Content-Length': `${contentLength}`,
+            'Content-Type': 'application/octet-stream',
+            ...(hasRange ? { 'Content-Range': `bytes ${hasRange}-${fileStats[F_STAT.SIZE] - 1}/${fileStats[F_STAT.SIZE]}` } : {})
+          },
+          params: {
+            size: fileStats[F_STAT.SIZE],
+            checksum: fileStats[F_STAT.CHECKSUM],
+            mtime: fileStats[F_STAT.MTIME]
+          },
+          data: getStream(),
+          getData: getStream
+        } as AxiosExtendedRequestConfig)
+        fileStats[F_STAT.INO] = r.data.ino
+        await this.diff.fParser.removeIncomplete(SIDE.REMOTE, filePath, null, true)
       }
-      const r = await this.req.http<{ ino: number }>({
-        method: diff ? 'put' : 'post',
-        url: this.diff.syncPath.apiFromPath(API.OPERATION, filePath),
-        headers: {
-          'Content-Length': `${contentLength}`,
-          'Content-Type': 'application/octet-stream',
-          ...(hasRange ? { 'Content-Range': `bytes ${hasRange}-${contentLength - 1}/${contentLength}` } : {})
-        },
-        params: {
-          size: fileStats[F_STAT.SIZE],
-          checksum: fileStats[F_STAT.CHECKSUM],
-          mtime: fileStats[F_STAT.MTIME]
-        },
-        data: getStream(),
-        getData: getStream
-      } as AxiosExtendedRequestConfig)
-      // update ino from response
-      fileStats[F_STAT.INO] = r.data.ino
       this.diff.fParser.addFile(SIDE.REMOTE, filePath, fileStats)
-      await this.diff.fParser.removeIncomplete(SIDE.REMOTE, tmpFilePath, null, true)
       this.setTransferState(transfer)
     } catch (e) {
       this.diff.fParser.removeFile(SIDE.LOCAL, filePath)
@@ -601,8 +631,7 @@ export class Sync {
       const dstRealPath = this.diff.syncPath.localRealPathFrom(f.dst)
       try {
         await checkParentDir(dstRealPath)
-        // todo: use fse.move for better fs support
-        await fs.rename(srcRealPath, dstRealPath)
+        await moveFiles(srcRealPath, dstRealPath)
         this.diff.fParser.moveFile(SIDE.LOCAL, f.src, f.dst)
         this.setTransferState(transfer)
       } catch (e) {
@@ -659,26 +688,41 @@ export class Sync {
     }
   }
 
-  private async hasRange(side: string, filePath: string, fileStats: SyncFileStats, realTmpPath?: string): Promise<any[]> {
-    // Check incomplete file
-    const tmpFilePath = getTmpPath(filePath)
-    if (fileStats[F_STAT.SIZE] < this.incTrackMinSize) {
-      // only tracks the file to resume if his size is not too low
-      return [tmpFilePath, null]
+  private async hasRange(side: SIDE.LOCAL | SIDE.REMOTE, filePath: string, fileStats: SyncFileStats, realTmpPath?: string): Promise<number | null> {
+    const hasLocalCheckpoint = side === SIDE.LOCAL && (await isPathExistsBool(realTmpPath))
+    let localCheckpointSize: number | undefined
+    if (hasLocalCheckpoint) {
+      const temporaryStats = await fs.lstat(realTmpPath)
+      if (!temporaryStats.isFile() || temporaryStats.isSymbolicLink()) {
+        throw new Error(`Invalid download checkpoint: ${realTmpPath}`)
+      }
+      localCheckpointSize = temporaryStats.size
     }
-    if ((side === SIDE.LOCAL && (await isPathExistsBool(realTmpPath))) || side === SIDE.REMOTE) {
-      const snapStats: SyncFileStats = this.diff.fParser.curIncSnap[side].get(tmpFilePath)
+    if (fileStats[F_STAT.SIZE] < this.incTrackMinSize) {
+      // Snapshot writes cost more than restarting small transfers, so they are intentionally not resumable.
+      if (this.diff.fParser.curIncSnap[side].has(filePath)) {
+        await this.diff.fParser.removeIncomplete(side, filePath, undefined, true)
+      }
+      return null
+    }
+    if (hasLocalCheckpoint || side === SIDE.REMOTE) {
+      const snapStats: SyncFileStats = this.diff.fParser.curIncSnap[side].get(filePath)
       if (snapStats) {
-        if (
-          (this.diff.secureDiff && snapStats[F_STAT.CHECKSUM] === fileStats[F_STAT.CHECKSUM]) ||
-          snapStats[F_STAT.SIZE] === fileStats[F_STAT.SIZE]
-        ) {
-          return [tmpFilePath, snapStats[F_STAT.INCOMPLETE_SIZE]]
+        // The staging file is authoritative locally; legacy remote uploads only expose the persisted offset.
+        const incompleteSize = side === SIDE.LOCAL ? localCheckpointSize : snapStats[F_STAT.INCOMPLETE_SIZE]
+        const checkpointMatches = this.diff.secureDiff
+          ? snapStats[F_STAT.CHECKSUM] === fileStats[F_STAT.CHECKSUM]
+          : snapStats[F_STAT.SIZE] === fileStats[F_STAT.SIZE] && snapStats[F_STAT.MTIME] === fileStats[F_STAT.MTIME]
+        if (typeof incompleteSize === 'number' && Number.isSafeInteger(incompleteSize) && incompleteSize >= 0 && checkpointMatches) {
+          if (side === SIDE.REMOTE || incompleteSize <= fileStats[F_STAT.SIZE]) {
+            return incompleteSize
+          }
         }
       }
+      if (side === SIDE.LOCAL) await this.diff.fParser.removeIncomplete(side, filePath, realTmpPath)
     }
-    this.diff.fParser.addIncomplete(side, tmpFilePath, [...fileStats, 0])
-    return [tmpFilePath, 0]
+    this.diff.fParser.addIncomplete(side, filePath, [...fileStats, 0])
+    return 0
   }
 
   private setTransferState(transfer: SyncTransfer, error: string = null) {

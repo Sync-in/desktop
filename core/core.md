@@ -18,6 +18,11 @@ Move tasks complete before other actions are scheduled. Creations and transfers 
 property updates use a separate queue. These queues can overlap, so this is a scheduling priority rather than a strict global execution order.
 Children of a deleted or moved directory are reduced to avoid redundant operations.
 
+Each batch produced by `DiffParser` carries its task count directly to `Sync` or `Report`, which passes it to `TransfersManager`. Property-only
+batches carry a count of zero. Task accounting therefore does not add listeners to the global core event bus. `RunManager` is likewise the sole
+global listener for synchronization-stop and exit events: it keeps the active `SyncManager` instances in a registry, forwards lifecycle requests,
+and removes every manager from that registry in a `finally` block.
+
 ## File inventories and snapshots
 
 Each relative path is associated with the following tuple:

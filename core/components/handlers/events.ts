@@ -2,7 +2,6 @@ import EventEmitter from 'events'
 
 // constants
 export const CORE = {
-  TASKS_COUNT: 'core-tasks-count',
   SYNC_STATUS: 'core-sync-status',
   SYNC_START: 'core-sync-start',
   SYNC_STOP: 'core-sync-stop',

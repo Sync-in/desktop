@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { CONFLICT_MODE, DIFF_MODE, SIDE_STATE, SYNC_MODE } from '../constants/diff'
-import type { SyncFileStats } from '../interfaces/sync-diff.interface'
+import type { SyncDiffBatch, SyncFileStats } from '../interfaces/sync-diff.interface'
 import { SyncPath } from '../models/syncpath'
 import { NormalizedMap } from '../utils/normalizedMap'
 import { DiffParser } from './diff'
@@ -22,7 +22,8 @@ async function diffActions({
   local = [],
   remote = [],
   oldLocal = [],
-  oldRemote = []
+  oldRemote = [],
+  onBatch
 }: {
   mode: SYNC_MODE
   ignoreDelete?: boolean
@@ -33,6 +34,7 @@ async function diffActions({
   remote?: Entries
   oldLocal?: Entries
   oldRemote?: Entries
+  onBatch?: (batch: SyncDiffBatch) => void
 }): Promise<Actions> {
   const syncPath = new SyncPath({
     id: 7,
@@ -69,7 +71,9 @@ async function diffActions({
     }
   })
 
-  for await (const [state, values] of diff.run()) {
+  for await (const batch of diff.run()) {
+    const [state, values] = batch
+    onBatch?.(batch)
     actions[state] = values
   }
   return actions
@@ -118,6 +122,30 @@ describe('DiffParser unidirectional deletions', () => {
 })
 
 describe('DiffParser execution', () => {
+  it('includes task counts in batches and excludes property updates', async () => {
+    const batches: SyncDiffBatch[] = []
+
+    await diffActions({
+      mode: SYNC_MODE.UPLOAD,
+      local: [
+        ['changed-a.txt', stats(8, 20)],
+        ['changed-b.txt', stats(12, 20)],
+        ['folder', directory(20)]
+      ],
+      remote: [
+        ['changed-a.txt', stats(4, 10)],
+        ['changed-b.txt', stats(6, 10)],
+        ['folder', directory(10)]
+      ],
+      onBatch: (batch) => batches.push(batch)
+    })
+
+    expect(batches).toEqual([
+      [SIDE_STATE.UPLOAD_DIFF, ['changed-a.txt', 'changed-b.txt'], 2],
+      [SIDE_STATE.REMOTE_PROPS, [{ path: 'folder', mtime: 20 }], 0]
+    ])
+  })
+
   it('propagates a sorting error after logging it', async () => {
     const failure = new Error('sorting failed')
     const errors: string[] = []

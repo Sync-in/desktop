@@ -1,4 +1,3 @@
-import { CORE, coreEvents } from './events'
 import { F_ACTION, SIDE, SYMBOLS, TRANSFER_MIN_SIZE } from '../constants/handlers'
 import { currentTimeStamp, fileBaseName, streamStdout, throttleFunc, toHumanSize, toHumanTime } from '../utils/functions'
 import { setTimeout as wait } from 'timers/promises'
@@ -108,6 +107,7 @@ export class TransfersManager {
   private readonly sync: SyncTransferContext
   public tasks = { count: 0, done: 0 }
   private store: TransferProgress[] = []
+  private stopped = false
   private watching = false
   private sendSyncEventDone: ThrottledFunction<[SyncTransfer]>
   private sendTaskEventDone: ThrottledFunction
@@ -118,12 +118,10 @@ export class TransfersManager {
     this.reportOnly = reportOnly
     this.logLevel = reportOnly ? LOG_LEVEL_REPORT : LOG_LEVEL_SYNC
     this.logger = getLogger(this.reportOnly ? LOG_MODULE_REPORT : LOG_MODULE_SYNC, sync, !reportOnly && !!this.appEvents)
-    this.listenersAndEmitters()
+    this.initEmitters()
   }
 
-  private listenersAndEmitters() {
-    this.updateTaskCount = this.updateTaskCount.bind(this)
-    coreEvents.on(CORE.TASKS_COUNT, this.updateTaskCount)
+  private initEmitters() {
     if (this.appEvents) {
       this.sendSyncEventDone = throttleFunc(
         this,
@@ -143,8 +141,8 @@ export class TransfersManager {
     }
   }
 
-  private updateTaskCount(sync: { serverId: number; syncPathId: number }, count = 1) {
-    if (this.sync.server.id === sync.serverId && this.sync.path.id === sync.syncPathId) {
+  addTasks(count: number) {
+    if (!this.stopped) {
       this.tasks.count += count
     }
   }
@@ -161,6 +159,11 @@ export class TransfersManager {
   }
 
   stop() {
+    if (this.stopped) {
+      return
+    }
+    this.stopped = true
+    this.watching = false
     if (this.appEvents && this.tasks.count) {
       if (this.tasks.count !== this.tasks.done) {
         this.logger.warn(`tasks count mismatch on stop: ${this.tasks.done}/${this.tasks.count}`)
@@ -176,8 +179,6 @@ export class TransfersManager {
         this.appEvents.emit(REMOTE_RENDERER.SYNC.TRANSFER, null)
       }
     }
-    this.watching = false
-    this.removeListeners()
   }
 
   done(tr: SyncTransfer) {
@@ -193,6 +194,9 @@ export class TransfersManager {
   }
 
   add(filePath: string, side: SIDE.LOCAL | SIDE.REMOTE, action: F_ACTION, totalSize: number): TransferProgress {
+    if (this.stopped) {
+      return null
+    }
     if (totalSize >= TRANSFER_MIN_SIZE) {
       if (!this.watching) {
         this.watching = true
@@ -213,7 +217,7 @@ export class TransfersManager {
   }
 
   private sendEvent(type: string, tr?: SyncTransfer) {
-    if (this.appEvents) {
+    if (this.appEvents && !this.stopped) {
       if (type === 'tasks') {
         this.sendTaskEventDone()
       } else if (type === 'sync') {
@@ -236,9 +240,5 @@ export class TransfersManager {
         } satisfies SyncNotificationMessage)
       }
     }
-  }
-
-  private removeListeners() {
-    coreEvents.removeListener(CORE.TASKS_COUNT, this.updateTaskCount)
   }
 }

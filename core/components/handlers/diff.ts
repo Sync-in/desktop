@@ -4,11 +4,10 @@ import { getLogger } from './loggers'
 import { SyncPath } from '../models/syncpath'
 import { F_STAT, INVERSE_SIDE, SIDE } from '../constants/handlers'
 import { regExpPathPattern } from '../utils/functions'
-import { CORE, coreEvents } from './events'
 import { Logger } from 'winston'
 import { NormalizedMap } from '../utils/normalizedMap'
 import { ALL_MODES, BOTH_MODE, CONFLICT_MODE, DOWNLOAD_MODE, SIDE_STATE, UPLOAD_MODE } from '../constants/diff'
-import { SyncFileStats, SyncSnapShot } from '../interfaces/sync-diff.interface'
+import type { SyncDiffBatch, SyncFileStats, SyncSnapShot } from '../interfaces/sync-diff.interface'
 
 export class DiffParser {
   public syncPath: SyncPath
@@ -25,7 +24,7 @@ export class DiffParser {
     this.logger = getLogger('Diff', { server: this.fParser.req.server.identity(), path: this.syncPath.identity() })
   }
 
-  async *run(): AsyncGenerator<any[]> {
+  async *run(): AsyncGenerator<SyncDiffBatch> {
     try {
       yield* this.sort()
     } catch (e) {
@@ -35,7 +34,7 @@ export class DiffParser {
     this.logger.debug('Parsing diff done')
   }
 
-  private async *sort() {
+  private async *sort(): AsyncGenerator<SyncDiffBatch> {
     const firstActions: {
       [SIDE_STATE.DOWNLOAD]: string[]
       [SIDE_STATE.DOWNLOAD_DIFF]: string[]
@@ -68,15 +67,10 @@ export class DiffParser {
     await this.reduce(firstActions, lastActions)
     /* Start to return the first ordered actions */
     for (const [state, filePaths] of Object.entries(firstActions).filter(([, filePaths]) => filePaths.length)) {
-      coreEvents.emit(CORE.TASKS_COUNT, { serverId: this.fParser.req.server.id, syncPathId: this.syncPath.id }, filePaths.length)
-      yield [state, filePaths]
+      yield [state as SIDE_STATE, filePaths, filePaths.length]
     }
     /* Start to return the last ordered actions */
     for (const [state, filePaths] of Object.entries(lastActions).filter(([, filePaths]) => filePaths.length)) {
-      if (!state.endsWith('Properties')) {
-        // ignore properties in tasks count
-        coreEvents.emit(CORE.TASKS_COUNT, { serverId: this.fParser.req.server.id, syncPathId: this.syncPath.id }, filePaths.length)
-      }
       // remove properties update on the parent directory because it's already done after a remove
       for (const side of [SIDE.LOCAL, SIDE.REMOTE]) {
         if (state === `${side}Remove` && lastActions[`${side}Properties`].length) {
@@ -87,7 +81,7 @@ export class DiffParser {
           }
         }
       }
-      yield [state, filePaths]
+      yield [state as SIDE_STATE, filePaths, state === SIDE_STATE.LOCAL_PROPS || state === SIDE_STATE.REMOTE_PROPS ? 0 : filePaths.length]
     }
   }
 

@@ -65,26 +65,28 @@ export class Sync {
   }
 
   async run() {
-    const taskGeneration = this.getTasks()
-    const taskExecution = this.tasksManager.run()
     try {
-      await Promise.all([taskGeneration, taskExecution])
-    } catch (e) {
-      this.wasAborted = true
-      this.uploadSessionManager.stop()
-      this.tasksManager.stop()
-      // Drain in-flight tasks before the caller closes the request agents.
-      await Promise.allSettled([taskGeneration, taskExecution])
-      this.transfers.stop()
-      throw e
-    }
-    this.cleanOnExit()
-    streamStdout()
-    if (this.wasAborted) {
-      this.logger.warn('Aborted')
-    } else {
-      this.diff.syncPath.updateLastSync()
-      this.logger.info('Done')
+      const taskGeneration = this.getTasks()
+      const taskExecution = this.tasksManager.run()
+      try {
+        await Promise.all([taskGeneration, taskExecution])
+      } catch (e) {
+        this.wasAborted = true
+        this.uploadSessionManager.stop()
+        this.tasksManager.stop()
+        // Drain in-flight tasks before the caller closes the request agents.
+        await Promise.allSettled([taskGeneration, taskExecution])
+        throw e
+      }
+      streamStdout()
+      if (this.wasAborted) {
+        this.logger.warn('Aborted')
+      } else {
+        this.diff.syncPath.updateLastSync()
+        this.logger.info('Done')
+      }
+    } finally {
+      this.cleanOnExit()
     }
   }
 
@@ -101,7 +103,8 @@ export class Sync {
   }
 
   private async getTasks() {
-    for await (const [state, filePaths] of this.diff.run()) {
+    for await (const [state, filePaths, taskCount] of this.diff.run()) {
+      this.transfers.addTasks(taskCount)
       await this.waitForMoves(state, filePaths)
       try {
         switch (state) {

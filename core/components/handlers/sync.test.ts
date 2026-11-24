@@ -278,6 +278,36 @@ describe('Sync legacy ranges', () => {
 })
 
 describe('Sync lifecycle', () => {
+  it('cleans transfers after draining in-flight work when task generation fails', async () => {
+    const failure = new Error('task generation failed')
+    let finishExecution = () => undefined
+    const taskExecution = new Promise<void>((resolve) => {
+      finishExecution = () => resolve()
+    })
+    const tasksManager = { run: vi.fn(() => taskExecution), stop: vi.fn() }
+    const transfers = { stop: vi.fn() }
+    const uploadSessionManager = { stop: vi.fn() }
+    const sync = Object.create(Sync.prototype) as Sync
+    Object.assign(sync, {
+      getTasks: vi.fn().mockRejectedValue(failure),
+      tasksManager,
+      transfers,
+      uploadSessionManager
+    })
+
+    const result = expect(sync.run()).rejects.toBe(failure)
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(uploadSessionManager.stop).toHaveBeenCalledOnce()
+    expect(transfers.stop).not.toHaveBeenCalled()
+
+    finishExecution()
+    await result
+
+    expect(transfers.stop).toHaveBeenCalledOnce()
+  })
+
   it('stops upload-session recovery with the synchronization', () => {
     const uploadSessionManager = { stop: vi.fn() }
     const sync = Object.create(Sync.prototype) as Sync

@@ -233,14 +233,15 @@ export class UploadSessionManager {
     const source = async function* () {
       if (offset < chunkEnd) {
         if (transferProgress) transferProgress.currentSize = offset
-        for await (const chunk of sourceHandle.createReadStream({
-          autoClose: false,
-          end: chunkEnd - 1,
-          highWaterMark: DEFAULT_HIGH_WATER_MARK,
-          start: offset
-        })) {
-          transferProgress?.update(chunk.length)
-          yield chunk
+        let readOffset = offset
+        while (readOffset < chunkEnd) {
+          // FileHandle streams retain one close listener per chunk when auto-close is disabled; positional reads keep the pinned handle reusable.
+          const chunk = Buffer.allocUnsafe(Math.min(DEFAULT_HIGH_WATER_MARK, chunkEnd - readOffset))
+          const { bytesRead } = await sourceHandle.read(chunk, 0, chunk.length, readOffset)
+          if (bytesRead === 0) throw new Error('source has changed during upload')
+          readOffset += bytesRead
+          transferProgress?.update(bytesRead)
+          yield bytesRead === chunk.length ? chunk : chunk.subarray(0, bytesRead)
         }
       }
       if (expectedChecksum) yield Buffer.from(expectedChecksum, 'hex')

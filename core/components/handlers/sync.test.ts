@@ -343,6 +343,30 @@ describe('Sync local moves', () => {
 })
 
 describe('UploadSessionManager', () => {
+  it('reads repeated ranges without creating streams on the pinned file handle', async () => {
+    const content = Buffer.from('abcdefghijkl')
+    const source = await createUploadSource(content, null)
+    const sourceHandle = await fs.open(source.realPath, 'r')
+    const createReadStream = vi.spyOn(sourceHandle, 'createReadStream').mockImplementation(() => {
+      throw new Error('FileHandle.createReadStream must not be used for upload chunks')
+    })
+    const { uploadSessionManager } = createUploadHarness()
+    const chunks: Buffer[] = []
+
+    try {
+      for (let offset = 0; offset < content.length; offset += 1) {
+        chunks.push(await consumeUploadData((uploadSessionManager as any).uploadSessionChunkStream(sourceHandle, offset, offset + 1, undefined)))
+      }
+
+      expect(Buffer.concat(chunks)).toEqual(content)
+      expect(createReadStream).not.toHaveBeenCalled()
+    } finally {
+      createReadStream.mockRestore()
+      await sourceHandle.close()
+      await fs.rm(source.tmpDir, { force: true, recursive: true })
+    }
+  })
+
   it('publishes an empty secure file without a chunk checksum', async () => {
     const source = await createUploadSource(Buffer.alloc(0), globalChecksum)
     const { fParser, http, uploadSessionManager } = createUploadHarness(undefined, [])
